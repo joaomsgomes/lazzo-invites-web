@@ -3,16 +3,49 @@
 
 async function resolveInvite(token: string) {
   const base = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL!;
-  const res = await fetch(`${base}/invite-resolve?token=${encodeURIComponent(token)}`, {
+  const url = `${base}/invite-resolve?token=${encodeURIComponent(token)}`;
+  
+  console.log("========== DEBUG INVITE ==========");
+  console.log("Token recebido:", token);
+  console.log("Base URL:", base);
+  console.log("URL completa:", url);
+  console.log("Token encoded:", encodeURIComponent(token));
+  
+  const res = await fetch(url, {
     cache: "no-store",
   });
-  const data = await res.json().catch(() => null);
+  
+  console.log("Status da resposta:", res.status);
+  console.log("Response OK?", res.ok);
+  
+  const data = await res.json().catch((err) => {
+    console.log("Erro ao fazer parse do JSON:", err);
+    return null;
+  });
+  
+  console.log("Dados retornados:", JSON.stringify(data, null, 2));
+  console.log("==================================");
+  
   return { ok: res.ok, status: res.status, data };
 }
 
-export default async function InvitePage({ params }: { params: { token: string } }) {
-  const token = params.token;
+export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
+  // No Next.js 15+, params é uma Promise e precisa de await
+  const resolvedParams = await params;
+  const token = resolvedParams.token;
+  
+  console.log("========== INICIO InvitePage ==========");
+  console.log("Params recebidos:", resolvedParams);
+  console.log("Token extraído:", token);
+  console.log("Tipo do token:", typeof token);
+  console.log("Tamanho do token:", token?.length);
+  
   const { ok, data } = await resolveInvite(token);
+  
+  console.log("Resultado final - OK:", ok);
+  console.log("Resultado final - Data:", data);
+  console.log("Data.valid:", data?.valid);
+  console.log("Data.reason:", data?.reason);
 
   // deep link fallback (opcional)
   const appScheme = `lazzo://invite/${token}`; // se tiveres scheme definido na app
@@ -20,6 +53,14 @@ export default async function InvitePage({ params }: { params: { token: string }
 
   if (!ok || !data?.valid) {
     const reason = data?.reason ?? "unknown";
+    
+    console.log("========== CONVITE INVÁLIDO ==========");
+    console.log("OK:", ok);
+    console.log("Data.valid:", data?.valid);
+    console.log("Reason:", reason);
+    console.log("Data completo:", JSON.stringify(data, null, 2));
+    console.log("======================================");
+    
     return (
       <main style={{ padding: 24, maxWidth: 520, margin: "0 auto", fontFamily: "system-ui" }}>
         <h1>Convite inválido</h1>
