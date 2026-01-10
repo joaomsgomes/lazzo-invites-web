@@ -218,7 +218,7 @@ export default function Home() {
           fontSize: '14px',
           color: BrandColors.text2,
         }}>
-          © 2026 Lazzo. All rights reserved.
+          Lazzo
         </p>
       </footer>
     </main>
