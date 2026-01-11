@@ -22,18 +22,24 @@ export default function Home() {
         <div style={{
           width: '120px',
           height: '120px',
-          background: `linear-gradient(135deg, ${BrandColors.living} 0%, ${BrandColors.planning} 100%)`,
+          background: BrandColors.bg1,
           borderRadius: Spacing.radiusMd,
           margin: '0 auto',
           marginBottom: Spacing.xl,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 8px 32px rgba(138, 56, 245, 0.3)',
+          overflow: 'hidden',
         }}>
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
+          <img 
+            src="/app-icon.png" 
+            alt="Lazzo"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
         </div>
 
         <h1 style={{
@@ -53,7 +59,7 @@ export default function Home() {
           marginBottom: Spacing.xl,
           lineHeight: 1.5,
         }}>
-          Connect with your tribe. Plan events, create memories, and stay together.
+          Plan fast, remember forever.
         </p>
 
         {/* CTA Buttons */}

@@ -21,18 +21,24 @@ export default function NotFound() {
         <div style={{
           width: '100px',
           height: '100px',
-          background: BrandColors.bg2,
+          background: BrandColors.bg1,
           borderRadius: Spacing.radiusMd,
           margin: '0 auto',
           marginBottom: Spacing.xl,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: `2px solid ${BrandColors.border}`,
+          overflow: 'hidden',
         }}>
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <img 
+            src="/app-icon.png" 
+            alt="Lazzo"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
         </div>
 
         {/* Error Code */}
@@ -53,7 +59,7 @@ export default function NotFound() {
           color: BrandColors.text1,
           marginBottom: Spacing.md,
         }}>
-          Página não encontrada
+          Page not found
         </h2>
 
         <p style={{
@@ -62,7 +68,7 @@ export default function NotFound() {
           marginBottom: Spacing.xl,
           lineHeight: 1.6,
         }}>
-          A página que procuras não existe ou foi movida. Verifica o link ou volta à página inicial.
+          The page you're looking for doesn't exist or has been moved. Check the link or go back home.
         </p>
 
         {/* Action Buttons */}
@@ -76,15 +82,8 @@ export default function NotFound() {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            Voltar ao Início
+            Back to Home
           </Link>
-
-          <a href={process.env.NEXT_PUBLIC_APPSTORE_URL || '#'} className="btn-secondary">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
-            </svg>
-            Download App
-          </a>
         </div>
 
         {/* Help Text */}
@@ -100,8 +99,8 @@ export default function NotFound() {
             color: BrandColors.text2,
             lineHeight: 1.6,
           }}>
-            <strong style={{ color: BrandColors.text1 }}>Recebeste um convite?</strong><br />
-            Verifica se o link está correto. Links de convite têm o formato: <code style={{ 
+            <strong style={{ color: BrandColors.text1 }}>Got an invite?</strong><br />
+            Check if the link is correct. Invite links have the format: <code style={{ 
               color: BrandColors.planning,
               background: BrandColors.bg3,
               padding: '2px 8px',

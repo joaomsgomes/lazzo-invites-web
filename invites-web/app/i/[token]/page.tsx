@@ -80,17 +80,24 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             <div style={{
               width: '80px',
               height: '80px',
-              background: BrandColors.bg3,
+              background: BrandColors.bg1,
               borderRadius: Spacing.radiusSmAlt,
               margin: '0 auto',
               marginBottom: Spacing.lg,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              overflow: 'hidden',
             }}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={BrandColors.cantVote} strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+              <img 
+                src="/app-icon.png" 
+                alt="Lazzo"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
             </div>
 
             <h1 style={{
@@ -100,7 +107,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
               textAlign: 'center',
               marginBottom: Spacing.md,
             }}>
-              Convite inválido
+              Invalid invite
             </h1>
 
             <p style={{
@@ -110,8 +117,8 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
               lineHeight: 1.6,
               marginBottom: Spacing.lg,
             }}>
-              Este convite não é válido ({reason}).<br />
-              Se achares que é um erro, pede um novo QR ao admin do grupo.
+              This invite is not valid ({reason}).<br />
+              If you think this is an error, ask the group admin for a new QR code.
             </p>
 
             <a 
@@ -130,7 +137,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                 cursor: 'pointer',
               }}
             >
-              Voltar ao Início
+              Back to Home
             </a>
           </div>
         </div>
@@ -148,7 +155,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
       alignItems: 'center',
       justifyContent: 'center',
       padding: Spacing.lg,
-      background: `linear-gradient(135deg, ${BrandColors.living} 0%, ${BrandColors.planning} 100%)`,
+      background: `linear-gradient(135deg, ${BrandColors.living} 0%, ${BrandColors.recap} 50%, ${BrandColors.planning} 100%)`,
     }}>
       <div style={{ 
         maxWidth: '520px',
@@ -165,18 +172,24 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             <div style={{
               width: '100px',
               height: '100px',
-              background: `linear-gradient(135deg, ${BrandColors.living} 0%, ${BrandColors.planning} 100%)`,
+              background: BrandColors.bg1,
               borderRadius: Spacing.radiusMd,
               margin: '0 auto',
               marginBottom: Spacing.lg,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: `0 8px 32px ${BrandColors.living}40`,
+              overflow: 'hidden',
             }}>
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+              <img 
+                src="/app-icon.png" 
+                alt="Lazzo"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
             </div>
             <h1 style={{
               fontSize: '32px',
@@ -184,13 +197,13 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
               color: BrandColors.text1,
               marginBottom: Spacing.xs,
             }}>
-              Bem-vindo ao Lazzo
+              Welcome to Lazzo
             </h1>
             <p style={{
               fontSize: '18px',
               color: BrandColors.text2,
             }}>
-              Foste convidado para <span style={{ color: BrandColors.planning, fontWeight: 600 }}>{groupName}</span>
+              You've been invited to <span style={{ color: BrandColors.planning, fontWeight: 600 }}>{groupName}</span>
             </p>
           </div>
 
@@ -210,7 +223,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                 fontSize: '14px',
                 color: BrandColors.text2,
               }}>
-                Expira em: <span style={{ color: BrandColors.text1, fontWeight: 500 }}>{new Date(expiresAt).toLocaleString("pt-PT")}</span>
+                Expires: <span style={{ color: BrandColors.text1, fontWeight: 500 }}>{new Date(expiresAt).toLocaleString("en-US")}</span>
               </p>
             </div>
           </div>
@@ -224,7 +237,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
               fontSize: '16px',
               marginBottom: Spacing.lg,
             }}>
-              Descarrega a app para aceitares o convite
+              Download the app to accept the invite
             </p>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
@@ -259,7 +272,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             color: BrandColors.text2,
             marginTop: Spacing.lg,
           }}>
-            Após instalar, volta a abrir este link
+            After installing, open this link again
           </p>
         </div>
       </div>
