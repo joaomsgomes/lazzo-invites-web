@@ -1,4 +1,5 @@
 import { BrandColors, Spacing } from './design/constants';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -30,6 +31,7 @@ export default function Home() {
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
+          border: `2px solid ${BrandColors.bg3}`,
         }}>
           <img 
             src="/app-icon.png" 
@@ -223,9 +225,20 @@ export default function Home() {
         <p style={{
           fontSize: '14px',
           color: BrandColors.text2,
+          marginBottom: Spacing.sm,
         }}>
           Lazzo
         </p>
+        <Link 
+          href="/privacy"
+          style={{
+            fontSize: '14px',
+            color: BrandColors.text2,
+            textDecoration: 'none',
+          }}
+        >
+          Privacy Policy
+        </Link>
       </footer>
     </main>
   );

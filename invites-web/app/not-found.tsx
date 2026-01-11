@@ -29,6 +29,7 @@ export default function NotFound() {
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
+          border: `2px solid ${BrandColors.bg3}`,
         }}>
           <img 
             src="/app-icon.png" 
@@ -108,6 +109,25 @@ export default function NotFound() {
               fontFamily: 'monospace',
             }}>/i/[token]</code>
           </p>
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          marginTop: Spacing.xl,
+          paddingTop: Spacing.lg,
+          borderTop: `1px solid ${BrandColors.border}`,
+          textAlign: 'center',
+        }}>
+          <Link 
+            href="/privacy"
+            style={{
+              fontSize: '14px',
+              color: BrandColors.text2,
+              textDecoration: 'none',
+            }}
+          >
+            Privacy Policy
+          </Link>
         </div>
       </div>
     </main>

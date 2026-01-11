@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   description: "Plan events, create memories, and stay connected with your friends and groups.",
   keywords: ["lazzo", "events", "groups", "social", "friends", "memories"],
   authors: [{ name: "Lazzo Team" }],
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
   openGraph: {
     title: "Lazzo - Connect with your tribe",
     description: "Plan events, create memories, and stay connected with your friends and groups.",
