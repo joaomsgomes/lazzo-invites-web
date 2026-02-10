@@ -25,6 +25,7 @@ coverage/
 # --- misc ---
 .DS_Store
 *.pem
+Thumbs.db
 
 # --- logs ---
 npm-debug.log*
