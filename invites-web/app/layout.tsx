@@ -7,7 +7,7 @@ const roboto = Roboto({
   subsets: ["latin"],
   display: 'swap',
 });
-// Metadata for SEO
+// Metadata for SEO and social sharing
 export const metadata: Metadata = {
   title: "Lazzo - Connect with your tribe",
   description: "Plan events, create memories, and stay connected with your friends and groups.",

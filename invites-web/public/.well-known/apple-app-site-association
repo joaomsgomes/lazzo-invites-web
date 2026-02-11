@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appID": "TEAMID.com.yourcompany.yourapp",
+        "appID": "5R8LLW6L55.com.lazzo.app",
         "paths": ["/i/*", "/invite/*"]
       }
     ]

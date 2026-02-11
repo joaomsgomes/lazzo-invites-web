@@ -1,6 +1,7 @@
 // app/i/[token]/page.tsx
 import { BrandColors, Spacing } from '../../design/constants';
 import Link from 'next/link';
+import ClientWrapper from './ClientWrapper';
 
 async function resolveInvite(token: string) {
   const base = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL!;
@@ -155,14 +156,15 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   const expiresAt = data.expires_at;
 
   return (
-    <main style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: Spacing.lg,
-      background: BrandColors.bg1,
-    }}>
+    <ClientWrapper token={token}>
+      <main style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: Spacing.lg,
+        background: BrandColors.bg1,
+      }}>
       <div style={{ 
         maxWidth: '520px',
         width: '100%',
@@ -298,6 +300,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
           </div>
         </div>
       </div>
-    </main>
+      </main>
+    </ClientWrapper>
   );
 }

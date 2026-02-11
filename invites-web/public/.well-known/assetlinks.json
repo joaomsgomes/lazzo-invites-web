@@ -1,12 +1,10 @@
-[
-  {
-    "relation": ["delegate_permission/common.handle_all_urls"],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "com.yourcompany.yourapp",
-      "sha256_cert_fingerprints": [
-        "AA:BB:...:ZZ"
-      ]
-    }
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.lazzo.app",
+    "sha256_cert_fingerprints": [
+      "19:8B:76:BD:85:8F:22:7B:FD:3B:20:13:53:82:C3:F2:08:B2:09:E0:E0:27:1B:24:71:F9:4B:FA:8D:08:AA:FC"
+    ]
   }
-]
+}]
