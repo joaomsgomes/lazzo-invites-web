@@ -21,6 +21,16 @@ jobs:
       - name: Install Vercel CLI
         run: npm i -g vercel
 
+      - name: Strip git author metadata for Vercel
+        run: |
+          rm -rf .git
+          echo "VERCEL_GIT_COMMIT_AUTHOR_LOGIN=" >> $GITHUB_ENV
+          echo "VERCEL_GIT_COMMIT_AUTHOR_NAME=" >> $GITHUB_ENV
+          echo "VERCEL_GIT_COMMIT_AUTHOR_EMAIL=" >> $GITHUB_ENV
+          echo "VERCEL_GIT_COMMIT_SHA=" >> $GITHUB_ENV
+          echo "VERCEL_GIT_COMMIT_MESSAGE=" >> $GITHUB_ENV
+          echo "VERCEL_GIT_COMMIT_REF=" >> $GITHUB_ENV
+
       # Pull Vercel env/config (server-side)
       - name: Vercel Pull
         run: |
