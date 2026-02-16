@@ -1,134 +1,153 @@
-// app/i/[token]/page.tsx
-import { BrandColors, Spacing } from '../../design/constants';
-import Link from 'next/link';
-import ClientWrapper from './ClientWrapper';
+// app/i/[token]/page.tsx — Event invite landing page
+//
+// Flow:
+// 1. Server-side: fetch event data via `get_event_by_invite_token` RPC
+// 2. Mobile: attempt deep-link to native app (via ClientWrapper/AppRedirect)
+// 3. Show event details + RSVP voting
+// 4. Guest enters name + email → OTP verification → vote submitted
+//
 
-async function resolveInvite(token: string) {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL!;
-  const url = `${base}/invite-resolve?token=${encodeURIComponent(token)}`;
-  
-  console.log("========== DEBUG INVITE ==========");
-  console.log("Token recebido:", token);
-  console.log("Base URL:", base);
-  console.log("URL completa:", url);
-  console.log("Token encoded:", encodeURIComponent(token));
-  
-  const res = await fetch(url, {
-    cache: "no-store",
-  });
-  
-  console.log("Status da resposta:", res.status);
-  console.log("Response OK?", res.ok);
-  
-  const data = await res.json().catch((err) => {
-    console.log("Erro ao fazer parse do JSON:", err);
-    return null;
-  });
-  
-  console.log("Dados retornados:", JSON.stringify(data, null, 2));
-  console.log("==================================");
-  
-  return { ok: res.ok, status: res.status, data };
+import { cache } from 'react';
+import { createServerSupabase, type EventData } from '../../../lib/supabase';
+import { BrandColors, Spacing } from '../../design/constants';
+import EventPage from './EventPage';
+import ClientWrapper from './ClientWrapper';
+import Link from 'next/link';
+import type { Metadata } from 'next';
+
+// Disable Next.js caching — invite pages must always show fresh data
+export const dynamic = 'force-dynamic';
+
+// ── Data Fetching (deduplicated between generateMetadata & page) ──
+
+const getEventData = cache(
+  async (token: string): Promise<{ event: EventData | null; error: string | null }> => {
+    try {
+      const supabase = createServerSupabase();
+      const { data, error } = await supabase
+        .rpc('get_event_by_invite_token', { p_token: token })
+        .single();
+
+      if (error) {
+        const msg = error.message || '';
+        if (msg.includes('Invalid') || msg.includes('expired')) {
+          return { event: null, error: 'expired' };
+        }
+        return { event: null, error: 'unknown' };
+      }
+
+      if (!data) return { event: null, error: 'not_found' };
+      return { event: data as EventData, error: null };
+    } catch {
+      return { event: null, error: 'unknown' };
+    }
+  }
+);
+
+// ── Dynamic OG Metadata (for WhatsApp card preview) ──
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const { event } = await getEventData(token);
+
+  if (!event) return { title: 'Lazzo - Invite' };
+
+  const title = `${event.event_emoji || '📩'} ${event.event_name} | Lazzo`;
+  const description =
+    event.event_description || `You're invited to ${event.event_name}!`;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: 'website' },
+  };
 }
 
-export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
-  // No Next.js 15+, params é uma Promise e precisa de await
-  const resolvedParams = await params;
-  const token = resolvedParams.token;
-  
-  console.log("========== INICIO InvitePage ==========");
-  console.log("Params recebidos:", resolvedParams);
-  console.log("Token extraído:", token);
-  console.log("Tipo do token:", typeof token);
-  console.log("Tamanho do token:", token?.length);
-  
-  const { ok, data } = await resolveInvite(token);
-  
-  console.log("Resultado final - OK:", ok);
-  console.log("Resultado final - Data:", data);
-  console.log("Data.valid:", data?.valid);
-  console.log("Data.reason:", data?.reason);
+// ── Page Component ──
 
-  if (!ok || !data?.valid) {
-    const reason = data?.reason ?? "unknown";
-    
-    console.log("========== CONVITE INVÁLIDO ==========");
-    console.log("OK:", ok);
-    console.log("Data.valid:", data?.valid);
-    console.log("Reason:", reason);
-    console.log("Data completo:", JSON.stringify(data, null, 2));
-    console.log("======================================");
-    
+export default async function InvitePage({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
+  const { token } = await params;
+  const { event, error } = await getEventData(token);
+
+  // ── Error State ──
+  if (error || !event) {
     return (
-      <main style={{ 
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: Spacing.lg,
-        background: BrandColors.bg1,
-      }}>
-        <div style={{ 
-          maxWidth: '520px',
-          width: '100%',
-        }}>
-          <div style={{
-            background: BrandColors.bg2,
-            borderRadius: Spacing.radiusMd,
-            padding: Spacing.xl,
-            border: `1px solid ${BrandColors.border}`,
-          }}>
+      <main
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: Spacing.lg,
+          background: BrandColors.bg1,
+        }}
+      >
+        <div style={{ maxWidth: '520px', width: '100%' }}>
+          <div
+            style={{
+              background: BrandColors.bg2,
+              borderRadius: Spacing.radiusMd,
+              padding: Spacing.xl,
+              border: `1px solid ${BrandColors.border}`,
+            }}
+          >
             {/* Error Icon */}
-            <div style={{
-              width: '80px',
-              height: '80px',
-              background: BrandColors.bg1,
-              borderRadius: Spacing.radiusSmAlt,
-              margin: '0 auto',
-              marginBottom: Spacing.lg,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-              border: `0px solid ${BrandColors.bg3}`,
-            }}>
-              <img 
-                src="/app-icon.png" 
-                alt="Lazzo"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
+            <div
+              style={{
+                width: '80px',
+                height: '80px',
+                background: BrandColors.bg3,
+                borderRadius: '50%',
+                margin: '0 auto',
+                marginBottom: Spacing.lg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '36px',
+              }}
+            >
+              {error === 'expired' ? '⏰' : '❌'}
             </div>
 
-            <h1 style={{
-              fontSize: '28px',
-              fontWeight: 600,
-              color: BrandColors.text1,
-              textAlign: 'center',
-              marginBottom: Spacing.md,
-            }}>
-              Invalid invite
+            <h1
+              style={{
+                fontSize: '28px',
+                fontWeight: 600,
+                color: BrandColors.text1,
+                textAlign: 'center',
+                marginBottom: Spacing.md,
+              }}
+            >
+              {error === 'expired' ? 'Invite expired' : 'Invalid invite'}
             </h1>
 
-            <p style={{
-              fontSize: '16px',
-              color: BrandColors.text2,
-              textAlign: 'center',
-              lineHeight: 1.6,
-              marginBottom: Spacing.lg,
-            }}>
-              {reason === 'not_found' && "The invite link doesn't exist."}
-              {reason === 'expired' && "This invite has expired."}
-              {reason === 'used' && "This invite has already been used."}
-              {(reason !== 'not_found' && reason !== 'expired' && reason !== 'used') && "This invite is no longer valid."}
-              <br />
-              If you think this is an error, ask the group admin for a new QR code.
+            <p
+              style={{
+                fontSize: '16px',
+                color: BrandColors.text2,
+                textAlign: 'center',
+                lineHeight: 1.6,
+                marginBottom: Spacing.lg,
+              }}
+            >
+              {error === 'expired' &&
+                'This invite link has expired. Ask the organizer to send a new one.'}
+              {error === 'not_found' &&
+                "This invite link doesn't exist or has been revoked."}
+              {error !== 'expired' &&
+                error !== 'not_found' &&
+                'Something went wrong. Please try again later.'}
             </p>
 
-            <a 
+            <a
               href="/"
               style={{
                 display: 'block',
@@ -146,161 +165,32 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             >
               Back to Home
             </a>
+
+            <div
+              style={{
+                textAlign: 'center',
+                marginTop: Spacing.lg,
+                paddingTop: Spacing.sm,
+                borderTop: `1px solid ${BrandColors.border}`,
+              }}
+            >
+              <Link
+                href="/privacy"
+                style={{ fontSize: '12px', color: BrandColors.text2 }}
+              >
+                Privacy Policy
+              </Link>
+            </div>
           </div>
         </div>
       </main>
     );
   }
 
-  const groupName = data.group?.name ?? "grupo";
-  const expiresAt = data.expires_at;
-
+  // ── Success: Show Event Page ──
   return (
     <ClientWrapper token={token}>
-      <main style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: Spacing.lg,
-        background: BrandColors.bg1,
-      }}>
-      <div style={{ 
-        maxWidth: '520px',
-        width: '100%',
-      }}>
-        <div style={{
-          background: BrandColors.bg2,
-          borderRadius: Spacing.radiusMd,
-          padding: Spacing.xl,
-          border: `1px solid ${BrandColors.border}`,
-        }}>
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: Spacing.xl }}>
-            <div style={{
-              width: '100px',
-              height: '100px',
-              background: BrandColors.bg1,
-              borderRadius: Spacing.radiusMd,
-              margin: '0 auto',
-              marginBottom: Spacing.lg,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-              border: `2px solid ${BrandColors.bg3}`,
-            }}>
-              <img 
-                src="/app-icon.png" 
-                alt="Lazzo"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
-            </div>
-            <h1 style={{
-              fontSize: '32px',
-              fontWeight: 700,
-              color: BrandColors.text1,
-              marginBottom: Spacing.xs,
-            }}>
-              Welcome to Lazzo
-            </h1>
-            <p style={{
-              fontSize: '18px',
-              color: BrandColors.text2,
-            }}>
-              You've been invited to <span style={{ color: BrandColors.planning, fontWeight: 600 }}>{groupName}</span>
-            </p>
-          </div>
-
-          {/* Expiration notice */}
-          <div style={{
-            background: BrandColors.bg3,
-            borderRadius: Spacing.radiusSmAlt,
-            padding: Spacing.md,
-            marginBottom: Spacing.xl,
-            border: `1px solid ${BrandColors.border}`,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.xs }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p style={{
-                fontSize: '14px',
-                color: BrandColors.text2,
-              }}>
-                Expires: <span style={{ color: BrandColors.text1, fontWeight: 500 }}>{new Date(expiresAt).toLocaleString("en-US")}</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Download section */}
-          <div>
-            <p style={{
-              textAlign: 'center',
-              color: BrandColors.text1,
-              fontWeight: 500,
-              fontSize: '16px',
-              marginBottom: Spacing.lg,
-            }}>
-              Download the app to accept the invite
-            </p>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
-              {/* App Store Button */}
-              <a href={process.env.NEXT_PUBLIC_APPSTORE_URL!} className="btn-store">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
-                </svg>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '18px', marginTop: '-2px' }}>App Store</div>
-                </div>
-              </a>
-
-              {/* Google Play Button */}
-              <a href={process.env.NEXT_PUBLIC_PLAYSTORE_URL!} className="btn-store">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/>
-                </svg>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '18px', marginTop: '-2px' }}>Google Play</div>
-                </div>
-              </a>
-            </div>
-          </div>
-
-          {/* Footer note */}
-          <p style={{
-            textAlign: 'center',
-            fontSize: '14px',
-            color: BrandColors.text2,
-            marginTop: Spacing.lg,
-            marginBottom: Spacing.sm,
-          }}>
-            After installing, open this link again
-          </p>
-          <div style={{
-            textAlign: 'center',
-            paddingTop: Spacing.sm,
-            borderTop: `1px solid ${BrandColors.border}`,
-          }}>
-            <Link 
-              href="/privacy"
-              style={{
-                fontSize: '12px',
-                color: BrandColors.text2,
-                textDecoration: 'none',
-              }}
-            >
-              Privacy Policy
-            </Link>
-          </div>
-        </div>
-      </div>
-      </main>
+      <EventPage event={event} token={token} />
     </ClientWrapper>
   );
 }

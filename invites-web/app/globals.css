@@ -136,3 +136,51 @@ a {
 .btn-store:hover {
   transform: translateY(-2px);
 }
+
+/* ── Input Fields ── */
+
+.input-field {
+  width: 100%;
+  padding: var(--gap-md);
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text1);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-field:focus {
+  border-color: var(--planning);
+}
+
+.input-field::placeholder {
+  color: var(--text2);
+  opacity: 0.7;
+}
+
+.input-field:disabled {
+  opacity: 0.5;
+}
+
+/* ── Store Buttons (small – footer) ── */
+
+.btn-store-sm {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--gap-xs) var(--gap-md);
+  background: var(--bg2);
+  color: var(--text1);
+  border-radius: var(--radius-sm-alt);
+  font-weight: 500;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.btn-store-sm:hover {
+  transform: translateY(-1px);
+}
