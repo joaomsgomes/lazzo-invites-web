@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import RsvpSection from './RsvpSection';
 import LivingSection from './LivingSection';
 import RecapSection from './RecapSection';
 import CalendarButton from './CalendarButton';
+import { createBrowserSupabase } from '../../../lib/supabase';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
 import Link from 'next/link';
 
@@ -97,11 +98,43 @@ export default function EventPage({ event, token, photos }: EventPageProps) {
     Number(event.going_count) + Number(event.guest_going_count)
   );
   const [cantCount, setCantCount] = useState(0);
+  const [liveStatus, setLiveStatus] = useState(event.status);
 
-  const statusConfig = useMemo(() => getStatusConfig(event.status), [event.status]);
-  const isLiving = event.status === 'living';
-  const isRecap = event.status === 'recap';
-  const canVote = event.status === 'pending' || event.status === 'confirmed';
+  // ── Poll event status every 15s to detect host actions (confirm, etc.) ──
+  // Uses the token-gated RPC so it works without user authentication.
+  useEffect(() => {
+    // Only poll for statuses that can change (pending → confirmed, etc.)
+    if (liveStatus === 'ended') return;
+
+    const poll = async () => {
+      try {
+        const supabase = createBrowserSupabase();
+        const { data } = await supabase
+          .rpc('get_event_by_invite_token', { p_token: token })
+          .single();
+        const d = data as EventData | null;
+        if (d?.status && d.status !== liveStatus) {
+          setLiveStatus(d.status);
+        }
+        // Also update going counts from server
+        if (d) {
+          const newGoingTotal = Number(d.going_count) + Number(d.guest_going_count);
+          setGoingCount(newGoingTotal);
+        }
+      } catch {
+        // Silent — graceful degradation
+      }
+    };
+
+    const interval = setInterval(poll, 15_000);
+    return () => clearInterval(interval);
+  }, [token, liveStatus]);
+
+  // Derive display values from liveStatus (reacts to status changes)
+  const statusConfig = useMemo(() => getStatusConfig(liveStatus), [liveStatus]);
+  const isLiving = liveStatus === 'living';
+  const isRecap = liveStatus === 'recap';
+  const canVote = liveStatus === 'pending' || liveStatus === 'confirmed';
   const hasLocation = Boolean(event.location_name);
   const hasCoords = Boolean(event.location_lat && event.location_lng);
   const hasDate = Boolean(event.start_datetime);
@@ -217,14 +250,15 @@ export default function EventPage({ event, token, photos }: EventPageProps) {
             fontSize: '14px',
             fontWeight: 500,
             color: statusConfig.color === BrandColors.text2 ? BrandColors.text2 : '#FFFFFF',
-            background: event.status === 'confirmed'
+            background: liveStatus === 'confirmed'
               ? BrandColors.planning
-              : event.status === 'living'
+              : liveStatus === 'living'
               ? BrandColors.living
-              : event.status === 'recap'
+              : liveStatus === 'recap'
               ? BrandColors.recap
               : BrandColors.bg2,
-            border: `1px solid ${event.status === 'pending' ? BrandColors.bg3 : 'transparent'}`,
+            border: `1px solid ${liveStatus === 'pending' ? BrandColors.bg3 : 'transparent'}`,
+            transition: 'all 0.4s ease',
           }}>
             {statusConfig.label}
           </span>
