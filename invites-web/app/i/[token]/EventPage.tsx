@@ -75,7 +75,7 @@ function getStatusConfig(status: string): { label: string; color: string } {
     case 'ended':
       return { label: 'Ended', color: BrandColors.text2 };
     default:
-      return { label: 'Planning', color: BrandColors.text2 };
+      return { label: 'Pending', color: BrandColors.text2 };
   }
 }
 
