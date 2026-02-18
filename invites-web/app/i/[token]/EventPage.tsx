@@ -1,65 +1,115 @@
 'use client';
 
-import { useState } from 'react';
-import { BrandColors, Spacing } from '../../design/constants';
+import { useState, useMemo } from 'react';
+import { BrandColors, Spacing, Typography } from '../../design/constants';
 import RsvpSection from './RsvpSection';
-import type { EventData } from '../../../lib/supabase';
+import LivingSection from './LivingSection';
+import RecapSection from './RecapSection';
+import CalendarButton from './CalendarButton';
+import type { EventData, EventPhoto } from '../../../lib/supabase';
 import Link from 'next/link';
 
-// ---- Helpers ----
+// ═══════════════════════════════════════════════════════════════════
+// EventPage — Redesigned to match Flutter event detail page exactly
+// Layout: Header → StatusChip → RSVP/Living/Recap → Details → Location → DateTime → Footer
+// ═══════════════════════════════════════════════════════════════════
 
-function formatDate(isoDate: string): string {
-  const d = new Date(isoDate);
-  return d.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+// ── Helpers ──────────────────────────────────────────────────────
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-function formatTime(isoDate: string): string {
-  const d = new Date(isoDate);
-  return d.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function formatHeaderDateTime(startIso: string, endIso: string | null): string {
+  const s = new Date(startIso);
+  const sDay = s.getDate();
+  const sMonth = MONTHS[s.getMonth()];
+  const sTime = `${s.getHours().toString().padStart(2, '0')}:${s.getMinutes().toString().padStart(2, '0')}`;
+
+  if (!endIso) return `${sDay} ${sMonth} · ${sTime}`;
+
+  const e = new Date(endIso);
+  const eDay = e.getDate();
+  const eMonth = MONTHS[e.getMonth()];
+  const eTime = `${e.getHours().toString().padStart(2, '0')}:${e.getMinutes().toString().padStart(2, '0')}`;
+
+  if (isSameDay(s, e)) return `${sDay} ${sMonth} · ${sTime} - ${eTime}`;
+  return `${sDay} ${sMonth} ${sTime} - ${eDay} ${eMonth} ${eTime}`;
 }
 
-function getStatusBadge(status: string) {
-  const configs: Record<string, { label: string; color: string }> = {
-    pending: { label: 'Planning', color: BrandColors.planning },
-    confirmed: { label: 'Confirmed', color: BrandColors.planning },
-    living: { label: 'Happening Now', color: BrandColors.living },
-    recap: { label: 'Recap', color: BrandColors.recap },
-    ended: { label: 'Ended', color: BrandColors.text2 },
-  };
-  return configs[status] || { label: status, color: BrandColors.text2 };
+function getDateRange(startIso: string, endIso: string | null): string {
+  const s = new Date(startIso);
+  if (!endIso) return `${WEEKDAYS[s.getDay()]}, ${s.getDate()} ${MONTHS_FULL[s.getMonth()]}`;
+
+  const e = new Date(endIso);
+  if (isSameDay(s, e)) return `${WEEKDAYS[s.getDay()]}, ${s.getDate()} ${MONTHS_FULL[s.getMonth()]}`;
+
+  if (s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear()) {
+    return `${WEEKDAYS[s.getDay()]}, ${s.getDate()} - ${WEEKDAYS[e.getDay()]}, ${e.getDate()} ${MONTHS_FULL[s.getMonth()]}`;
+  }
+  return `${WEEKDAYS[s.getDay()]}, ${s.getDate()} ${MONTHS_FULL[s.getMonth()]} - ${WEEKDAYS[e.getDay()]}, ${e.getDate()} ${MONTHS_FULL[e.getMonth()]}`;
 }
 
-function getStorageUrl(path: string | null, bucket: string): string | null {
-  if (!path) return null;
-  if (path.startsWith('http')) return path;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  return `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
+function getTimeRange(startIso: string, endIso: string | null): string {
+  const s = new Date(startIso);
+  const sTime = `${s.getHours().toString().padStart(2, '0')}:${s.getMinutes().toString().padStart(2, '0')}`;
+  if (!endIso) return sTime;
+  const e = new Date(endIso);
+  const eTime = `${e.getHours().toString().padStart(2, '0')}:${e.getMinutes().toString().padStart(2, '0')}`;
+  return `${sTime} - ${eTime}`;
 }
 
-// ---- Component ----
+function getStatusConfig(status: string): { label: string; color: string } {
+  switch (status) {
+    case 'confirmed':
+      return { label: 'Confirmed', color: BrandColors.planning };
+    case 'living':
+      return { label: 'Happening Now', color: BrandColors.living };
+    case 'recap':
+      return { label: 'Recap', color: BrandColors.recap };
+    case 'ended':
+      return { label: 'Ended', color: BrandColors.text2 };
+    default:
+      return { label: 'Planning', color: BrandColors.text2 };
+  }
+}
+
+function getGoogleMapsUrl(lat: number | null, lng: number | null, name: string | null): string {
+  if (lat && lng) return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  if (name) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`;
+  return '#';
+}
+
+// ── Component ────────────────────────────────────────────────────
 
 interface EventPageProps {
   event: EventData;
   token: string;
+  photos: EventPhoto[];
 }
 
-export default function EventPage({ event, token }: EventPageProps) {
+export default function EventPage({ event, token, photos }: EventPageProps) {
   const [goingCount, setGoingCount] = useState(
     Number(event.going_count) + Number(event.guest_going_count)
   );
   const [cantCount, setCantCount] = useState(0);
 
-  const statusBadge = getStatusBadge(event.status);
-  const coverUrl = getStorageUrl(event.cover_photo_url, 'event-photos');
-  const avatarUrl = getStorageUrl(event.organizer_avatar, 'avatars');
+  const statusConfig = useMemo(() => getStatusConfig(event.status), [event.status]);
+  const isLiving = event.status === 'living';
+  const isRecap = event.status === 'recap';
+  const canVote = event.status === 'pending' || event.status === 'confirmed';
+  const hasLocation = Boolean(event.location_name);
+  const hasCoords = Boolean(event.location_lat && event.location_lng);
+  const hasDate = Boolean(event.start_datetime);
+
+  const mapsUrl = useMemo(
+    () => getGoogleMapsUrl(event.location_lat, event.location_lng, event.location_name),
+    [event.location_lat, event.location_lng, event.location_name]
+  );
 
   const handleVoteSubmitted = (vote: 'going' | 'not_going') => {
     if (vote === 'going') setGoingCount((p) => p + 1);
@@ -77,241 +127,129 @@ export default function EventPage({ event, token }: EventPageProps) {
       background: BrandColors.bg1,
     }}>
       <div style={{ maxWidth: '520px', width: '100%' }}>
-        {/* ═══════════ EVENT CARD ═══════════ */}
+
+        {/* ═══════════ 1. EVENT HEADER (matching Flutter EventHeader) ═══════════ */}
         <div style={{
-          background: BrandColors.bg2,
-          borderRadius: Spacing.radiusMd,
-          overflow: 'hidden',
-          border: `1px solid ${BrandColors.border}`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginBottom: Spacing.xs,
         }}>
-          {/* Cover Photo or Emoji Header */}
-          {coverUrl ? (
-            <div style={{
-              width: '100%',
-              height: '200px',
-              position: 'relative',
-              overflow: 'hidden',
-              background: BrandColors.bg3,
-            }}>
-              <img
-                src={coverUrl}
-                alt={event.event_name}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            </div>
-          ) : (
-            <div style={{
-              width: '100%',
-              padding: `${Spacing.xl} 0 ${Spacing.md}`,
-              display: 'flex',
-              justifyContent: 'center',
-            }}>
-              <div style={{
-                width: '80px',
-                height: '80px',
-                background: BrandColors.bg3,
-                borderRadius: Spacing.radiusMd,
-                display: 'flex',
+          {/* Giant Emoji */}
+          <span style={{
+            fontSize: '80px',
+            lineHeight: 1,
+            display: 'block',
+          }}>
+            {event.event_emoji || '📅'}
+          </span>
+
+          {/* Event Title */}
+          <h1 style={{
+            ...Typography.titleLargeEmph,
+            color: BrandColors.text1,
+            textAlign: 'center',
+            marginTop: Spacing.xs,
+          }}>
+            {event.event_name}
+          </h1>
+
+          {/* Location Info Row — clickable → Google Maps */}
+          {hasLocation && (
+            <a
+              href={hasCoords || event.location_name ? mapsUrl : undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '40px',
-              }}>
-                {event.event_emoji || '📅'}
-              </div>
-            </div>
+                gap: Spacing.xs,
+                marginTop: Spacing.xs,
+                color: BrandColors.text2,
+                textDecoration: 'none',
+                cursor: hasCoords || event.location_name ? 'pointer' : 'default',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span style={{ fontSize: '14px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {event.location_name}
+              </span>
+            </a>
           )}
 
-          {/* Event Content */}
-          <div style={{ padding: Spacing.lg }}>
-            {/* Title + Status Badge */}
-            <div style={{ textAlign: 'center', marginBottom: Spacing.lg }}>
-              {coverUrl && (
-                <span style={{
-                  fontSize: '28px',
-                  display: 'block',
-                  marginBottom: Spacing.xs,
-                }}>
-                  {event.event_emoji || '📅'}
-                </span>
-              )}
-              <h1 style={{
-                fontSize: '26px',
-                fontWeight: 700,
-                color: BrandColors.text1,
-                marginBottom: Spacing.sm,
-                lineHeight: 1.2,
-              }}>
-                {event.event_name}
-              </h1>
-              <span style={{
-                display: 'inline-block',
-                padding: '4px 14px',
-                borderRadius: Spacing.radiusPill,
-                fontSize: '13px',
-                fontWeight: 600,
-                color: statusBadge.color,
-                background: statusBadge.color + '1A',
-                border: `1px solid ${statusBadge.color}44`,
-              }}>
-                {statusBadge.label}
-              </span>
-            </div>
-
-            {/* Detail Rows */}
+          {/* Date Info Row */}
+          {hasDate && (
             <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: Spacing.md,
-              marginBottom: Spacing.lg,
-            }}>
-              {/* Date & Time */}
-              {event.start_datetime && (
-                <InfoRow
-                  icon="📅"
-                  title={formatDate(event.start_datetime)}
-                  subtitle={
-                    `${formatTime(event.start_datetime)}` +
-                    (event.end_datetime ? ` – ${formatTime(event.end_datetime)}` : '')
-                  }
-                />
-              )}
-
-              {!event.start_datetime && (
-                <InfoRow
-                  icon="📅"
-                  title="Date not set yet"
-                  subtitle="The organizer hasn't picked a date"
-                  muted
-                />
-              )}
-
-              {/* Location */}
-              {event.location_name && (
-                <InfoRow
-                  icon="📍"
-                  title={event.location_name}
-                  subtitle={event.location_address || undefined}
-                />
-              )}
-
-              {!event.location_name && (
-                <InfoRow
-                  icon="📍"
-                  title="Location not set yet"
-                  subtitle="The organizer hasn't picked a place"
-                  muted
-                />
-              )}
-
-              {/* Organizer */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: Spacing.sm,
-              }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  background: BrandColors.bg3,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: BrandColors.text2,
-                  overflow: 'hidden',
-                  flexShrink: 0,
-                }}>
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt={event.organizer_name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={(e) => {
-                        const img = e.target as HTMLImageElement;
-                        img.style.display = 'none';
-                        if (img.parentElement) {
-                          img.parentElement.textContent =
-                            event.organizer_name?.[0]?.toUpperCase() || '?';
-                        }
-                      }}
-                    />
-                  ) : (
-                    event.organizer_name?.[0]?.toUpperCase() || '?'
-                  )}
-                </div>
-                <div>
-                  <p style={{
-                    fontSize: '13px',
-                    color: BrandColors.text2,
-                    marginBottom: '2px',
-                  }}>
-                    Organized by
-                  </p>
-                  <p style={{
-                    fontSize: '15px',
-                    color: BrandColors.text1,
-                    fontWeight: 500,
-                  }}>
-                    {event.organizer_name}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
-            {event.event_description && (
-              <div style={{
-                padding: Spacing.md,
-                background: BrandColors.bg1,
-                borderRadius: Spacing.radiusSmAlt,
-                marginBottom: Spacing.lg,
-              }}>
-                <p style={{
-                  fontSize: '14px',
-                  color: BrandColors.text2,
-                  lineHeight: 1.6,
-                  whiteSpace: 'pre-wrap',
-                }}>
-                  {event.event_description}
-                </p>
-              </div>
-            )}
-
-            {/* Participant Counts */}
-            <div style={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: Spacing.sm,
-              padding: `${Spacing.sm} 0`,
-              marginBottom: Spacing.md,
-              borderTop: `1px solid ${BrandColors.border}`,
-              paddingTop: Spacing.md,
+              gap: Spacing.xs,
+              marginTop: Spacing.xxs,
+              color: BrandColors.text2,
             }}>
-              <span style={{
-                fontSize: '14px',
-                color: BrandColors.text2,
-              }}>
-                👥{' '}
-                <strong style={{ color: BrandColors.text1 }}>{goingCount}</strong> going
-                {cantCount > 0 && (
-                  <>
-                    {' · '}
-                    <strong style={{ color: BrandColors.text1 }}>{cantCount}</strong> can&apos;t
-                  </>
-                )}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              <span style={{ fontSize: '14px' }}>
+                {formatHeaderDateTime(event.start_datetime!, event.end_datetime)}
               </span>
             </div>
+          )}
+        </div>
 
-            {/* ═══════ RSVP SECTION ═══════ */}
+        {/* ═══════════ 2. STATUS CHIP (matching Flutter EventStatusChip) ═══════════ */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginBottom: Spacing.lg,
+          marginTop: Spacing.sm,
+        }}>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '6px 16px',
+            borderRadius: Spacing.radiusPill,
+            fontSize: '14px',
+            fontWeight: 500,
+            color: statusConfig.color === BrandColors.text2 ? BrandColors.text2 : '#FFFFFF',
+            background: event.status === 'confirmed'
+              ? BrandColors.planning
+              : event.status === 'living'
+              ? BrandColors.living
+              : event.status === 'recap'
+              ? BrandColors.recap
+              : BrandColors.bg2,
+            border: `1px solid ${event.status === 'pending' ? BrandColors.bg3 : 'transparent'}`,
+          }}>
+            {statusConfig.label}
+          </span>
+        </div>
+
+        {/* ═══════════ 3. LIVING SECTION ═══════════ */}
+        {isLiving && (
+          <div style={{ marginBottom: Spacing.md }}>
+            <LivingSection
+              event={event}
+              photos={photos}
+            />
+          </div>
+        )}
+
+        {/* ═══════════ 3b. RECAP SECTION ═══════════ */}
+        {isRecap && (
+          <div style={{ marginBottom: Spacing.md }}>
+            <RecapSection photos={photos} />
+          </div>
+        )}
+
+        {/* ═══════════ 4. RSVP SECTION (planning/confirmed only) ═══════════ */}
+        {canVote && (
+          <div style={{ marginBottom: Spacing.md }}>
             <RsvpSection
               token={token}
               initialGoingCount={goingCount}
@@ -320,9 +258,179 @@ export default function EventPage({ event, token }: EventPageProps) {
               onVoteSubmitted={handleVoteSubmitted}
             />
           </div>
-        </div>
+        )}
 
-        {/* ═══════════ FOOTER ═══════════ */}
+        {/* ═══════════ 5. DETAILS CARD (matching Flutter EventDetailsWidget) ═══════════ */}
+        {event.event_description && (
+          <SectionCard>
+            <SectionHeader title="Details" />
+            <div style={{ marginTop: Spacing.sm }}>
+              <p style={{
+                ...Typography.bodyMedium,
+                color: BrandColors.text2,
+                whiteSpace: 'pre-wrap',
+              }}>
+                {event.event_description}
+              </p>
+            </div>
+          </SectionCard>
+        )}
+
+        {/* ═══════════ 6. LOCATION CARD (matching Flutter LocationWidget) ═══════════ */}
+        {hasLocation && (
+          <SectionCard>
+            <div>
+              <SectionHeader title="Location" />
+              {(event.location_name || event.location_address) && (
+                <p style={{
+                  fontSize: '12px',
+                  color: BrandColors.text2,
+                  marginTop: '2px',
+                }}>
+                  {[event.location_name, event.location_address]
+                    .filter(Boolean)
+                    .filter((v, i, arr) => arr.indexOf(v) === i)
+                    .join(' • ')}
+                </p>
+              )}
+            </div>
+
+            {/* Map placeholder — tappable to open Google Maps */}
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '200px',
+                background: BrandColors.bg3,
+                borderRadius: Spacing.radiusSm,
+                marginTop: Spacing.md,
+                textDecoration: 'none',
+                cursor: 'pointer',
+                transition: 'opacity 0.15s',
+              }}
+            >
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                <line x1="8" y1="2" x2="8" y2="18" />
+                <line x1="16" y1="6" x2="16" y2="22" />
+              </svg>
+              <span style={{
+                fontSize: '14px',
+                color: BrandColors.text2,
+                marginTop: Spacing.xs,
+              }}>
+                Tap to open in Maps
+              </span>
+            </a>
+          </SectionCard>
+        )}
+
+        {/* ═══════════ 7. DATE & TIME CARD (matching Flutter DateTimeWidget) ═══════════ */}
+        {hasDate && (
+          <SectionCard>
+            <SectionHeader title="Date & Time" />
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: Spacing.sm,
+              marginTop: Spacing.md,
+            }}>
+              {/* Calendar Icon Square */}
+              <CalendarIconSquare
+                startDatetime={event.start_datetime!}
+                endDatetime={event.end_datetime}
+              />
+              {/* Date and time text */}
+              <div style={{ flex: 1 }}>
+                <p style={{
+                  ...Typography.bodyMediumEmph,
+                  color: BrandColors.text1,
+                }}>
+                  {getDateRange(event.start_datetime!, event.end_datetime)}
+                </p>
+                <p style={{
+                  ...Typography.bodyMedium,
+                  color: BrandColors.text2,
+                  marginTop: Spacing.xxs,
+                }}>
+                  {getTimeRange(event.start_datetime!, event.end_datetime)}
+                </p>
+              </div>
+            </div>
+
+            {/* Add to Calendar Button */}
+            <div style={{ marginTop: Spacing.md }}>
+              <CalendarButton
+                eventName={event.event_name}
+                startDatetime={event.start_datetime!}
+                endDatetime={event.end_datetime}
+                locationName={event.location_name}
+                locationAddress={event.location_address}
+                description={event.event_description}
+              />
+            </div>
+          </SectionCard>
+        )}
+
+        {/* ═══════════ 8. ORGANIZER + PARTICIPANT COUNTS ═══════════ */}
+        <SectionCard>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            {/* Organizer */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: Spacing.sm,
+            }}>
+              <OrganizerAvatar
+                name={event.organizer_name}
+                avatarUrl={event.organizer_avatar}
+              />
+              <div>
+                <p style={{
+                  fontSize: '12px',
+                  color: BrandColors.text2,
+                }}>
+                  Organized by
+                </p>
+                <p style={{
+                  fontSize: '14px',
+                  color: BrandColors.text1,
+                  fontWeight: 500,
+                }}>
+                  {event.organizer_name}
+                </p>
+              </div>
+            </div>
+
+            {/* Participant count */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: Spacing.xs,
+            }}>
+              <span style={{ fontSize: '14px', color: BrandColors.text2 }}>
+                👥 <strong style={{ color: BrandColors.text1 }}>{goingCount}</strong> going
+                {cantCount > 0 && (
+                  <>
+                    {' · '}
+                    <strong style={{ color: BrandColors.text1 }}>{cantCount}</strong> can&apos;t
+                  </>
+                )}
+              </span>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* ═══════════ 9. FOOTER ═══════════ */}
         <div style={{ textAlign: 'center', marginTop: Spacing.lg }}>
           <p style={{
             fontSize: '14px',
@@ -373,52 +481,125 @@ export default function EventPage({ event, token }: EventPageProps) {
   );
 }
 
-// ---- Info Row Sub-component ----
 
-function InfoRow({
-  icon,
-  title,
-  subtitle,
-  muted,
-}: {
-  icon: string;
-  title: string;
-  subtitle?: string;
-  muted?: boolean;
-}) {
+// ═══════════════════════════════════════════════════════════════════
+// Sub-components
+// ═══════════════════════════════════════════════════════════════════
+
+/** bg2 card wrapper for each section — matches Flutter's Container pattern */
+function SectionCard({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: Spacing.sm,
+      width: '100%',
+      padding: Spacing.md,
+      background: BrandColors.bg2,
+      borderRadius: Spacing.radiusMd,
+      marginBottom: Spacing.md,
     }}>
-      <span style={{
-        fontSize: '20px',
-        lineHeight: '24px',
-        flexShrink: 0,
-        opacity: muted ? 0.5 : 1,
-      }}>
-        {icon}
-      </span>
-      <div>
-        <p style={{
-          fontSize: '15px',
-          color: muted ? BrandColors.text2 : BrandColors.text1,
-          fontWeight: muted ? 400 : 500,
-          fontStyle: muted ? 'italic' : 'normal',
-        }}>
-          {title}
-        </p>
-        {subtitle && (
-          <p style={{
-            fontSize: '13px',
-            color: BrandColors.text2,
-            marginTop: '2px',
-          }}>
-            {subtitle}
-          </p>
-        )}
-      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Section header text — matches Flutter's AppText.labelLarge */
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <p style={{
+      ...Typography.labelLarge,
+      color: BrandColors.text1,
+    }}>
+      {title}
+    </p>
+  );
+}
+
+/** Calendar icon square (56×56) matching Flutter's DateTimeWidget */
+function CalendarIconSquare({
+  startDatetime,
+  endDatetime,
+}: {
+  startDatetime: string;
+  endDatetime: string | null;
+}) {
+  const s = new Date(startDatetime);
+  const e = endDatetime ? new Date(endDatetime) : null;
+  const isMultiDay = e !== null && !isSameDay(s, e);
+
+  return (
+    <div style={{
+      width: '56px',
+      height: '56px',
+      minWidth: '56px',
+      background: BrandColors.bg3,
+      borderRadius: Spacing.radiusSm,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      {isMultiDay ? (
+        <>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: BrandColors.text1 }}>
+            {s.getDate()}-{e!.getDate()}
+          </span>
+          <span style={{ fontSize: '10px', color: BrandColors.text2 }}>
+            {MONTHS[s.getMonth()].toUpperCase()}
+          </span>
+        </>
+      ) : (
+        <>
+          <span style={{ fontSize: '10px', color: BrandColors.text2 }}>
+            {MONTHS[s.getMonth()].toUpperCase()}
+          </span>
+          <span style={{ fontSize: '20px', fontWeight: 600, color: BrandColors.text1 }}>
+            {s.getDate()}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Organizer avatar circle */
+function OrganizerAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const fullUrl = avatarUrl
+    ? avatarUrl.startsWith('http')
+      ? avatarUrl
+      : `${supabaseUrl}/storage/v1/object/public/avatars/${avatarUrl}`
+    : null;
+
+  return (
+    <div style={{
+      width: '36px',
+      height: '36px',
+      borderRadius: '50%',
+      background: BrandColors.bg3,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '14px',
+      fontWeight: 600,
+      color: BrandColors.text2,
+      overflow: 'hidden',
+      flexShrink: 0,
+    }}>
+      {fullUrl ? (
+        <img
+          src={fullUrl}
+          alt={name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={(e) => {
+            const img = e.target as HTMLImageElement;
+            img.style.display = 'none';
+            if (img.parentElement) {
+              img.parentElement.textContent = name?.[0]?.toUpperCase() || '?';
+            }
+          }}
+        />
+      ) : (
+        name?.[0]?.toUpperCase() || '?'
+      )}
     </div>
   );
 }

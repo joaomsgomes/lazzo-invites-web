@@ -46,3 +46,29 @@ export interface EventData {
   guest_going_count: number;
   cover_photo_url: string | null;
 }
+
+/** Shape returned by `get_event_photos_by_invite_token` RPC */
+export interface EventPhoto {
+  photo_id: string;
+  url: string;
+  storage_path: string;
+  is_portrait: boolean;
+  captured_at: string;
+}
+
+/**
+ * Fetches event photos via the token-gated RPC.
+ * Returns empty array on failure (graceful degradation).
+ */
+export async function fetchEventPhotos(token: string): Promise<EventPhoto[]> {
+  try {
+    const supabase = createServerSupabase();
+    const { data, error } = await supabase
+      .rpc('get_event_photos_by_invite_token', { p_token: token });
+
+    if (error || !data) return [];
+    return data as EventPhoto[];
+  } catch {
+    return [];
+  }
+}

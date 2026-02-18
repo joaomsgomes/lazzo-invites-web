@@ -20,6 +20,7 @@ export const BrandColors = {
   // Status colors
   cantVote: '#FF3B30',
   warning: '#ECA900',
+  white: '#FFFFFF',
 } as const;
 
 export const Spacing = {
@@ -47,61 +48,73 @@ export const Spacing = {
 export const Typography = {
   fontFamily: "'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   
-  // Text styles
+  // Text styles (matching Flutter AppText exactly)
+  titleLargeEmph: {
+    fontWeight: 600 as const,
+    fontSize: '22px',
+    lineHeight: 1.27,
+  },
+  
+  titleMediumEmph: {
+    fontWeight: 600 as const,
+    fontSize: '16px',
+    lineHeight: 1.5,
+  },
+
   enterCodeTitle: {
-    fontWeight: 500,
+    fontWeight: 500 as const,
     fontSize: '32px',
     lineHeight: 1.25,
   },
   
   subtitleMuted: {
-    fontWeight: 500,
+    fontWeight: 500 as const,
     fontSize: '22px',
     lineHeight: 1.27,
   },
   
   subtitleStrong: {
-    fontWeight: 500,
+    fontWeight: 500 as const,
     fontSize: '22px',
     lineHeight: 1.27,
   },
   
   headlineMedium: {
-    fontWeight: 500,
+    fontWeight: 500 as const,
     fontSize: '28px',
     lineHeight: 36 / 28,
   },
   
   bodyLarge: {
-    fontWeight: 400,
+    fontWeight: 400 as const,
     fontSize: '16px',
     lineHeight: 24 / 16,
     letterSpacing: '0.5px',
   },
   
   bodyMedium: {
-    fontWeight: 400,
+    fontWeight: 400 as const,
     fontSize: '14px',
     lineHeight: 20 / 14,
     letterSpacing: '0.25px',
   },
   
   bodyMediumEmph: {
-    fontWeight: 500,
+    fontWeight: 500 as const,
     fontSize: '14px',
     lineHeight: 20 / 14,
     letterSpacing: '0.25px',
   },
   
   labelLarge: {
-    fontWeight: 500,
+    fontWeight: 500 as const,
     fontSize: '14px',
     lineHeight: 20 / 14,
     letterSpacing: '0.5px',
   },
   
   labelLargeEmph: {
-    fontWeight: 600,
+    fontWeight: 600 as const,
     fontSize: '14px',
     lineHeight: 20 / 14,
     letterSpacing: '0.5px',

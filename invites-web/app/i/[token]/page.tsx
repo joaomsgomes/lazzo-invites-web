@@ -8,7 +8,7 @@
 //
 
 import { cache } from 'react';
-import { createServerSupabase, type EventData } from '../../../lib/supabase';
+import { createServerSupabase, fetchEventPhotos, type EventData, type EventPhoto } from '../../../lib/supabase';
 import { BrandColors, Spacing } from '../../design/constants';
 import EventPage from './EventPage';
 import ClientWrapper from './ClientWrapper';
@@ -187,10 +187,16 @@ export default async function InvitePage({
     );
   }
 
+  // ── Fetch photos for living/recap events ──
+  let photos: EventPhoto[] = [];
+  if (event.status === 'living' || event.status === 'recap') {
+    photos = await fetchEventPhotos(token);
+  }
+
   // ── Success: Show Event Page ──
   return (
     <ClientWrapper token={token}>
-      <EventPage event={event} token={token} />
+      <EventPage event={event} token={token} photos={photos} />
     </ClientWrapper>
   );
 }

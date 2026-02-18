@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { BrandColors, Spacing } from '../../design/constants';
 import { createBrowserSupabase } from '../../../lib/supabase';
 import OtpInput from './OtpInput';
+import { saveSession } from './SessionManager';
 
 // ---- Types ----
 
@@ -163,6 +164,9 @@ export default function RsvpSection({
           email: email.trim(),
         })
       );
+
+      // 4b. Save session for persistence across visits
+      saveSession(token, email.trim(), name.trim());
 
       // 5. Update UI
       setConfirmedVote(selectedVote!);
