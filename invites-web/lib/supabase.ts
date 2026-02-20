@@ -72,6 +72,83 @@ export interface EventPhoto {
   captured_at: string;
 }
 
+/** Normalised guest record used by ManageGuestsSheet */
+export interface GuestRecord {
+  id: string;
+  name: string;
+  /** Normalised status: going | not_going | maybe | pending */
+  rsvp: 'going' | 'not_going' | 'maybe' | 'pending';
+  source: 'app' | 'web';
+  avatar_url: string | null;
+  voted_at: string | null;
+}
+
+/**
+ * Fetches all guests for an event (app participants + web guests).
+ * Uses service role client to bypass RLS.
+ * Returns empty array on failure (graceful degradation).
+ */
+export async function fetchEventGuests(eventId: string): Promise<GuestRecord[]> {
+  try {
+    const serviceClient = createServiceSupabase();
+    if (!serviceClient) return [];
+
+    // 1. App participants (event_participants joined with users)
+    const { data: appParticipants } = await serviceClient
+      .from('event_participants')
+      .select('user_id, rsvp, confirmed_at, users:user_id ( id, name, avatar_url )')
+      .eq('pevent_id', eventId);
+
+    // 2. Web guests (event_guest_rsvps)
+    const { data: webGuests } = await serviceClient
+      .from('event_guest_rsvps')
+      .select('id, guest_name, rsvp, updated_at')
+      .eq('event_id', eventId);
+
+    const guests: GuestRecord[] = [];
+
+    // Normalise app participants (rsvp_status enum: pending/yes/no/maybe → our format)
+    if (appParticipants) {
+      for (const p of appParticipants) {
+        // Supabase returns the joined user as an object (or array with 1 element)
+        const user = Array.isArray(p.users) ? p.users[0] : p.users;
+        const rsvpMap: Record<string, GuestRecord['rsvp']> = {
+          yes: 'going',
+          no: 'not_going',
+          maybe: 'maybe',
+          pending: 'pending',
+        };
+        guests.push({
+          id: p.user_id,
+          name: user?.name || 'Unknown',
+          rsvp: rsvpMap[p.rsvp] || 'pending',
+          source: 'app',
+          avatar_url: user?.avatar_url || null,
+          voted_at: p.confirmed_at || null,
+        });
+      }
+    }
+
+    // Web guests already use our format
+    if (webGuests) {
+      for (const g of webGuests) {
+        guests.push({
+          id: g.id,
+          name: g.guest_name,
+          rsvp: g.rsvp as GuestRecord['rsvp'],
+          source: 'web',
+          avatar_url: null,
+          voted_at: g.updated_at || null,
+        });
+      }
+    }
+
+    return guests;
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Fetches event photos via the token-gated RPC.
  * Generates signed URLs using service role key if available.

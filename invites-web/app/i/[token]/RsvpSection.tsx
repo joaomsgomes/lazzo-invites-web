@@ -38,7 +38,7 @@ export default function RsvpSection({
   const [confirmedName, setConfirmedName] = useState<string>('');
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // Check localStorage for existing vote
+  // Check localStorage for existing vote AND restore stored credentials
   useEffect(() => {
     try {
       const stored = localStorage.getItem(`lazzo_rsvp_${token}`);
@@ -46,6 +46,8 @@ export default function RsvpSection({
         const parsed = JSON.parse(stored);
         setConfirmedVote(parsed.vote);
         setConfirmedName(parsed.name || '');
+        setName(parsed.name || '');
+        setEmail(parsed.email || '');
         setPhase('done');
         setSelectedVote(parsed.vote);
       }
@@ -64,11 +66,56 @@ export default function RsvpSection({
 
   // ---- Handlers ----
 
+  /** Submit vote directly using stored credentials (no OTP needed) */
+  const submitVoteDirect = useCallback(async (vote: 'going' | 'not_going', storedName: string, storedEmail: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const supabase = createBrowserSupabase();
+      const { error: rsvpError } = await supabase.rpc('upsert_event_guest_rsvp_by_token', {
+        p_token: token,
+        p_guest_name: storedName,
+        p_rsvp: vote,
+        p_plus_one: 0,
+        p_guest_phone: storedEmail,
+      });
+
+      if (rsvpError) throw rsvpError;
+
+      // Update localStorage
+      localStorage.setItem(
+        `lazzo_rsvp_${token}`,
+        JSON.stringify({ vote, name: storedName, email: storedEmail })
+      );
+      saveSession(token, storedEmail, storedName);
+
+      setConfirmedVote(vote);
+      setConfirmedName(storedName);
+      setPhase('done');
+      onVoteSubmitted(vote);
+    } catch {
+      // If direct submit fails, fall back to full credential flow
+      setPhase('credentials');
+      setError('Session expired — please verify again');
+    } finally {
+      setLoading(false);
+    }
+  }, [token, onVoteSubmitted]);
+
   const handleVoteClick = useCallback((vote: 'going' | 'not_going') => {
     setSelectedVote(vote);
-    setPhase('credentials');
     setError(null);
-  }, []);
+
+    // If we have stored credentials from a previous vote, submit directly
+    if (name.trim() && email.trim()) {
+      submitVoteDirect(vote, name.trim(), email.trim());
+      return;
+    }
+
+    // No stored credentials — show the credential + OTP flow
+    setPhase('credentials');
+  }, [name, email, submitVoteDirect]);
 
   const handleSendOtp = useCallback(async () => {
     const trimmedName = name.trim();
@@ -190,11 +237,9 @@ export default function RsvpSection({
     setPhase('vote');
     setSelectedVote(null);
     setConfirmedVote(null);
-    setConfirmedName('');
+    // Keep name/email in state so re-vote can skip OTP
     setError(null);
-    // Clear stored vote so user goes through full flow again
-    try { localStorage.removeItem(`lazzo_rsvp_${token}`); } catch { /* ignore */ }
-  }, [token]);
+  }, []);
 
   // ---- Render: event not voteable ----
 

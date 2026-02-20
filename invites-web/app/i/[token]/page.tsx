@@ -8,7 +8,7 @@
 //
 
 import { cache } from 'react';
-import { createServerSupabase, fetchEventPhotos, type EventData, type EventPhoto } from '../../../lib/supabase';
+import { createServerSupabase, fetchEventPhotos, fetchEventGuests, type EventData, type EventPhoto, type GuestRecord } from '../../../lib/supabase';
 import { BrandColors, Spacing } from '../../design/constants';
 import EventPage from './EventPage';
 import ClientWrapper from './ClientWrapper';
@@ -193,10 +193,13 @@ export default async function InvitePage({
     photos = await fetchEventPhotos(token);
   }
 
+  // ── Fetch all guests (app participants + web guests) ──
+  const guests: GuestRecord[] = await fetchEventGuests(event.event_id);
+
   // ── Success: Show Event Page ──
   return (
     <ClientWrapper token={token}>
-      <EventPage event={event} token={token} photos={photos} />
+      <EventPage event={event} token={token} photos={photos} guests={guests} />
     </ClientWrapper>
   );
 }

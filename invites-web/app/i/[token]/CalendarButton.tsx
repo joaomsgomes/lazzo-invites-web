@@ -45,51 +45,22 @@ function formatICSDate(isoDate: string): string {
   );
 }
 
-function escapeICS(text: string): string {
-  return text
-    .replace(/\\/g, '\\\\')
-    .replace(/;/g, '\\;')
-    .replace(/,/g, '\\,')
-    .replace(/\n/g, '\\n');
-}
-
 function getDefaultEnd(start: string): string {
   return formatICSDate(
     new Date(new Date(start).getTime() + 2 * 60 * 60 * 1000).toISOString()
   );
 }
 
-function generateICSContent(props: CalendarButtonProps): string {
-  const start = formatICSDate(props.startDatetime);
-  const end = props.endDatetime ? formatICSDate(props.endDatetime) : getDefaultEnd(props.startDatetime);
+function generateCalendarApiUrl(props: CalendarButtonProps): string {
   const location = [props.locationName, props.locationAddress].filter(Boolean).join(', ');
-  const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}@getlazzo.com`;
-
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Lazzo//Event Invite//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    'BEGIN:VEVENT',
-    `UID:${uid}`,
-    `DTSTART:${start}`,
-    `DTEND:${end}`,
-    `SUMMARY:${escapeICS(props.eventName)}`,
-    ...(location ? [`LOCATION:${escapeICS(location)}`] : []),
-    ...(props.description ? [`DESCRIPTION:${escapeICS(props.description)}`] : []),
-    `DTSTAMP:${formatICSDate(new Date().toISOString())}`,
-    'STATUS:CONFIRMED',
-    'BEGIN:VALARM',
-    'TRIGGER:-PT30M',
-    'ACTION:DISPLAY',
-    `DESCRIPTION:${escapeICS(props.eventName)} starts in 30 minutes`,
-    'END:VALARM',
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ];
-
-  return lines.join('\r\n');
+  const params = new URLSearchParams({
+    title: props.eventName,
+    start: props.startDatetime,
+    ...(props.endDatetime ? { end: props.endDatetime } : {}),
+    ...(location ? { location } : {}),
+    ...(props.description ? { description: props.description } : {}),
+  });
+  return `/api/calendar?${params.toString()}`;
 }
 
 function generateGoogleCalendarUrl(props: CalendarButtonProps): string {
@@ -126,14 +97,17 @@ export default function CalendarButton(props: CalendarButtonProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, [showMenu]);
 
-  /** iOS: opens .ics blob → native Calendar prompt */
+  /** iOS / Apple Calendar: opens .ics via API route → native Calendar prompt */
   const handleAppleCalendar = useCallback(() => {
-    const icsContent = generateICSContent(props);
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const blobUrl = URL.createObjectURL(blob);
-    // window.open triggers the native calendar dialog on iOS Safari
-    window.open(blobUrl, '_blank');
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
+    // Use API route which serves .ics with proper Content-Type headers
+    // iOS Safari natively intercepts text/calendar responses and shows "Add to Calendar"
+    const url = generateCalendarApiUrl(props);
+    const a = document.createElement('a');
+    a.href = url;
+    a.setAttribute('download', `${props.eventName.replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_') || 'event'}.ics`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     setShowMenu(false);
   }, [props]);
 

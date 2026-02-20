@@ -5,9 +5,9 @@ import { BrandColors, Spacing, Typography } from '../../design/constants';
 import RsvpSection from './RsvpSection';
 import LivingSection from './LivingSection';
 import RecapSection from './RecapSection';
-import CalendarButton from './CalendarButton';
+import ManageGuestsSheet from './ManageGuestsSheet';
 import { createBrowserSupabase } from '../../../lib/supabase';
-import type { EventData, EventPhoto } from '../../../lib/supabase';
+import type { EventData, EventPhoto, GuestRecord } from '../../../lib/supabase';
 import Link from 'next/link';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -91,15 +91,17 @@ interface EventPageProps {
   event: EventData;
   token: string;
   photos: EventPhoto[];
+  guests: GuestRecord[];
 }
 
-export default function EventPage({ event, token, photos: initialPhotos }: EventPageProps) {
+export default function EventPage({ event, token, photos: initialPhotos, guests }: EventPageProps) {
   const [goingCount, setGoingCount] = useState(
     Number(event.going_count) + Number(event.guest_going_count)
   );
   const [cantCount, setCantCount] = useState(0);
   const [liveStatus, setLiveStatus] = useState(event.status);
   const [photos, setPhotos] = useState<EventPhoto[]>(initialPhotos);
+  const [showGuests, setShowGuests] = useState(false);
 
   // Handler for when a new photo is uploaded from Living/Recap sections
   const handlePhotoUploaded = useCallback((newPhoto: EventPhoto) => {
@@ -410,27 +412,25 @@ export default function EventPage({ event, token, photos: initialPhotos }: Event
               </div>
             </div>
 
-            {/* Add to Calendar Button */}
-            <div style={{ marginTop: Spacing.md }}>
-              <CalendarButton
-                eventName={event.event_name}
-                startDatetime={event.start_datetime!}
-                endDatetime={event.end_datetime}
-                locationName={event.location_name}
-                locationAddress={event.location_address}
-                description={event.event_description}
-              />
-            </div>
           </SectionCard>
         )}
 
-        {/* ═══════════ 8. ORGANIZER + PARTICIPANT COUNTS ═══════════ */}
+        {/* ═══════════ 8. ORGANIZER + GUESTS (tappable → ManageGuestsSheet) ═══════════ */}
         <SectionCard>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
+          <button
+            onClick={() => setShowGuests(true)}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+          >
             {/* Organizer */}
             <div style={{
               display: 'flex',
@@ -458,18 +458,30 @@ export default function EventPage({ event, token, photos: initialPhotos }: Event
               </div>
             </div>
 
-            {/* Vote count */}
+            {/* Guest count + chevron */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: Spacing.xs,
             }}>
               <span style={{ fontSize: '14px', color: BrandColors.text2 }}>
-                👥 <strong style={{ color: BrandColors.text1 }}>{goingCount + cantCount}</strong> {goingCount + cantCount === 1 ? 'Vote' : 'Votes'}
+                👥 <strong style={{ color: BrandColors.text1 }}>{guests.length}</strong>
               </span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </div>
-          </div>
+          </button>
         </SectionCard>
+
+        {/* ── ManageGuestsSheet (full-screen overlay) ── */}
+        {showGuests && (
+          <ManageGuestsSheet
+            guests={guests}
+            eventStatus={liveStatus}
+            onClose={() => setShowGuests(false)}
+          />
+        )}
 
         {/* ═══════════ 9. FOOTER ═══════════ */}
         <div style={{ textAlign: 'center', marginTop: Spacing.lg }}>
