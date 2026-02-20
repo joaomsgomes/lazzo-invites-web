@@ -186,6 +186,16 @@ export default function RsvpSection({
     setError(null);
   }, []);
 
+  const handleEditVote = useCallback(() => {
+    setPhase('vote');
+    setSelectedVote(null);
+    setConfirmedVote(null);
+    setConfirmedName('');
+    setError(null);
+    // Clear stored vote so user goes through full flow again
+    try { localStorage.removeItem(`lazzo_rsvp_${token}`); } catch { /* ignore */ }
+  }, [token]);
+
   // ---- Render: event not voteable ----
 
   if (!canVote && phase !== 'done') {
@@ -228,8 +238,26 @@ export default function RsvpSection({
           fontWeight: 600,
           color: BrandColors.text1,
         }}>
-          {phase === 'done' ? '✓ Vote confirmed' : 'Can you make it?'}
+          {phase === 'done' ? 'Vote confirmed' : 'Can you make it?'}
         </p>
+
+        {/* Edit vote button when done */}
+        {phase === 'done' && (
+          <button
+            onClick={handleEditVote}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: BrandColors.planning,
+              fontSize: '13px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              padding: '4px 8px',
+            }}
+          >
+            Edit vote
+          </button>
+        )}
 
         {/* Back button when in credential/otp phase */}
         {(phase === 'credentials' || phase === 'otp') && (
@@ -252,21 +280,7 @@ export default function RsvpSection({
 
       {/* ---- DONE STATE ---- */}
       {phase === 'done' && (
-        <div style={{ textAlign: 'center', padding: `${Spacing.sm} 0` }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            background: confirmedVote === 'going' ? BrandColors.planning + '33' : BrandColors.cantVote + '33',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto',
-            marginBottom: Spacing.sm,
-            fontSize: '22px',
-          }}>
-            {confirmedVote === 'going' ? '🎉' : '😔'}
-          </div>
+        <div style={{ textAlign: 'center', padding: `${Spacing.xs} 0` }}>
           <p style={{
             fontSize: '16px',
             color: BrandColors.text1,

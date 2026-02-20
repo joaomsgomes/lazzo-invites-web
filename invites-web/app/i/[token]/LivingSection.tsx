@@ -3,32 +3,44 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import PhotoGrid from './PhotoGrid';
+import PhotoUploadSheet from './PhotoUploadSheet';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
 
 // ═══════════════════════════════════════════════════════════════════
-// LivingSection — Matches Flutter's EventLivingPage sections
-// Shows: Time Left Pill → Action Row → Photos Grid
+// LivingSection — Matches Flutter's EventLivingPage layout exactly
+//
+// Layout: TimeLeftPill → ActionRow (Share | Photo | Guests) → PhotosCard
+//
+// Colors: Purple (#8A38F5) accent throughout
 // ═══════════════════════════════════════════════════════════════════
 
 interface LivingSectionProps {
   event: EventData;
+  token: string;
   photos: EventPhoto[];
+  onPhotoUploaded: (photo: EventPhoto) => void;
 }
 
-export default function LivingSection({ event, photos }: LivingSectionProps) {
+export default function LivingSection({ event, token, photos, onPhotoUploaded }: LivingSectionProps) {
+  const [showUpload, setShowUpload] = useState(false);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.md }}>
-      {/* Time Left Pill */}
+
+      {/* ── Time Left Pill ── */}
       {event.end_datetime && (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <TimeLeftPill endDatetime={event.end_datetime} />
         </div>
       )}
 
-      {/* Action Row */}
-      <LivingActionRow eventName={event.event_name} />
+      {/* ── Action Row (matching Flutter LivingActionRow) ── */}
+      <LivingActionRow
+        eventName={event.event_name}
+        onPhotoPress={() => setShowUpload(true)}
+      />
 
-      {/* Photos Card */}
+      {/* ── Photos Card (matching Flutter LivingPhotosWidget) ── */}
       <div style={{
         width: '100%',
         padding: Spacing.md,
@@ -63,15 +75,77 @@ export default function LivingSection({ event, photos }: LivingSectionProps) {
           )}
         </div>
 
-        {/* Grid */}
-        <PhotoGrid photos={photos} accentColor={BrandColors.living} />
+        {/* Grid + Add Photo */}
+        <PhotoGrid
+          photos={photos}
+          accentColor={BrandColors.living}
+          onAddPhoto={() => setShowUpload(true)}
+          showAddCard={true}
+        />
       </div>
+
+      {/* ── Add Photos CTA (matching Flutter AddPhotosCtaCard) ── */}
+      {photos.length === 0 && (
+        <button
+          onClick={() => setShowUpload(true)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: Spacing.md,
+            background: BrandColors.bg2,
+            borderRadius: Spacing.radiusMd,
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <div style={{ textAlign: 'left' }}>
+            <p style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>
+              Add your photos
+            </p>
+            <p style={{ fontSize: '12px', color: BrandColors.text2, marginTop: '2px' }}>
+              You can then select a photo cover
+            </p>
+          </div>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            background: BrandColors.living,
+            borderRadius: Spacing.radiusSmAlt,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </div>
+        </button>
+      )}
+
+      {/* ── Photo Upload Sheet ── */}
+      {showUpload && (
+        <PhotoUploadSheet
+          token={token}
+          accentColor={BrandColors.living}
+          eventStatus="living"
+          onPhotoUploaded={(photo) => {
+            onPhotoUploaded(photo);
+            setShowUpload(false);
+          }}
+          onClose={() => setShowUpload(false)}
+        />
+      )}
     </div>
   );
 }
 
 
 // ── Time Left Pill ─────────────────────────────────────────────
+// Matches Flutter's LivingTimeLeftPill: purple pill, clock icon, countdown
 
 function TimeLeftPill({ endDatetime }: { endDatetime: string }) {
   const [timeLeft, setTimeLeft] = useState('');
@@ -110,6 +184,7 @@ function TimeLeftPill({ endDatetime }: { endDatetime: string }) {
       color: '#FFFFFF',
       fontSize: '14px',
       fontWeight: 500,
+      boxShadow: '0 4px 12px rgba(138, 56, 245, 0.4)',
     }}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -121,31 +196,34 @@ function TimeLeftPill({ endDatetime }: { endDatetime: string }) {
 }
 
 
-// ── Action Row ─────────────────────────────────────────────────
+// ── Action Row (matching Flutter LivingActionRow) ────────────────
+// 3 equal-width buttons: Share (bg2) | Photo (purple) | Guests (bg2)
 
-function LivingActionRow({ eventName }: { eventName: string }) {
+function LivingActionRow({
+  eventName,
+  onPhotoPress,
+}: {
+  eventName: string;
+  onPhotoPress: () => void;
+}) {
   const handleShare = useCallback(async () => {
     if (navigator.share) {
       try {
         await navigator.share({
           title: eventName,
-          text: `Check out ${eventName} on Lazzo!`,
+          text: `Join ${eventName} on Lazzo! 🎉`,
           url: window.location.href,
         });
       } catch {
-        // User cancelled or share failed — silent
+        // User cancelled — silent
       }
     } else {
-      // Fallback: copy URL
       await navigator.clipboard.writeText(window.location.href);
     }
   }, [eventName]);
 
   return (
-    <div style={{
-      display: 'flex',
-      gap: Spacing.sm,
-    }}>
+    <div style={{ display: 'flex', gap: Spacing.sm }}>
       {/* Share */}
       <ActionButton
         icon={
@@ -161,7 +239,7 @@ function LivingActionRow({ eventName }: { eventName: string }) {
         onClick={handleShare}
       />
 
-      {/* Photo — prompts app download on web */}
+      {/* Photo — opens camera/gallery upload sheet */}
       <ActionButton
         icon={
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -172,10 +250,7 @@ function LivingActionRow({ eventName }: { eventName: string }) {
         label="Photo"
         backgroundColor={BrandColors.living}
         textColor="#FFFFFF"
-        onClick={() => {
-          // On web, prompt to download app for photo upload
-          window.open(process.env.NEXT_PUBLIC_APPSTORE_URL || '#', '_blank');
-        }}
+        onClick={onPhotoPress}
       />
 
       {/* Guests */}
@@ -192,13 +267,15 @@ function LivingActionRow({ eventName }: { eventName: string }) {
         backgroundColor={BrandColors.bg2}
         textColor={BrandColors.text1}
         onClick={() => {
-          // Scroll to participant section or show guest list
           document.querySelector('[data-section="participants"]')?.scrollIntoView({ behavior: 'smooth' });
         }}
       />
     </div>
   );
 }
+
+// ── Action Button ──────────────────────────────────────────────
+// Matches Flutter's vertical icon+label buttons
 
 function ActionButton({
   icon,

@@ -24,6 +24,22 @@ export function createServerSupabase(): SupabaseClient {
   });
 }
 
+/**
+ * Creates a Supabase client with the service role key (server-side only).
+ * Bypasses RLS — used for generating storage signed URLs.
+ * Returns null if SUPABASE_SERVICE_ROLE_KEY is not configured.
+ */
+export function createServiceSupabase(): SupabaseClient | null {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) return null;
+  return createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+    },
+  });
+}
+
 // ---- Types ----
 
 /** Shape returned by `get_event_by_invite_token` RPC */
@@ -58,6 +74,7 @@ export interface EventPhoto {
 
 /**
  * Fetches event photos via the token-gated RPC.
+ * Generates signed URLs using service role key if available.
  * Returns empty array on failure (graceful degradation).
  */
 export async function fetchEventPhotos(token: string): Promise<EventPhoto[]> {
@@ -67,7 +84,26 @@ export async function fetchEventPhotos(token: string): Promise<EventPhoto[]> {
       .rpc('get_event_photos_by_invite_token', { p_token: token });
 
     if (error || !data) return [];
-    return data as EventPhoto[];
+    const photos = data as EventPhoto[];
+    if (photos.length === 0) return [];
+
+    // Generate signed URLs using service role (bypasses storage RLS)
+    const serviceClient = createServiceSupabase();
+    if (serviceClient) {
+      const paths = photos.map((p) => p.storage_path);
+      const { data: signedData } = await serviceClient
+        .storage.from('memory_groups')
+        .createSignedUrls(paths, 7200); // 2-hour expiry
+
+      if (signedData) {
+        return photos.map((photo, i) => ({
+          ...photo,
+          url: signedData[i]?.signedUrl || photo.url,
+        }));
+      }
+    }
+
+    return photos;
   } catch {
     return [];
   }
