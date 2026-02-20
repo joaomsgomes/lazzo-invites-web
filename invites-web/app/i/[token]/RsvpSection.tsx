@@ -15,7 +15,7 @@ interface RsvpSectionProps {
   initialGoingCount: number;
   initialCantCount: number;
   eventStatus: string;
-  onVoteSubmitted: (vote: 'going' | 'not_going') => void;
+  onVoteSubmitted: (vote: 'going' | 'not_going', guestName: string) => void;
 }
 
 // ---- Main Component ----
@@ -93,7 +93,7 @@ export default function RsvpSection({
       setConfirmedVote(vote);
       setConfirmedName(storedName);
       setPhase('done');
-      onVoteSubmitted(vote);
+      onVoteSubmitted(vote, storedName);
     } catch {
       // If direct submit fails, fall back to full credential flow
       setPhase('credentials');
@@ -219,7 +219,7 @@ export default function RsvpSection({
       setConfirmedVote(selectedVote!);
       setConfirmedName(name.trim());
       setPhase('done');
-      onVoteSubmitted(selectedVote!);
+      onVoteSubmitted(selectedVote!, name.trim());
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
     } finally {

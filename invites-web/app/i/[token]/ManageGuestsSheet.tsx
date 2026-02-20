@@ -326,7 +326,7 @@ function GuestListTile({
   isLivingOrRecap: boolean;
 }) {
   const initial = (guest.name || '?').charAt(0).toUpperCase();
-  const displayName = guest.source === 'web' ? `${guest.name} (web)` : guest.name;
+  const displayName = guest.name;
 
   return (
     <div style={{

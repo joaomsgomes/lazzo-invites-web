@@ -95,13 +95,14 @@ interface EventPageProps {
 }
 
 export default function EventPage({ event, token, photos: initialPhotos, guests }: EventPageProps) {
-  const [goingCount, setGoingCount] = useState(
-    Number(event.going_count) + Number(event.guest_going_count)
-  );
-  const [cantCount, setCantCount] = useState(0);
+  const [localGuests, setLocalGuests] = useState<GuestRecord[]>(guests);
   const [liveStatus, setLiveStatus] = useState(event.status);
   const [photos, setPhotos] = useState<EventPhoto[]>(initialPhotos);
   const [showGuests, setShowGuests] = useState(false);
+
+  // Derive ALL vote counts from the single localGuests source of truth
+  const goingCount = useMemo(() => localGuests.filter(g => g.rsvp === 'going').length, [localGuests]);
+  const cantCount = useMemo(() => localGuests.filter(g => g.rsvp === 'not_going').length, [localGuests]);
 
   // Handler for when a new photo is uploaded from Living/Recap sections
   const handlePhotoUploaded = useCallback((newPhoto: EventPhoto) => {
@@ -123,11 +124,6 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         const d = data as EventData | null;
         if (d?.status && d.status !== liveStatus) {
           setLiveStatus(d.status);
-        }
-        // Also update going counts from server
-        if (d) {
-          const newGoingTotal = Number(d.going_count) + Number(d.guest_going_count);
-          setGoingCount(newGoingTotal);
         }
       } catch {
         // Silent — graceful degradation
@@ -152,9 +148,25 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     [event.location_lat, event.location_lng, event.location_name]
   );
 
-  const handleVoteSubmitted = (vote: 'going' | 'not_going') => {
-    if (vote === 'going') setGoingCount((p) => p + 1);
-    else setCantCount((p) => p + 1);
+  const handleVoteSubmitted = (vote: 'going' | 'not_going', guestName: string) => {
+    setLocalGuests(prev => {
+      const idx = prev.findIndex(g => g.name === guestName && g.source === 'web');
+      if (idx >= 0) {
+        // Update existing guest's vote
+        const updated = [...prev];
+        updated[idx] = { ...updated[idx], rsvp: vote, voted_at: new Date().toISOString() };
+        return updated;
+      }
+      // Add new guest
+      return [...prev, {
+        id: String(Date.now()),
+        name: guestName,
+        rsvp: vote,
+        source: 'web' as const,
+        avatar_url: null,
+        voted_at: new Date().toISOString(),
+      }];
+    });
   };
 
   return (
@@ -465,7 +477,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               gap: Spacing.xs,
             }}>
               <span style={{ fontSize: '14px', color: BrandColors.text2 }}>
-                👥 <strong style={{ color: BrandColors.text1 }}>{guests.length}</strong>
+                👥 <strong style={{ color: BrandColors.text1 }}>{localGuests.length}</strong>
               </span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6" />
@@ -477,7 +489,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         {/* ── ManageGuestsSheet (full-screen overlay) ── */}
         {showGuests && (
           <ManageGuestsSheet
-            guests={guests}
+            guests={localGuests}
             eventStatus={liveStatus}
             onClose={() => setShowGuests(false)}
           />
