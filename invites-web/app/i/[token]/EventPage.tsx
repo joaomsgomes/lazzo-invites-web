@@ -393,7 +393,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         )}
 
         {/* ═══════════ 7. DATE & TIME CARD (matching Flutter DateTimeWidget) ═══════════ */}
-        {hasDate && (
+        {hasDate && !isRecap && (
           <SectionCard>
             <SectionHeader title="Date & Time" />
             <div style={{
@@ -478,7 +478,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               gap: Spacing.xs,
             }}>
               <span style={{ fontSize: '14px', color: BrandColors.text2 }}>
-                👥 <strong style={{ color: BrandColors.text1 }}>{localGuests.length}</strong>
+                <strong style={{ color: BrandColors.text1 }}>{localGuests.length}</strong>
               </span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6" />

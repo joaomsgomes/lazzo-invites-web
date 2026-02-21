@@ -61,16 +61,9 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded }: 
           marginBottom: Spacing.md,
         }}>
           <div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: Spacing.xs,
-            }}>
-              <span style={{ fontSize: '20px' }}>📸</span>
-              <p style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>
-                Memories
-              </p>
-            </div>
+            <p style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>
+              Memories
+            </p>
             {photos.length > 0 && (
               <p style={{
                 fontSize: '12px',
@@ -97,50 +90,7 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded }: 
         />
       </div>
 
-      {/* ── Upload CTA Card (matching Flutter AddPhotosCtaCard) ── */}
-      <button
-        onClick={() => setShowUpload(true)}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: Spacing.md,
-          background: BrandColors.bg2,
-          borderRadius: Spacing.radiusMd,
-          border: 'none',
-          cursor: 'pointer',
-        }}
-      >
-        <div style={{ textAlign: 'left' }}>
-          <p style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>
-            Add your photos
-          </p>
-          <p style={{ fontSize: '12px', color: BrandColors.text2, marginTop: '2px' }}>
-            {recapCloseTime ? (
-              <RecapInlineTimer closeTime={recapCloseTime} />
-            ) : (
-              'Upload your memories from the event'
-            )}
-          </p>
-        </div>
-        <div style={{
-          width: '48px',
-          height: '48px',
-          background: BrandColors.recap,
-          borderRadius: Spacing.radiusSmAlt,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <line x1="12" y1="8" x2="12" y2="16" />
-            <line x1="8" y1="12" x2="16" y2="12" />
-          </svg>
-        </div>
-      </button>
+
 
       {/* ── Download app prompt ── */}
       {photos.length > 0 && (
