@@ -5,6 +5,7 @@ import { BrandColors, Spacing, Typography } from '../../design/constants';
 import RsvpSection from './RsvpSection';
 import LivingSection from './LivingSection';
 import RecapSection from './RecapSection';
+import RecapAuthGate from './RecapAuthGate';
 import ManageGuestsSheet from './ManageGuestsSheet';
 import { createBrowserSupabase } from '../../../lib/supabase';
 import type { EventData, EventPhoto, GuestRecord } from '../../../lib/supabase';
@@ -169,7 +170,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     });
   };
 
-  return (
+  const pageContent = (
     <main style={{
       minHeight: '100vh',
       display: 'flex',
@@ -550,6 +551,21 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
       </div>
     </main>
   );
+
+  // Wrap with RecapAuthGate when the event is in recap state
+  if (isRecap) {
+    return (
+      <RecapAuthGate
+        token={token}
+        eventName={event.event_name}
+        eventEmoji={event.event_emoji || '📸'}
+      >
+        {pageContent}
+      </RecapAuthGate>
+    );
+  }
+
+  return pageContent;
 }
 
 
