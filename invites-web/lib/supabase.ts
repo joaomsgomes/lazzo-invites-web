@@ -93,14 +93,29 @@ export async function fetchEventGuests(eventId: string): Promise<GuestRecord[]> 
     const serviceClient = createServiceSupabase();
     if (!serviceClient) return [];
 
-    // 1. App participants (event_participants joined with users)
-    const { data: appParticipants } = await serviceClient
+    // 1. App participants
+    const { data: appParticipants, error: appErr } = await serviceClient
       .from('event_participants')
-      .select('user_id, rsvp, confirmed_at, users:user_id ( id, name, avatar_url )')
+      .select('user_id, rsvp, confirmed_at')
       .eq('pevent_id', eventId);
 
-    // 2. Web guests (event_guest_rsvps)
-    const { data: webGuests } = await serviceClient
+    // 2. Fetch user details separately (avoids FK join issues)
+    let userMap = new Map<string, { name: string; avatar_url: string | null }>();
+    if (appParticipants && appParticipants.length > 0) {
+      const userIds = appParticipants.map((p: { user_id: string }) => p.user_id);
+      const { data: users } = await serviceClient
+        .from('users')
+        .select('id, name, avatar_url')
+        .in('id', userIds);
+      if (users) {
+        for (const u of users) {
+          userMap.set(u.id, { name: u.name, avatar_url: u.avatar_url });
+        }
+      }
+    }
+
+    // 3. Web guests (event_guest_rsvps)
+    const { data: webGuests, error: webErr } = await serviceClient
       .from('event_guest_rsvps')
       .select('id, guest_name, rsvp, updated_at')
       .eq('event_id', eventId);
@@ -110,8 +125,7 @@ export async function fetchEventGuests(eventId: string): Promise<GuestRecord[]> 
     // Normalise app participants (rsvp_status enum: pending/yes/no/maybe → our format)
     if (appParticipants) {
       for (const p of appParticipants) {
-        // Supabase returns the joined user as an object (or array with 1 element)
-        const user = Array.isArray(p.users) ? p.users[0] : p.users;
+        const user = userMap.get(p.user_id);
         const rsvpMap: Record<string, GuestRecord['rsvp']> = {
           yes: 'going',
           no: 'not_going',
