@@ -19,9 +19,10 @@ interface LivingSectionProps {
   token: string;
   photos: EventPhoto[];
   onPhotoUploaded: (photo: EventPhoto) => void;
+  onGuestsPress: () => void;
 }
 
-export default function LivingSection({ event, token, photos, onPhotoUploaded }: LivingSectionProps) {
+export default function LivingSection({ event, token, photos, onPhotoUploaded, onGuestsPress }: LivingSectionProps) {
   const [showUpload, setShowUpload] = useState(false);
 
   return (
@@ -38,6 +39,7 @@ export default function LivingSection({ event, token, photos, onPhotoUploaded }:
       <LivingActionRow
         eventName={event.event_name}
         onPhotoPress={() => setShowUpload(true)}
+        onGuestsPress={onGuestsPress}
       />
 
       {/* ── Photos Card (matching Flutter LivingPhotosWidget) ── */}
@@ -84,47 +86,7 @@ export default function LivingSection({ event, token, photos, onPhotoUploaded }:
         />
       </div>
 
-      {/* ── Add Photos CTA (matching Flutter AddPhotosCtaCard) ── */}
-      {photos.length === 0 && (
-        <button
-          onClick={() => setShowUpload(true)}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: Spacing.md,
-            background: BrandColors.bg2,
-            borderRadius: Spacing.radiusMd,
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          <div style={{ textAlign: 'left' }}>
-            <p style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>
-              Add your photos
-            </p>
-            <p style={{ fontSize: '12px', color: BrandColors.text2, marginTop: '2px' }}>
-              You can then select a photo cover
-            </p>
-          </div>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            background: BrandColors.living,
-            borderRadius: Spacing.radiusSmAlt,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-          </div>
-        </button>
-      )}
+
 
       {/* ── Photo Upload Sheet ── */}
       {showUpload && (
@@ -202,9 +164,11 @@ function TimeLeftPill({ endDatetime }: { endDatetime: string }) {
 function LivingActionRow({
   eventName,
   onPhotoPress,
+  onGuestsPress,
 }: {
   eventName: string;
   onPhotoPress: () => void;
+  onGuestsPress: () => void;
 }) {
   const handleShare = useCallback(async () => {
     if (navigator.share) {
@@ -266,9 +230,7 @@ function LivingActionRow({
         label="Guests"
         backgroundColor={BrandColors.bg2}
         textColor={BrandColors.text1}
-        onClick={() => {
-          document.querySelector('[data-section="participants"]')?.scrollIntoView({ behavior: 'smooth' });
-        }}
+        onClick={onGuestsPress}
       />
     </div>
   );

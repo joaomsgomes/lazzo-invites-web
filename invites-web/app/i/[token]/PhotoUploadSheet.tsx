@@ -56,7 +56,11 @@ export default function PhotoUploadSheet({
     const checkAuth = async () => {
       try {
         const supabase = createBrowserSupabase();
-        const { data: { session } } = await supabase.auth.getSession();
+
+        // Try to refresh the session first (JWT may have expired in localStorage)
+        const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+        const session = refreshedSession
+          ?? (await supabase.auth.getSession()).data.session;
 
         if (session?.user) {
           // Already authenticated — ensure participant
@@ -66,8 +70,14 @@ export default function PhotoUploadSheet({
             setEventId(result.eventId);
             setPhase('picker');
           } else {
-            setError('Could not join event. The invite may have expired.');
-            setPhase('error');
+            // Session may be stale or invite token changed — fall back to auth flow
+            // instead of showing a hard error
+            const saved = getValidSession(token);
+            if (saved) {
+              setName(saved.name);
+              setEmail(saved.email);
+            }
+            setPhase('auth-name');
           }
         } else {
           // Check if we have saved session info to pre-fill

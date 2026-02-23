@@ -293,6 +293,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               token={token}
               photos={photos}
               onPhotoUploaded={handlePhotoUploaded}
+              onGuestsPress={() => setShowGuests(true)}
             />
           </div>
         )}

@@ -5,10 +5,15 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 /**
  * Creates a Supabase client for browser/client components.
+ * Uses a singleton to ensure consistent auth state management.
  * Used for Auth OTP and RPC calls from the client.
  */
+let _browserClient: SupabaseClient | null = null;
 export function createBrowserSupabase(): SupabaseClient {
-  return createClient(supabaseUrl, supabaseAnonKey);
+  if (!_browserClient) {
+    _browserClient = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return _browserClient;
 }
 
 /**

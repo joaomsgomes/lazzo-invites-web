@@ -189,13 +189,20 @@ export async function ensureEventParticipant(
   token: string
 ): Promise<{ eventId: string; eventName: string } | null> {
   try {
+    // Verify the user is actually authenticated before calling the RPC
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return null;
+
     const { data, error } = await supabase.rpc('accept_event_invite_by_token', {
       p_token: token,
     });
 
-    if (error || !data || data.length === 0) return null;
+    if (error || !data) return null;
 
+    // Handle both single-object and array responses
     const row = Array.isArray(data) ? data[0] : data;
+    if (!row?.event_id) return null;
+
     return {
       eventId: row.event_id,
       eventName: row.event_name,
