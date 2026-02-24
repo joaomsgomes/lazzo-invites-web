@@ -24,6 +24,7 @@ interface LivingSectionProps {
 
 export default function LivingSection({ event, token, photos, onPhotoUploaded, onGuestsPress }: LivingSectionProps) {
   const [showUpload, setShowUpload] = useState(false);
+  const [showAllPhotos, setShowAllPhotos] = useState(false);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.md }}>
@@ -71,9 +72,14 @@ export default function LivingSection({ event, token, photos, onPhotoUploaded, o
             )}
           </div>
           {photos.length > 0 && (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+            <div
+              onClick={() => setShowAllPhotos(true)}
+              style={{ cursor: 'pointer', padding: 4 }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
           )}
         </div>
 
@@ -83,6 +89,8 @@ export default function LivingSection({ event, token, photos, onPhotoUploaded, o
           accentColor={BrandColors.living}
           onAddPhoto={() => setShowUpload(true)}
           showAddCard={true}
+          showAllPhotos={showAllPhotos}
+          onShowAllPhotosChange={setShowAllPhotos}
         />
       </div>
 
@@ -94,10 +102,7 @@ export default function LivingSection({ event, token, photos, onPhotoUploaded, o
           token={token}
           accentColor={BrandColors.living}
           eventStatus="living"
-          onPhotoUploaded={(photo) => {
-            onPhotoUploaded(photo);
-            setShowUpload(false);
-          }}
+          onPhotoUploaded={onPhotoUploaded}
           onClose={() => setShowUpload(false)}
         />
       )}

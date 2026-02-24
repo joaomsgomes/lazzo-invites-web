@@ -1,17 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { BrandColors, Spacing } from '../../design/constants';
 import type { EventPhoto } from '../../../lib/supabase';
 
 // ═══════════════════════════════════════════════════════════════════
-// PhotoGrid — 3-column grid matching Flutter's LivingPhotosWidget
+// PhotoGrid — 3-column grid showing max 3 photos + Add card
 //
 // Features:
-// - 4:5 aspect ratio tiles
-// - Max 9 visible slots, +N overflow on last slot
-// - Optional "Add Photo" card (matching Flutter's _AddPhotoCard)
-// - Full-screen lightbox with navigation
+// - Max 3 visible photos in the grid, +N overflow on 3rd if more
+// - Clicking the header chevron (>) opens ManagePhotosSheet (all photos)
+// - Full-screen lightbox with horizontal swipe/scroll navigation
+// - No vertical scrolling in lightbox
 // ═══════════════════════════════════════════════════════════════════
 
 interface PhotoGridProps {
@@ -19,22 +19,41 @@ interface PhotoGridProps {
   accentColor?: string;
   onAddPhoto?: () => void;
   showAddCard?: boolean;
+  showAllPhotos?: boolean;
+  onShowAllPhotosChange?: (show: boolean) => void;
 }
 
 const COLUMNS = 3;
-const MAX_SLOTS = 9;
-const GAP = 8; // matches Gaps.xs
+const MAX_VISIBLE = 3;
+const GAP = 8;
 
 export default function PhotoGrid({
   photos,
   accentColor = BrandColors.living,
   onAddPhoto,
   showAddCard = false,
+  showAllPhotos: externalShowAll,
+  onShowAllPhotosChange,
 }: PhotoGridProps) {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [internalShowAll, setInternalShowAll] = useState(false);
+  
+  const showAllPhotos = externalShowAll ?? internalShowAll;
+  const setShowAllPhotos = useCallback((val: boolean) => {
+    setInternalShowAll(val);
+    onShowAllPhotosChange?.(val);
+  }, [onShowAllPhotosChange]);
+
+  // Sync external to internal
+  useEffect(() => {
+    if (externalShowAll !== undefined) {
+      setInternalShowAll(externalShowAll);
+    }
+  }, [externalShowAll]);
+
   const totalCount = photos.length;
 
-  // ── Empty State (matching Flutter's empty camera card) ──
+  // ── Empty State ──
   if (totalCount === 0 && !showAddCard) {
     return (
       <div style={{
@@ -44,42 +63,29 @@ export default function PhotoGrid({
         textAlign: 'center',
       }}>
         <div style={{ fontSize: '32px', marginBottom: Spacing.sm }}>📷</div>
-        <p style={{
-          fontSize: '16px',
-          fontWeight: 600,
-          color: BrandColors.text1,
-          marginBottom: Spacing.xxs,
-        }}>
+        <p style={{ fontSize: '16px', fontWeight: 600, color: BrandColors.text1, marginBottom: Spacing.xxs }}>
           No photos yet
         </p>
-        <p style={{
-          fontSize: '14px',
-          color: BrandColors.text2,
-        }}>
+        <p style={{ fontSize: '14px', color: BrandColors.text2 }}>
           Photos will appear here during the event
         </p>
       </div>
     );
   }
 
-  // Empty state with add button
   if (totalCount === 0 && showAddCard) {
     return (
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${COLUMNS}, 1fr)`,
-        gap: `${GAP}px`,
-      }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COLUMNS}, 1fr)`, gap: `${GAP}px` }}>
         <AddPhotoCard accentColor={accentColor} onClick={onAddPhoto} />
       </div>
     );
   }
 
-  // Calculate grid slots
-  const hasOverflow = totalCount >= MAX_SLOTS;
-  const addCardFits = showAddCard && totalCount < MAX_SLOTS;
-  const photoSlots = hasOverflow ? MAX_SLOTS : totalCount;
-  const overflowCount = hasOverflow ? totalCount - MAX_SLOTS + 1 : 0;
+  // Show max 3 photos in grid, with overflow count on 3rd
+  const hasOverflow = totalCount > MAX_VISIBLE;
+  const visibleCount = Math.min(totalCount, MAX_VISIBLE);
+  const overflowCount = hasOverflow ? totalCount - MAX_VISIBLE + 1 : 0;
+  const addCardFits = showAddCard && totalCount < MAX_VISIBLE;
 
   return (
     <>
@@ -88,13 +94,19 @@ export default function PhotoGrid({
         gridTemplateColumns: `repeat(${COLUMNS}, 1fr)`,
         gap: `${GAP}px`,
       }}>
-        {photos.slice(0, photoSlots).map((photo, i) => {
-          const isLastWithOverflow = hasOverflow && i === MAX_SLOTS - 1;
+        {photos.slice(0, visibleCount).map((photo, i) => {
+          const isLastWithOverflow = hasOverflow && i === MAX_VISIBLE - 1;
 
           return (
             <div
               key={photo.photo_id}
-              onClick={() => setLightboxIdx(i)}
+              onClick={() => {
+                if (isLastWithOverflow) {
+                  setShowAllPhotos(true);
+                } else {
+                  setLightboxIdx(i);
+                }
+              }}
               style={{
                 aspectRatio: '4/5',
                 borderRadius: Spacing.radiusSm,
@@ -117,7 +129,6 @@ export default function PhotoGrid({
                 onError={(e) => {
                   const img = e.target as HTMLImageElement;
                   img.style.display = 'none';
-                  // Show placeholder icon on error
                   if (img.parentElement) {
                     img.parentElement.style.display = 'flex';
                     img.parentElement.style.alignItems = 'center';
@@ -139,11 +150,7 @@ export default function PhotoGrid({
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}>
-                  <span style={{
-                    fontSize: '16px',
-                    fontWeight: 600,
-                    color: '#FFFFFF',
-                  }}>
+                  <span style={{ fontSize: '16px', fontWeight: 600, color: '#FFFFFF' }}>
                     +{overflowCount}
                   </span>
                 </div>
@@ -152,13 +159,12 @@ export default function PhotoGrid({
           );
         })}
 
-        {/* Add Photo Card — shown after photos if grid has space */}
         {addCardFits && (
           <AddPhotoCard accentColor={accentColor} onClick={onAddPhoto} />
         )}
       </div>
 
-      {/* ── Lightbox ── */}
+      {/* ── Lightbox (horizontal swipe) ── */}
       {lightboxIdx !== null && (
         <Lightbox
           photos={photos}
@@ -167,13 +173,27 @@ export default function PhotoGrid({
           onClose={() => setLightboxIdx(null)}
         />
       )}
+
+      {/* ── All Photos Sheet ── */}
+      {showAllPhotos && (
+        <AllPhotosSheet
+          photos={photos}
+          accentColor={accentColor}
+          onAddPhoto={onAddPhoto}
+          showAddCard={showAddCard}
+          onClose={() => setShowAllPhotos(false)}
+          onPhotoClick={(idx) => {
+            setShowAllPhotos(false);
+            setLightboxIdx(idx);
+          }}
+        />
+      )}
     </>
   );
 }
 
 
 // ── Add Photo Card ─────────────────────────────────────────────
-// Matches Flutter's _AddPhotoCard: dashed border, camera icon, "Add" label
 
 function AddPhotoCard({
   accentColor,
@@ -211,11 +231,7 @@ function AddPhotoCard({
         <line x1="12" y1="5" x2="12" y2="19" />
         <line x1="5" y1="12" x2="19" y2="12" />
       </svg>
-      <span style={{
-        fontSize: '11px',
-        fontWeight: 500,
-        color: accentColor,
-      }}>
+      <span style={{ fontSize: '11px', fontWeight: 500, color: accentColor }}>
         Add
       </span>
     </button>
@@ -223,8 +239,123 @@ function AddPhotoCard({
 }
 
 
-// ── Lightbox ───────────────────────────────────────────────────
-// Full-screen photo viewer with navigation arrows, swipe support, and counter
+// ── All Photos Sheet ───────────────────────────────────────────
+// Full-screen sheet showing ALL photos in a grid
+
+function AllPhotosSheet({
+  photos,
+  accentColor,
+  onAddPhoto,
+  showAddCard,
+  onClose,
+  onPhotoClick,
+}: {
+  photos: EventPhoto[];
+  accentColor: string;
+  onAddPhoto?: () => void;
+  showAddCard: boolean;
+  onClose: () => void;
+  onPhotoClick: (idx: number) => void;
+}) {
+  // Lock body scroll when sheet is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 950,
+      background: BrandColors.bg1,
+      display: 'flex',
+      flexDirection: 'column',
+      animation: 'fadeIn 0.2s ease-out',
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: `${Spacing.md} ${Spacing.md}`,
+        paddingTop: 'max(env(safe-area-inset-top), 16px)',
+        borderBottom: `1px solid ${BrandColors.border}`,
+        flexShrink: 0,
+      }}>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: BrandColors.text1,
+            fontSize: '16px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '4px 0',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Back
+        </button>
+        <p style={{ fontSize: '16px', fontWeight: 600, color: BrandColors.text1 }}>
+          All Photos
+        </p>
+        <div style={{ width: '60px' }} /> {/* spacer for centering */}
+      </div>
+
+      {/* Photo Grid (scrollable) */}
+      <div style={{
+        flex: 1,
+        overflow: 'auto',
+        padding: Spacing.md,
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${COLUMNS}, 1fr)`,
+          gap: `${GAP}px`,
+        }}>
+          {photos.map((photo, i) => (
+            <div
+              key={photo.photo_id}
+              onClick={() => onPhotoClick(i)}
+              style={{
+                aspectRatio: '4/5',
+                borderRadius: Spacing.radiusSm,
+                overflow: 'hidden',
+                cursor: 'pointer',
+                background: BrandColors.bg3,
+              }}
+            >
+              <img
+                src={photo.url}
+                alt=""
+                loading="lazy"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+            </div>
+          ))}
+          {showAddCard && (
+            <AddPhotoCard accentColor={accentColor} onClick={onAddPhoto} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ── Lightbox (horizontal swipe, no vertical scroll) ────────────
+// Uses a horizontally scrollable container with snap points.
 
 function Lightbox({
   photos,
@@ -237,20 +368,65 @@ function Lightbox({
   onIndexChange: (idx: number) => void;
   onClose: () => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isUserScrolling = useRef(false);
+  const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Lock body scroll
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    const prevTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouchAction;
+    };
+  }, []);
+
+  // Scroll to currentIdx on mount and when currentIdx changes programmatically
+  useEffect(() => {
+    if (scrollRef.current && !isUserScrolling.current) {
+      const container = scrollRef.current;
+      const targetX = currentIdx * container.clientWidth;
+      container.scrollTo({ left: targetX, behavior: 'smooth' });
+    }
+  }, [currentIdx]);
+
+  // Detect which photo is visible after scroll ends, update index
+  const handleScroll = useCallback(() => {
+    isUserScrolling.current = true;
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+    scrollTimeout.current = setTimeout(() => {
+      isUserScrolling.current = false;
+      if (scrollRef.current) {
+        const container = scrollRef.current;
+        const w = container.clientWidth;
+        if (w > 0) {
+          const newIdx = Math.round(container.scrollLeft / w);
+          const clamped = Math.max(0, Math.min(newIdx, photos.length - 1));
+          onIndexChange(clamped);
+        }
+      }
+    }, 100);
+  }, [photos.length, onIndexChange]);
+
+  const goTo = useCallback((idx: number) => {
+    isUserScrolling.current = false;
+    onIndexChange(idx);
+  }, [onIndexChange]);
+
   return (
     <div
-      onClick={onClose}
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 1000,
-        background: 'rgba(0,0,0,0.9)',
+        background: 'rgba(0,0,0,0.95)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: Spacing.md,
-        cursor: 'pointer',
+        flexDirection: 'column',
         animation: 'fadeIn 0.2s ease-out',
+        touchAction: 'none',
       }}
     >
       {/* Close button */}
@@ -258,7 +434,7 @@ function Lightbox({
         onClick={onClose}
         style={{
           position: 'absolute',
-          top: '16px',
+          top: 'max(env(safe-area-inset-top), 16px)',
           right: '16px',
           background: 'rgba(255,255,255,0.15)',
           border: 'none',
@@ -277,13 +453,62 @@ function Lightbox({
         ✕
       </button>
 
+      {/* Horizontally scrollable photo strip */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        style={{
+          flex: 1,
+          display: 'flex',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
+        {photos.map((photo, i) => (
+          <div
+            key={photo.photo_id}
+            style={{
+              flex: '0 0 100%',
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              scrollSnapAlign: 'center',
+              padding: Spacing.md,
+              boxSizing: 'border-box',
+            }}
+          >
+            <img
+              src={photo.url}
+              alt=""
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+                borderRadius: Spacing.radiusSm,
+                userSelect: 'none',
+                pointerEvents: 'none',
+              } as React.CSSProperties}
+              draggable={false}
+            />
+          </div>
+        ))}
+      </div>
+
       {/* Nav: Previous */}
       {currentIdx > 0 && (
         <button
-          onClick={(e) => { e.stopPropagation(); onIndexChange(currentIdx - 1); }}
+          onClick={() => goTo(currentIdx - 1)}
           style={{
             position: 'absolute',
             left: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
             background: 'rgba(255,255,255,0.15)',
             border: 'none',
             color: '#fff',
@@ -305,10 +530,12 @@ function Lightbox({
       {/* Nav: Next */}
       {currentIdx < photos.length - 1 && (
         <button
-          onClick={(e) => { e.stopPropagation(); onIndexChange(currentIdx + 1); }}
+          onClick={() => goTo(currentIdx + 1)}
           style={{
             position: 'absolute',
             right: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
             background: 'rgba(255,255,255,0.15)',
             border: 'none',
             color: '#fff',
@@ -327,30 +554,25 @@ function Lightbox({
         </button>
       )}
 
-      {/* Image */}
-      <img
-        src={photos[currentIdx].url}
-        alt=""
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          maxWidth: '90vw',
-          maxHeight: '85vh',
-          objectFit: 'contain',
-          borderRadius: Spacing.radiusSm,
-          cursor: 'default',
-        }}
-      />
-
       {/* Counter */}
       <div style={{
         position: 'absolute',
-        bottom: '20px',
+        bottom: 'max(env(safe-area-inset-bottom), 20px)',
+        left: 0,
+        right: 0,
+        textAlign: 'center',
         fontSize: '14px',
         color: 'rgba(255,255,255,0.7)',
         fontWeight: 500,
+        zIndex: 1001,
       }}>
         {currentIdx + 1} / {photos.length}
       </div>
+
+      {/* Hide scrollbar via inline style tag */}
+      <style>{`
+        div[style*="scroll-snap-type"]::-webkit-scrollbar { display: none; }
+      `}</style>
     </div>
   );
 }

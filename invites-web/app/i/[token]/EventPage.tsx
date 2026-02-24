@@ -7,6 +7,7 @@ import LivingSection from './LivingSection';
 import RecapSection from './RecapSection';
 import RecapAuthGate from './RecapAuthGate';
 import ManageGuestsSheet from './ManageGuestsSheet';
+import LazzoHeader from './LazzoHeader';
 import { createBrowserSupabase } from '../../../lib/supabase';
 import type { EventData, EventPhoto, GuestRecord } from '../../../lib/supabase';
 import Link from 'next/link';
@@ -171,15 +172,19 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
   };
 
   const pageContent = (
-    <main style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: `${Spacing.lg} ${Spacing.md}`,
-      paddingBottom: '48px',
-      background: BrandColors.bg1,
-    }}>
+    <>
+      {/* ═══════════ LAZZO BRAND HEADER (all states) ═══════════ */}
+      <LazzoHeader />
+
+      <main style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: `${Spacing.lg} ${Spacing.md}`,
+        paddingBottom: '48px',
+        background: BrandColors.bg1,
+      }}>
       <div style={{ maxWidth: '520px', width: '100%' }}>
 
         {/* ═══════════ 1. EVENT HEADER (matching Flutter EventHeader) ═══════════ */}
@@ -551,6 +556,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         </div>
       </div>
     </main>
+    </>
   );
 
   // Wrap with RecapAuthGate when the event is in recap state

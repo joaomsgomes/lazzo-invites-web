@@ -24,6 +24,7 @@ interface RecapSectionProps {
 
 export default function RecapSection({ event, token, photos, onPhotoUploaded }: RecapSectionProps) {
   const [showUpload, setShowUpload] = useState(false);
+  const [showAllPhotos, setShowAllPhotos] = useState(false);
 
   // Calculate recap close time (end_datetime + 24h)
   const recapCloseTime = event.end_datetime
@@ -75,9 +76,14 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded }: 
             )}
           </div>
           {photos.length > 0 && (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+            <div
+              onClick={() => setShowAllPhotos(true)}
+              style={{ cursor: 'pointer', padding: 4 }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
           )}
         </div>
 
@@ -87,27 +93,12 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded }: 
           accentColor={BrandColors.recap}
           onAddPhoto={() => setShowUpload(true)}
           showAddCard={true}
+          showAllPhotos={showAllPhotos}
+          onShowAllPhotosChange={setShowAllPhotos}
         />
       </div>
 
 
-
-      {/* ── Download app prompt ── */}
-      {photos.length > 0 && (
-        <div style={{
-          padding: Spacing.sm,
-          background: BrandColors.bg2,
-          borderRadius: Spacing.radiusSm,
-          textAlign: 'center',
-        }}>
-          <p style={{
-            fontSize: '13px',
-            color: BrandColors.text2,
-          }}>
-            📱 Download the app to save and share these memories
-          </p>
-        </div>
-      )}
 
       {/* ── Photo Upload Sheet ── */}
       {showUpload && (
@@ -115,10 +106,7 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded }: 
           token={token}
           accentColor={BrandColors.recap}
           eventStatus="recap"
-          onPhotoUploaded={(photo) => {
-            onPhotoUploaded(photo);
-            setShowUpload(false);
-          }}
+          onPhotoUploaded={onPhotoUploaded}
           onClose={() => setShowUpload(false)}
         />
       )}
