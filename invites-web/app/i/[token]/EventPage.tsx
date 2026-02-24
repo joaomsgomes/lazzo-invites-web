@@ -111,6 +111,37 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     setPhotos((prev) => [newPhoto, ...prev]);
   }, []);
 
+  // ── Fetch photos from DB client-side to ensure persistence ──
+  // Runs on mount and every 30s so photos uploaded by anyone always appear.
+  useEffect(() => {
+    if (liveStatus !== 'living' && liveStatus !== 'recap') return;
+
+    const fetchPhotos = async () => {
+      try {
+        const res = await fetch(`/api/event-photos?token=${encodeURIComponent(token)}`);
+        if (!res.ok) return;
+        const { photos: dbPhotos } = await res.json() as { photos: EventPhoto[] };
+        if (!dbPhotos || dbPhotos.length === 0) return;
+
+        // Merge: keep any client-only photos (just uploaded, not yet in DB) + all DB photos
+        setPhotos(prev => {
+          const dbIds = new Set(dbPhotos.map(p => p.photo_id));
+          const clientOnly = prev.filter(p => !dbIds.has(p.photo_id));
+          return [...clientOnly, ...dbPhotos];
+        });
+      } catch {
+        // Silent — graceful degradation
+      }
+    };
+
+    // Fetch immediately on mount
+    fetchPhotos();
+
+    // Poll every 30 seconds
+    const interval = setInterval(fetchPhotos, 30_000);
+    return () => clearInterval(interval);
+  }, [token, liveStatus]);
+
   // ── Poll event status every 15s to detect host actions (confirm, etc.) ──
   // Uses the token-gated RPC so it works without user authentication.
   useEffect(() => {

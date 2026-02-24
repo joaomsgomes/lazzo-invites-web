@@ -332,7 +332,7 @@ export default function PhotoUploadSheet({
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 900,
+        zIndex: 960,
         background: 'rgba(0,0,0,0.7)',
         display: 'flex',
         alignItems: 'flex-end',
