@@ -16,7 +16,7 @@ import OtpInput from './OtpInput';
 // 5. If not participant → show error
 // ═══════════════════════════════════════════════════════════════════
 
-const RECAP_AUTH_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const RECAP_AUTH_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 const STORAGE_KEY_PREFIX = 'lazzo_recap_auth_';
 
 interface RecapAuthSession {

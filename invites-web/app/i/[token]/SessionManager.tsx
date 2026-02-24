@@ -14,7 +14,7 @@ import OtpInput from './OtpInput';
 // 3. On return visit after SESSION_TTL → show re-auth popup
 // ═══════════════════════════════════════════════════════════════════
 
-const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const SESSION_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 const STORAGE_KEY_PREFIX = 'lazzo_session_';
 
 interface SessionInfo {

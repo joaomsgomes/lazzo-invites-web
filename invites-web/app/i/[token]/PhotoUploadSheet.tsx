@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import { createBrowserSupabase } from '../../../lib/supabase';
-import { compressImage, uploadPhoto, ensureEventParticipant } from '../../../lib/photoUtils';
+import { compressImage, ensureEventParticipant } from '../../../lib/photoUtils';
 import type { EventPhoto } from '../../../lib/supabase';
 import OtpInput from './OtpInput';
 import { saveSession, getValidSession } from './SessionManager';
@@ -57,10 +57,14 @@ export default function PhotoUploadSheet({
       try {
         const supabase = createBrowserSupabase();
 
-        // Try to refresh the session first (JWT may have expired in localStorage)
-        const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-        const session = refreshedSession
-          ?? (await supabase.auth.getSession()).data.session;
+        // 1. Try to get/refresh existing Supabase auth session
+        let session = (await supabase.auth.getSession()).data.session;
+
+        // If session exists but might be expired, try refresh
+        if (session) {
+          const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+          if (refreshed) session = refreshed;
+        }
 
         if (session?.user) {
           // Already authenticated — ensure participant
@@ -69,26 +73,24 @@ export default function PhotoUploadSheet({
           if (result) {
             setEventId(result.eventId);
             setPhase('picker');
-          } else {
-            // Session may be stale or invite token changed — fall back to auth flow
-            // instead of showing a hard error
-            const saved = getValidSession(token);
-            if (saved) {
-              setName(saved.name);
-              setEmail(saved.email);
-            }
-            setPhase('auth-name');
+            return;
           }
-        } else {
-          // Check if we have saved session info to pre-fill
-          const saved = getValidSession(token);
-          if (saved) {
-            setName(saved.name);
-            setEmail(saved.email);
-          }
-          setPhase('auth-name');
+          // ensureEventParticipant failed — session might be stale, fall through to auth
         }
+
+        // 2. No valid Supabase session — pre-fill from localStorage if available
+        const saved = getValidSession(token);
+        if (saved) {
+          setName(saved.name);
+          setEmail(saved.email);
+        }
+        setPhase('auth-name');
       } catch {
+        const saved = getValidSession(token);
+        if (saved) {
+          setName(saved.name);
+          setEmail(saved.email);
+        }
         setPhase('auth-name');
       }
     };
@@ -197,9 +199,12 @@ export default function PhotoUploadSheet({
 
     try {
       const supabase = createBrowserSupabase();
-      const { data: { session } } = await supabase.auth.getSession();
 
-      if (!session?.user?.id || !eventId) {
+      // Refresh session before upload — JWT may have expired while user picked a file
+      const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+      const session = refreshed ?? (await supabase.auth.getSession()).data.session;
+
+      if (!session?.access_token) {
         setError('Session expired. Please try again.');
         setPhase('error');
         return;
@@ -211,12 +216,23 @@ export default function PhotoUploadSheet({
 
       setUploadProgress('Uploading...');
 
-      // Upload
-      const result = await uploadPhoto(supabase, eventId, session.user.id, compressed);
+      // Upload via server-side API (bypasses RLS — no JWT expiry issues)
+      const formData = new FormData();
+      formData.append('file', compressed.blob, `photo.${compressed.blob.type === 'image/webp' ? 'webp' : 'jpg'}`);
+      formData.append('token', token);
+      formData.append('isPortrait', String(compressed.isPortrait));
+
+      const res = await fetch('/api/upload-photo', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: formData,
+      });
 
       if (!mountedRef.current) return;
 
-      if (result.success) {
+      const result = await res.json();
+
+      if (res.ok && result.success) {
         setPhase('success');
 
         // Notify parent with the new photo
@@ -234,7 +250,7 @@ export default function PhotoUploadSheet({
           if (mountedRef.current) onClose();
         }, 1500);
       } else {
-        setError(result.error);
+        setError(result.error || 'Upload failed');
         setPhase('error');
       }
     } catch (e: unknown) {
@@ -243,7 +259,7 @@ export default function PhotoUploadSheet({
         setPhase('error');
       }
     }
-  }, [eventId, onPhotoUploaded, onClose]);
+  }, [token, onPhotoUploaded, onClose]);
 
   const openFilePicker = useCallback((capture: boolean) => {
     if (fileInputRef.current) {
