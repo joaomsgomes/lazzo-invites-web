@@ -44,6 +44,8 @@ export default function PhotoUploadSheet({
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState('');
   const [eventId, setEventId] = useState<string | null>(null);
+  const [uploadCurrent, setUploadCurrent] = useState(0);
+  const [uploadTotal, setUploadTotal] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mountedRef = useRef(true);
 
@@ -52,45 +54,58 @@ export default function PhotoUploadSheet({
   }, []);
 
   // ── Check auth on mount ──
+  // If localStorage session is valid (within 48h), skip OTP entirely.
+  // The server-side API can resolve the user by email as fallback.
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const supabase = createBrowserSupabase();
+        // 1. Check localStorage session first — if valid, skip OTP
+        const saved = getValidSession(token);
+        if (saved) {
+          setName(saved.name);
+          setEmail(saved.email);
 
-        // 1. Try to get/refresh existing Supabase auth session
+          // Try to also get the Supabase session (best effort)
+          const supabase = createBrowserSupabase();
+          const sess = (await supabase.auth.getSession()).data.session;
+          if (sess) {
+            const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+            // Use refreshed or original — either is fine
+            void refreshed;
+          }
+
+          // Go straight to picker — server API will use email fallback if JWT is dead
+          setPhase('picker');
+          return;
+        }
+
+        // 2. No localStorage session — check Supabase auth session
+        const supabase = createBrowserSupabase();
         let session = (await supabase.auth.getSession()).data.session;
 
-        // If session exists but might be expired, try refresh
         if (session) {
           const { data: { session: refreshed } } = await supabase.auth.refreshSession();
           if (refreshed) session = refreshed;
         }
 
         if (session?.user) {
-          // Already authenticated — ensure participant
+          // Authenticated via Supabase — ensure participant
           setUploadProgress('Preparing...');
           const result = await ensureEventParticipant(supabase, token);
           if (result) {
             setEventId(result.eventId);
+            // Save session so next time we skip OTP
+            const userEmail = session.user.email || '';
+            saveSession(token, userEmail, session.user.user_metadata?.name || userEmail.split('@')[0]);
+            setEmail(userEmail);
             setPhase('picker');
             return;
           }
-          // ensureEventParticipant failed — session might be stale, fall through to auth
         }
 
-        // 2. No valid Supabase session — pre-fill from localStorage if available
-        const saved = getValidSession(token);
-        if (saved) {
-          setName(saved.name);
-          setEmail(saved.email);
-        }
+        // 3. No valid session at all — need OTP
         setPhase('auth-name');
       } catch {
-        const saved = getValidSession(token);
-        if (saved) {
-          setName(saved.name);
-          setEmail(saved.email);
-        }
         setPhase('auth-name');
       }
     };
@@ -182,75 +197,111 @@ export default function PhotoUploadSheet({
     }
   }, [otpCode, email, name, token]);
 
-  // ── File selection ──
+  // ── File selection (supports multiple files) ──
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
 
-    const file = files[0];
-    if (!file.type.startsWith('image/')) {
-      setError('Please select an image file');
+    // Filter to images only
+    const imageFiles = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) {
+      setError('Please select image files');
       return;
     }
 
     setPhase('uploading');
     setError(null);
-    setUploadProgress('Compressing...');
+    setUploadCurrent(0);
+    setUploadTotal(imageFiles.length);
 
     try {
       const supabase = createBrowserSupabase();
 
-      // Refresh session before upload — JWT may have expired while user picked a file
-      const { data: { session: refreshed } } = await supabase.auth.refreshSession();
-      const session = refreshed ?? (await supabase.auth.getSession()).data.session;
-
-      if (!session?.access_token) {
-        setError('Session expired. Please try again.');
-        setPhase('error');
-        return;
+      // Try to get a valid access token (best effort — API has email fallback)
+      let accessToken: string | null = null;
+      try {
+        const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+        const session = refreshed ?? (await supabase.auth.getSession()).data.session;
+        accessToken = session?.access_token ?? null;
+      } catch {
+        // No JWT available — server will use email fallback
       }
 
-      // Compress image
-      const compressed = await compressImage(file);
+      const uploadedPhotos: EventPhoto[] = [];
+      const errors: string[] = [];
+
+      for (let i = 0; i < imageFiles.length; i++) {
+        if (!mountedRef.current) return;
+
+        setUploadCurrent(i + 1);
+        setUploadProgress(
+          imageFiles.length === 1
+            ? 'Compressing...'
+            : `Compressing ${i + 1}/${imageFiles.length}...`
+        );
+
+        // Compress
+        const compressed = await compressImage(imageFiles[i]);
+        if (!mountedRef.current) return;
+
+        setUploadProgress(
+          imageFiles.length === 1
+            ? 'Uploading...'
+            : `Uploading ${i + 1}/${imageFiles.length}...`
+        );
+
+        // Upload via server-side API
+        const body = new FormData();
+        body.append('file', compressed.blob, `photo.${compressed.blob.type === 'image/webp' ? 'webp' : 'jpg'}`);
+        body.append('token', token);
+        body.append('isPortrait', String(compressed.isPortrait));
+        // Send email + name as fallback auth (when JWT is expired/unavailable)
+        if (email) body.append('email', email);
+        if (name) body.append('userName', name);
+
+        const headers: Record<string, string> = {};
+        if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
+        const res = await fetch('/api/upload-photo', {
+          method: 'POST',
+          headers,
+          body,
+        });
+
+        if (!mountedRef.current) return;
+
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          const newPhoto: EventPhoto = {
+            photo_id: result.photoId || crypto.randomUUID(),
+            url: result.signedUrl,
+            storage_path: result.storagePath,
+            is_portrait: result.isPortrait,
+            captured_at: new Date().toISOString(),
+          };
+          uploadedPhotos.push(newPhoto);
+          onPhotoUploaded(newPhoto);
+        } else {
+          errors.push(result.error || `File ${i + 1} failed`);
+        }
+      }
+
       if (!mountedRef.current) return;
 
-      setUploadProgress('Uploading...');
-
-      // Upload via server-side API (bypasses RLS — no JWT expiry issues)
-      const formData = new FormData();
-      formData.append('file', compressed.blob, `photo.${compressed.blob.type === 'image/webp' ? 'webp' : 'jpg'}`);
-      formData.append('token', token);
-      formData.append('isPortrait', String(compressed.isPortrait));
-
-      const res = await fetch('/api/upload-photo', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: formData,
-      });
-
-      if (!mountedRef.current) return;
-
-      const result = await res.json();
-
-      if (res.ok && result.success) {
+      if (uploadedPhotos.length > 0) {
         setPhase('success');
-
-        // Notify parent with the new photo
-        const newPhoto: EventPhoto = {
-          photo_id: result.photoId || crypto.randomUUID(),
-          url: result.signedUrl,
-          storage_path: result.storagePath,
-          is_portrait: result.isPortrait,
-          captured_at: new Date().toISOString(),
-        };
-        onPhotoUploaded(newPhoto);
-
         // Auto-close after 1.5s
         setTimeout(() => {
           if (mountedRef.current) onClose();
         }, 1500);
+
+        // If partial failures, show in success message
+        if (errors.length > 0) {
+          setUploadProgress(`${uploadedPhotos.length} uploaded, ${errors.length} failed`);
+        }
       } else {
-        setError(result.error || 'Upload failed');
+        setError(errors[0] || 'Upload failed');
         setPhase('error');
       }
     } catch (e: unknown) {
@@ -259,15 +310,17 @@ export default function PhotoUploadSheet({
         setPhase('error');
       }
     }
-  }, [token, onPhotoUploaded, onClose]);
+  }, [token, email, name, onPhotoUploaded, onClose]);
 
   const openFilePicker = useCallback((capture: boolean) => {
     if (fileInputRef.current) {
-      // On mobile, capture="environment" opens camera
+      // On mobile, capture="environment" opens camera (single photo only)
       if (capture) {
         fileInputRef.current.setAttribute('capture', 'environment');
+        fileInputRef.current.removeAttribute('multiple');
       } else {
         fileInputRef.current.removeAttribute('capture');
+        fileInputRef.current.setAttribute('multiple', '');
       }
       fileInputRef.current.click();
     }
@@ -522,6 +575,15 @@ export default function PhotoUploadSheet({
             }}>
               {uploadProgress}
             </p>
+            {uploadTotal > 1 && (
+              <p style={{
+                ...Typography.bodyMedium,
+                color: BrandColors.text2,
+                marginBottom: Spacing.xs,
+              }}>
+                {uploadCurrent} of {uploadTotal} photos
+              </p>
+            )}
             <p style={{
               ...Typography.bodyMedium,
               color: BrandColors.text2,
@@ -552,7 +614,9 @@ export default function PhotoUploadSheet({
               ...Typography.titleMediumEmph,
               color: BrandColors.text1,
             }}>
-              Photo uploaded!
+              {uploadTotal > 1
+                ? `${uploadTotal} photos uploaded!`
+                : 'Photo uploaded!'}
             </p>
           </div>
         )}
