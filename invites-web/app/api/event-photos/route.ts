@@ -5,13 +5,11 @@ import { createClient } from '@supabase/supabase-js';
 // GET /api/event-photos?token=xxx — Client-side photo fetch
 //
 // Returns event photos with signed URLs.
-// Token-gated via the existing RPC (no user auth needed).
-// Used by EventPage to refresh photos client-side, ensuring
-// persistence across visits and real-time updates from others.
+// Uses direct table queries with service role (no RPC dependency).
+// Token-gated: validates invite token → gets event_id → queries photos.
 // ═══════════════════════════════════════════════════════════════════
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function GET(req: NextRequest) {
@@ -20,50 +18,54 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing token' }, { status: 400 });
   }
 
+  if (!serviceRoleKey) {
+    return NextResponse.json({ photos: [] });
+  }
+
   try {
-    // Use anon key for the RPC (SECURITY DEFINER handles access)
-    const supabase = createClient(supabaseUrl, anonKey, {
-      global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) },
+    const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const { data, error } = await supabase
-      .rpc('get_event_photos_by_invite_token', { p_token: token });
+    // 1. Validate token → get event_id
+    const { data: linkData, error: linkError } = await serviceClient
+      .from('event_invite_links')
+      .select('event_id')
+      .eq('token', token)
+      .is('revoked_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .limit(1)
+      .maybeSingle();
 
-    if (error || !data) {
+    if (linkError || !linkData?.event_id) {
       return NextResponse.json({ photos: [] });
     }
 
-    const photos = data as Array<{
-      photo_id: string;
-      url: string;
-      storage_path: string;
-      is_portrait: boolean;
-      captured_at: string;
-    }>;
+    // 2. Query event_photos directly
+    const { data: rows, error: photosError } = await serviceClient
+      .from('event_photos')
+      .select('id, url, storage_path, is_portrait, captured_at')
+      .eq('event_id', linkData.event_id)
+      .order('captured_at', { ascending: false })
+      .limit(50);
 
-    if (photos.length === 0) {
+    if (photosError || !rows || rows.length === 0) {
       return NextResponse.json({ photos: [] });
     }
 
-    // Generate signed URLs using service role (bypasses storage RLS)
-    if (serviceRoleKey) {
-      const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
+    // 3. Generate signed URLs
+    const paths = rows.map((r: Record<string, unknown>) => r.storage_path as string);
+    const { data: signedData } = await serviceClient
+      .storage.from('memory_groups')
+      .createSignedUrls(paths, 7200);
 
-      const paths = photos.map((p) => p.storage_path);
-      const { data: signedData } = await serviceClient
-        .storage.from('memory_groups')
-        .createSignedUrls(paths, 7200); // 2-hour expiry
-
-      if (signedData) {
-        const signedPhotos = photos.map((photo, i) => ({
-          ...photo,
-          url: signedData[i]?.signedUrl || photo.url,
-        }));
-        return NextResponse.json({ photos: signedPhotos });
-      }
-    }
+    const photos = rows.map((row: Record<string, unknown>, i: number) => ({
+      photo_id: row.id as string,
+      url: (signedData?.[i]?.signedUrl || row.url) as string,
+      storage_path: row.storage_path as string,
+      is_portrait: row.is_portrait as boolean,
+      captured_at: row.captured_at as string,
+    }));
 
     return NextResponse.json({ photos });
   } catch {

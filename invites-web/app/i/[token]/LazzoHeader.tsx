@@ -12,78 +12,52 @@ import { BrandColors, Spacing } from '../../design/constants';
 const APP_STORE_URL = process.env.NEXT_PUBLIC_APPSTORE_URL || '#';
 const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAYSTORE_URL || '#';
 
-/** Inline infinity symbol SVG with Lazzo brand gradient (green → purple → orange)
- *  Thick filled shape matching the brand logo exactly. */
+/**
+ * Infinity icon matching the Lazzo brand logo exactly.
+ * Two thick donut-shaped loops overlapping at the center.
+ * Left loop is drawn ON TOP → creates the crossover depth effect.
+ *
+ * Gradient: green → cyan → purple (left loop) | purple → pink → orange (right loop)
+ */
 function LazzoLogo({ size = 28 }: { size?: number }) {
-  const id = 'lazzo-grad';
-  // Aspect ratio of the infinity icon is roughly 2:1
   const w = size * 2;
   const h = size;
   return (
     <svg
       width={w}
       height={h}
-      viewBox="0 0 200 100"
+      viewBox="20 4 160 92"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-label="Lazzo logo"
     >
       <defs>
-        <linearGradient id={id} x1="0" y1="50" x2="200" y2="50" gradientUnits="userSpaceOnUse">
+        {/* Right loop gradient: purple → pink → orange */}
+        <linearGradient id="lz-r" x1="88" y1="50" x2="176" y2="50" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#9333EA" />
+          <stop offset="50%" stopColor="#EC4899" />
+          <stop offset="100%" stopColor="#FB923C" />
+        </linearGradient>
+        {/* Left loop gradient: green → cyan → purple */}
+        <linearGradient id="lz-l" x1="24" y1="50" x2="112" y2="50" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#00E85F" />
-          <stop offset="25%" stopColor="#00C7FF" />
-          <stop offset="50%" stopColor="#A855F7" />
-          <stop offset="75%" stopColor="#F97316" />
-          <stop offset="100%" stopColor="#FF6B2B" />
+          <stop offset="50%" stopColor="#06B6D4" />
+          <stop offset="100%" stopColor="#9333EA" />
         </linearGradient>
       </defs>
-      {/* Thick infinity symbol (∞) — two overlapping loops crossing at center */}
+
+      {/* Right loop donut — drawn FIRST so it sits behind at the crossing */}
       <path
-        d={[
-          // Outer left loop
-          'M100,50',
-          'C100,23 78,3 53,3',
-          'C28,3 5,23 5,50',
-          'C5,77 28,97 53,97',
-          'C78,97 100,77 100,50',
-          'Z',
-        ].join(' ')}
-        fill={`url(#${id})`}
+        fillRule="evenodd"
+        d="M132,6 A44,44 0 1,1 132,94 A44,44 0 1,1 132,6 Z M132,26 A24,24 0 1,0 132,74 A24,24 0 1,0 132,26 Z"
+        fill="url(#lz-r)"
       />
+
+      {/* Left loop donut — drawn SECOND so it sits in front at the crossing */}
       <path
-        d={[
-          // Outer right loop
-          'M100,50',
-          'C100,77 122,97 147,97',
-          'C172,97 195,77 195,50',
-          'C195,23 172,3 147,3',
-          'C122,3 100,23 100,50',
-          'Z',
-        ].join(' ')}
-        fill={`url(#${id})`}
-      />
-      {/* Inner cutouts to create the hollow infinity shape */}
-      <path
-        d={[
-          'M100,50',
-          'C100,33 82,17 53,17',
-          'C32,17 19,33 19,50',
-          'C19,67 32,83 53,83',
-          'C82,83 100,67 100,50',
-          'Z',
-        ].join(' ')}
-        fill={BrandColors.bg1}
-      />
-      <path
-        d={[
-          'M100,50',
-          'C100,67 118,83 147,83',
-          'C168,83 181,67 181,50',
-          'C181,33 168,17 147,17',
-          'C118,17 100,33 100,50',
-          'Z',
-        ].join(' ')}
-        fill={BrandColors.bg1}
+        fillRule="evenodd"
+        d="M68,6 A44,44 0 1,1 68,94 A44,44 0 1,1 68,6 Z M68,26 A24,24 0 1,0 68,74 A24,24 0 1,0 68,26 Z"
+        fill="url(#lz-l)"
       />
     </svg>
   );

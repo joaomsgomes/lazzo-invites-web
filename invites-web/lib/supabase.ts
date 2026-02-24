@@ -169,37 +169,51 @@ export async function fetchEventGuests(eventId: string): Promise<GuestRecord[]> 
 }
 
 /**
- * Fetches event photos via the token-gated RPC.
- * Generates signed URLs using service role key if available.
+ * Fetches event photos using direct table queries with the service role client.
+ * Validates the invite token, queries event_photos, and generates signed URLs.
+ * Does NOT depend on any custom RPC — works regardless of DB migrations.
  * Returns empty array on failure (graceful degradation).
  */
 export async function fetchEventPhotos(token: string): Promise<EventPhoto[]> {
   try {
-    const supabase = createServerSupabase();
-    const { data, error } = await supabase
-      .rpc('get_event_photos_by_invite_token', { p_token: token });
-
-    if (error || !data) return [];
-    const photos = data as EventPhoto[];
-    if (photos.length === 0) return [];
-
-    // Generate signed URLs using service role (bypasses storage RLS)
     const serviceClient = createServiceSupabase();
-    if (serviceClient) {
-      const paths = photos.map((p) => p.storage_path);
-      const { data: signedData } = await serviceClient
-        .storage.from('memory_groups')
-        .createSignedUrls(paths, 7200); // 2-hour expiry
+    if (!serviceClient) return [];
 
-      if (signedData) {
-        return photos.map((photo, i) => ({
-          ...photo,
-          url: signedData[i]?.signedUrl || photo.url,
-        }));
-      }
-    }
+    // 1. Validate invite token → get event_id
+    const { data: linkData, error: linkError } = await serviceClient
+      .from('event_invite_links')
+      .select('event_id')
+      .eq('token', token)
+      .is('revoked_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .limit(1)
+      .maybeSingle();
 
-    return photos;
+    if (linkError || !linkData?.event_id) return [];
+
+    // 2. Fetch photos ordered by most recent
+    const { data: rows, error: photosError } = await serviceClient
+      .from('event_photos')
+      .select('id, url, storage_path, is_portrait, captured_at')
+      .eq('event_id', linkData.event_id)
+      .order('captured_at', { ascending: false })
+      .limit(50);
+
+    if (photosError || !rows || rows.length === 0) return [];
+
+    // 3. Generate signed URLs (bypasses storage RLS)
+    const paths = rows.map((r: Record<string, unknown>) => r.storage_path as string);
+    const { data: signedData } = await serviceClient
+      .storage.from('memory_groups')
+      .createSignedUrls(paths, 7200); // 2-hour expiry
+
+    return rows.map((row: Record<string, unknown>, i: number) => ({
+      photo_id: row.id as string,
+      url: (signedData?.[i]?.signedUrl || row.url) as string,
+      storage_path: row.storage_path as string,
+      is_portrait: row.is_portrait as boolean,
+      captured_at: row.captured_at as string,
+    }));
   } catch {
     return [];
   }

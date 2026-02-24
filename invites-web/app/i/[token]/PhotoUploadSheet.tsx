@@ -388,7 +388,7 @@ export default function PhotoUploadSheet({
               color: BrandColors.text1,
               marginBottom: Spacing.xs,
             }}>
-              {eventStatus === 'living' ? '📸 Add a Photo' : '🖼️ Upload Photos'}
+              {eventStatus === 'living' ? ' Add a Photo' : ' Upload Photos'}
             </h3>
             <p style={{
               ...Typography.bodyMedium,
@@ -497,7 +497,7 @@ export default function PhotoUploadSheet({
               color: BrandColors.text1,
               marginBottom: Spacing.xs,
             }}>
-              {eventStatus === 'living' ? '📸 Add a Photo' : '🖼️ Upload Photos'}
+              {eventStatus === 'living' ? ' Add a Photo' : ' Upload Photos'}
             </h3>
             <p style={{
               ...Typography.bodyMedium,
