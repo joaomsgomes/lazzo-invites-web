@@ -16,6 +16,7 @@ interface RsvpSectionProps {
   initialCantCount: number;
   eventStatus: string;
   onVoteSubmitted: (vote: 'going' | 'not_going', guestName: string) => void;
+  onGuestsPress?: () => void;
 }
 
 // ---- Main Component ----
@@ -26,6 +27,7 @@ export default function RsvpSection({
   initialCantCount,
   eventStatus,
   onVoteSubmitted,
+  onGuestsPress,
 }: RsvpSectionProps) {
   const [phase, setPhase] = useState<RsvpPhase>('vote');
   const [selectedVote, setSelectedVote] = useState<'going' | 'not_going' | null>(null);
@@ -353,6 +355,7 @@ export default function RsvpSection({
             isSelected={selectedVote === 'going'}
             color={BrandColors.planning}
             onClick={() => handleVoteClick('going')}
+            onCountPress={onGuestsPress}
             disabled={loading}
           />
           <VoteButton
@@ -361,6 +364,7 @@ export default function RsvpSection({
             isSelected={selectedVote === 'not_going'}
             color={BrandColors.cantVote}
             onClick={() => handleVoteClick('not_going')}
+            onCountPress={onGuestsPress}
             disabled={loading}
           />
         </div>
@@ -520,6 +524,7 @@ function VoteButton({
   isSelected,
   color,
   onClick,
+  onCountPress,
   disabled,
 }: {
   label: string;
@@ -527,6 +532,7 @@ function VoteButton({
   isSelected: boolean;
   color: string;
   onClick: () => void;
+  onCountPress?: () => void;
   disabled?: boolean;
 }) {
   return (
@@ -556,19 +562,28 @@ function VoteButton({
         {label}
       </span>
       {count > 0 && (
-        <span style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minWidth: '22px',
-          height: '22px',
-          padding: '0 6px',
-          borderRadius: '11px',
-          fontSize: '12px',
-          fontWeight: 600,
-          background: isSelected ? 'rgba(255,255,255,0.2)' : BrandColors.bg1,
-          color: isSelected ? BrandColors.text1 : BrandColors.text2,
-        }}>
+        <span
+          onClick={(e) => {
+            if (onCountPress) {
+              e.stopPropagation();
+              onCountPress();
+            }
+          }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minWidth: '22px',
+            height: '22px',
+            padding: '0 6px',
+            borderRadius: '11px',
+            fontSize: '12px',
+            fontWeight: 600,
+            background: isSelected ? 'rgba(255,255,255,0.2)' : BrandColors.bg1,
+            color: isSelected ? BrandColors.text1 : BrandColors.text2,
+            cursor: onCountPress ? 'pointer' : 'inherit',
+          }}
+        >
           {count}
         </span>
       )}

@@ -5,63 +5,12 @@ import { BrandColors, Spacing } from '../../design/constants';
 // ═══════════════════════════════════════════════════════════════════
 // LazzoHeader — Persistent brand header shown for ALL event states
 //
-// Layout: [Logo (infinity gradient + "LAZZO")] — [Get the app CTA]
+// Layout: [App Icon + "LAZZO"] — [Get the app CTA]
 // Sticky top bar encouraging app installs, matching web standards.
 // ═══════════════════════════════════════════════════════════════════
 
 const APP_STORE_URL = process.env.NEXT_PUBLIC_APPSTORE_URL || '#';
 const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAYSTORE_URL || '#';
-
-/**
- * Infinity icon matching the Lazzo brand logo exactly.
- * Two thick donut-shaped loops overlapping at the center.
- * Left loop is drawn ON TOP → creates the crossover depth effect.
- *
- * Gradient: green → cyan → purple (left loop) | purple → pink → orange (right loop)
- */
-function LazzoLogo({ size = 28 }: { size?: number }) {
-  const w = size * 2;
-  const h = size;
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="20 4 160 92"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-label="Lazzo logo"
-    >
-      <defs>
-        {/* Right loop gradient: purple → pink → orange */}
-        <linearGradient id="lz-r" x1="88" y1="50" x2="176" y2="50" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#9333EA" />
-          <stop offset="50%" stopColor="#EC4899" />
-          <stop offset="100%" stopColor="#FB923C" />
-        </linearGradient>
-        {/* Left loop gradient: green → cyan → purple */}
-        <linearGradient id="lz-l" x1="24" y1="50" x2="112" y2="50" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#00E85F" />
-          <stop offset="50%" stopColor="#06B6D4" />
-          <stop offset="100%" stopColor="#9333EA" />
-        </linearGradient>
-      </defs>
-
-      {/* Right loop donut — drawn FIRST so it sits behind at the crossing */}
-      <path
-        fillRule="evenodd"
-        d="M132,6 A44,44 0 1,1 132,94 A44,44 0 1,1 132,6 Z M132,26 A24,24 0 1,0 132,74 A24,24 0 1,0 132,26 Z"
-        fill="url(#lz-r)"
-      />
-
-      {/* Left loop donut — drawn SECOND so it sits in front at the crossing */}
-      <path
-        fillRule="evenodd"
-        d="M68,6 A44,44 0 1,1 68,94 A44,44 0 1,1 68,6 Z M68,26 A24,24 0 1,0 68,74 A24,24 0 1,0 68,26 Z"
-        fill="url(#lz-l)"
-      />
-    </svg>
-  );
-}
 
 export default function LazzoHeader() {
   // Detect platform for CTA link
@@ -94,9 +43,16 @@ export default function LazzoHeader() {
           boxSizing: 'border-box',
         }}
       >
-        {/* ── Logo lockup: Infinity gradient + "LAZZO" wordmark ── */}
+        {/* ── Logo lockup: App icon + "LAZZO" wordmark ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <LazzoLogo size={24} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/app-icon.png"
+            alt="Lazzo"
+            width={32}
+            height={32}
+            style={{ borderRadius: '8px' }}
+          />
           <span
             style={{
               fontSize: '18px',

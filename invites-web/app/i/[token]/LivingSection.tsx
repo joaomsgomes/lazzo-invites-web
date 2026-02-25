@@ -9,7 +9,7 @@ import type { EventData, EventPhoto } from '../../../lib/supabase';
 // ═══════════════════════════════════════════════════════════════════
 // LivingSection — Matches Flutter's EventLivingPage layout exactly
 //
-// Layout: TimeLeftPill → ActionRow (Share | Photo | Guests) → PhotosCard
+// Layout: TimeLeftPill → ActionRow (Photo | Guests) → PhotosCard
 //
 // Colors: Purple (#8A38F5) accent throughout
 // ═══════════════════════════════════════════════════════════════════
@@ -38,7 +38,6 @@ export default function LivingSection({ event, token, photos, onPhotoUploaded, o
 
       {/* ── Action Row (matching Flutter LivingActionRow) ── */}
       <LivingActionRow
-        eventName={event.event_name}
         onPhotoPress={() => setShowUpload(true)}
         onGuestsPress={onGuestsPress}
       />
@@ -106,6 +105,7 @@ export default function LivingSection({ event, token, photos, onPhotoUploaded, o
           onClose={() => setShowUpload(false)}
         />
       )}
+
     </div>
   );
 }
@@ -164,50 +164,17 @@ function TimeLeftPill({ endDatetime }: { endDatetime: string }) {
 
 
 // ── Action Row (matching Flutter LivingActionRow) ────────────────
-// 3 equal-width buttons: Share (bg2) | Photo (purple) | Guests (bg2)
+// 2 equal-width buttons: Photo (purple) | Guests (bg2)
 
 function LivingActionRow({
-  eventName,
   onPhotoPress,
   onGuestsPress,
 }: {
-  eventName: string;
   onPhotoPress: () => void;
   onGuestsPress: () => void;
 }) {
-  const handleShare = useCallback(async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: eventName,
-          text: `Join ${eventName} on Lazzo! 🎉`,
-          url: window.location.href,
-        });
-      } catch {
-        // User cancelled — silent
-      }
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-    }
-  }, [eventName]);
-
   return (
     <div style={{ display: 'flex', gap: Spacing.sm }}>
-      {/* Share */}
-      <ActionButton
-        icon={
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-            <polyline points="16 6 12 2 8 6" />
-            <line x1="12" y1="2" x2="12" y2="15" />
-          </svg>
-        }
-        label="Share"
-        backgroundColor={BrandColors.bg2}
-        textColor={BrandColors.text1}
-        onClick={handleShare}
-      />
-
       {/* Photo — opens camera/gallery upload sheet */}
       <ActionButton
         icon={

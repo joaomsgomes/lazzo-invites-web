@@ -9,7 +9,7 @@ import type { EventData, EventPhoto } from '../../../lib/supabase';
 // ═══════════════════════════════════════════════════════════════════
 // RecapSection — Matches Flutter's MemoryPage for recap state
 //
-// Layout: RecapTimer → Share Row → Photos Grid → Upload CTA
+// Layout: RecapTimer → Upload Button → Photos Grid
 //
 // Colors: Orange (#FF751A) accent throughout
 // Recap window: 24h after event.end_datetime
@@ -41,9 +41,8 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded }: 
         </div>
       )}
 
-      {/* ── Share Button Row ── */}
+      {/* ── Upload Button Row ── */}
       <RecapActionRow
-        eventName={event.event_name}
         onUploadPress={() => setShowUpload(true)}
       />
 
@@ -110,6 +109,7 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded }: 
           onClose={() => setShowUpload(false)}
         />
       )}
+
     </div>
   );
 }
@@ -179,95 +179,17 @@ function RecapTimerPill({ closeTime }: { closeTime: Date }) {
 }
 
 
-// ── Recap Inline Timer ──────────────────────────────────────────
-// Text-only timer for use inside CTA subtitle
-
-function RecapInlineTimer({ closeTime }: { closeTime: Date }) {
-  const [text, setText] = useState('');
-
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      const diff = closeTime.getTime() - now.getTime();
-      if (diff <= 0) { setText('Uploads closed'); return; }
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-      if (hours > 0) {
-        setText(minutes > 0 ? `Recap closes in ${hours}h ${minutes}m` : `Recap closes in ${hours}h`);
-      } else if (minutes > 0) {
-        setText(`Recap closes in ${minutes}m`);
-      } else {
-        setText('Closing soon');
-      }
-    };
-    update();
-    const interval = setInterval(update, 60_000);
-    return () => clearInterval(interval);
-  }, [closeTime]);
-
-  return <>{text}</>;
-}
-
 
 // ── Recap Action Row ────────────────────────────────────────────
-// 2 buttons: Share + Upload
+// 1 button: Upload (full width, orange)
 
 function RecapActionRow({
-  eventName,
   onUploadPress,
 }: {
-  eventName: string;
   onUploadPress: () => void;
 }) {
-  const handleShare = useCallback(async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: eventName,
-          text: `Check out memories from ${eventName}! 📸`,
-          url: window.location.href,
-        });
-      } catch {
-        // User cancelled
-      }
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-    }
-  }, [eventName]);
-
   return (
     <div style={{ display: 'flex', gap: Spacing.sm }}>
-      {/* Share */}
-      <button
-        onClick={handleShare}
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: Spacing.xxs,
-          padding: Spacing.md,
-          background: BrandColors.bg2,
-          borderRadius: Spacing.radiusMd,
-          border: 'none',
-          cursor: 'pointer',
-          color: BrandColors.text1,
-          transition: 'transform 0.15s',
-        }}
-        onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.97)'; }}
-        onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-          <polyline points="16 6 12 2 8 6" />
-          <line x1="12" y1="2" x2="12" y2="15" />
-        </svg>
-        <span style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>Share</span>
-      </button>
-
       {/* Upload Photos */}
       <button
         onClick={onUploadPress}

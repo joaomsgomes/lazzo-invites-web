@@ -8,6 +8,7 @@ import RecapSection from './RecapSection';
 import RecapAuthGate from './RecapAuthGate';
 import ManageGuestsSheet from './ManageGuestsSheet';
 import LazzoHeader from './LazzoHeader';
+import ShareSheet from './ShareSheet';
 import { createBrowserSupabase } from '../../../lib/supabase';
 import type { EventData, EventPhoto, GuestRecord } from '../../../lib/supabase';
 import Link from 'next/link';
@@ -101,6 +102,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
   const [liveStatus, setLiveStatus] = useState(event.status);
   const [photos, setPhotos] = useState<EventPhoto[]>(initialPhotos);
   const [showGuests, setShowGuests] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   // Derive ALL vote counts from the single localGuests source of truth
   const goingCount = useMemo(() => localGuests.filter(g => g.rsvp === 'going').length, [localGuests]);
@@ -213,7 +215,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         flexDirection: 'column',
         alignItems: 'center',
         padding: `${Spacing.lg} ${Spacing.md}`,
-        paddingBottom: '48px',
+        paddingBottom: '100px',
         background: BrandColors.bg1,
       }}>
       <div style={{ maxWidth: '520px', width: '100%' }}>
@@ -355,6 +357,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               initialCantCount={cantCount}
               eventStatus={event.status}
               onVoteSubmitted={handleVoteSubmitted}
+              onGuestsPress={() => setShowGuests(true)}
             />
           </div>
         )}
@@ -587,6 +590,69 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         </div>
       </div>
     </main>
+
+      {/* ═══════════ STICKY BOTTOM SHARE BAR (all states except ended) ═══════════ */}
+      {liveStatus !== 'ended' && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 910,
+          background: BrandColors.bg2,
+          borderTop: `1px solid ${BrandColors.border}`,
+          padding: `${Spacing.sm} ${Spacing.md}`,
+          paddingBottom: `calc(${Spacing.sm} + env(safe-area-inset-bottom, 0px))`,
+          display: 'flex',
+          justifyContent: 'center',
+        }}>
+          <button
+            onClick={() => setShowShare(true)}
+            style={{
+              maxWidth: '520px',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: Spacing.xs,
+              padding: '14px 24px',
+              borderRadius: Spacing.radiusMd,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: 600,
+              color: '#FFFFFF',
+              background: isLiving
+                ? BrandColors.living
+                : isRecap
+                ? BrandColors.recap
+                : BrandColors.planning,
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            {isLiving || isRecap ? 'Share event with friends' : 'Share invite with friends'}
+          </button>
+        </div>
+      )}
+
+      {/* ── ShareSheet overlay ── */}
+      {showShare && (
+        <ShareSheet
+          inviteUrl={typeof window !== 'undefined' ? window.location.href : `${process.env.NEXT_PUBLIC_SITE_URL || ''}/i/${token}`}
+          eventName={event.event_name}
+          eventEmoji={event.event_emoji || '📅'}
+          onClose={() => setShowShare(false)}
+        />
+      )}
     </>
   );
 
