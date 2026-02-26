@@ -60,8 +60,6 @@ export async function generateMetadata({
   const description =
     event.event_description || `You're invited to ${event.event_name}!`;
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://getlazzo.com';
-
   return {
     title,
     description,
@@ -69,14 +67,11 @@ export async function generateMetadata({
       title,
       description,
       type: 'website',
-      images: [
-        {
-          url: `${siteUrl}/app-icon.png`,
-          width: 512,
-          height: 512,
-          alt: event.event_name,
-        },
-      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
     },
   };
 }

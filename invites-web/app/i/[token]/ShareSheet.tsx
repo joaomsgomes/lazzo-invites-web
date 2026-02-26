@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import { trackInviteLinkShared } from '../../../lib/analytics';
+import QRCode from 'qrcode';
 
 // ═══════════════════════════════════════════════════════════════════
 // ShareSheet — Bottom sheet modal with two sharing modes:
 //   1. QR Code — scannable QR that opens the invite link
 //   2. Card — Partiful-style visual card with event emoji + link
 //
-// QR generation uses the Google Charts API (no npm dependency needed).
+// QR generation uses the `qrcode` npm package (canvas-based).
 // ═══════════════════════════════════════════════════════════════════
 
 interface ShareSheetProps {
@@ -144,16 +145,18 @@ export default function ShareSheet({ inviteUrl, eventId, eventName, eventEmoji, 
           />
         </div>
 
-        {/* Content */}
-        {tab === 'qr' ? (
-          <QrCodeTab inviteUrl={inviteUrl} />
-        ) : (
-          <InviteCardTab
-            inviteUrl={inviteUrl}
-            eventName={eventName}
-            eventEmoji={eventEmoji}
-          />
-        )}
+        {/* Content — fixed height to prevent jumping between tabs */}
+        <div style={{ minHeight: '340px', display: 'flex', alignItems: 'stretch' }}>
+          {tab === 'qr' ? (
+            <QrCodeTab inviteUrl={inviteUrl} />
+          ) : (
+            <InviteCardTab
+              inviteUrl={inviteUrl}
+              eventName={eventName}
+              eventEmoji={eventEmoji}
+            />
+          )}
+        </div>
 
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: Spacing.sm, marginTop: Spacing.md }}>
@@ -273,8 +276,20 @@ function TabButton({ label, icon, isSelected, onClick }: {
 // ── QR Code Tab ──────────────────────────────────────────────────
 
 function QrCodeTab({ inviteUrl }: { inviteUrl: string }) {
-  // Use Google Charts API for QR — zero dependencies
-  const qrSrc = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(inviteUrl)}&choe=UTF-8`;
+  const [qrSrc, setQrSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    QRCode.toDataURL(inviteUrl, {
+      width: 300,
+      margin: 0,
+      color: { dark: '#000000', light: '#FFFFFF' },
+      errorCorrectionLevel: 'M',
+    }).then((url) => {
+      if (!cancelled) setQrSrc(url);
+    });
+    return () => { cancelled = true; };
+  }, [inviteUrl]);
 
   return (
     <div style={{
@@ -294,15 +309,21 @@ function QrCodeTab({ inviteUrl }: { inviteUrl: string }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        width: 232,
+        height: 232,
       }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={qrSrc}
-          alt="QR Code"
-          width={200}
-          height={200}
-          style={{ display: 'block', imageRendering: 'pixelated' }}
-        />
+        {qrSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={qrSrc}
+            alt="QR Code"
+            width={200}
+            height={200}
+            style={{ display: 'block', imageRendering: 'pixelated' }}
+          />
+        ) : (
+          <div style={{ width: 200, height: 200 }} />
+        )}
       </div>
       <span style={{ ...Typography.bodyMedium, color: BrandColors.text2, textAlign: 'center' }}>
         Scan to join the event
