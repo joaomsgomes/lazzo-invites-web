@@ -42,6 +42,7 @@ export function initPostHog(): void {
 
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
+    ui_host: 'https://eu.posthog.com',
 
     // COST OPTIMIZATION — critical for $0 bill
     autocapture: false,
@@ -49,10 +50,9 @@ export function initPostHog(): void {
     capture_pageview: false,
     capture_pageleave: false,
 
-    // Feature flags — bootstrap empty, loaded on init
-    bootstrap: {
-      featureFlags: {},
-    },
+    // Disable feature flag fetching — not used on web yet,
+    // avoids 401 noise on /flags/ endpoint
+    advanced_disable_feature_flags: true,
 
     // Privacy
     respect_dnt: true,
@@ -88,10 +88,10 @@ export function trackEvent(
 ): void {
   if (!isReady()) return;
 
-  posthog.capture(event, {
-    platform: 'web',
-    ...properties,
-  });
+  const payload = { platform: 'web', ...properties };
+  console.log(`[PostHog] event: ${event}`, payload);
+
+  posthog.capture(event, payload);
 }
 
 // ── Screen Views (selective — critical screens only) ──────────
@@ -135,6 +135,7 @@ export function identifyUser(
 ): void {
   if (!isReady()) return;
 
+  console.log(`[PostHog] identify: ${userId}`, { platform: 'web', ...properties });
   posthog.identify(userId, {
     platform: 'web',
     ...properties,
@@ -147,6 +148,7 @@ export function identifyUser(
  */
 export function resetIdentity(): void {
   if (!isReady()) return;
+  console.log('[PostHog] reset identity');
   posthog.reset();
 }
 
