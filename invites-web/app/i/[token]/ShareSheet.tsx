@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
+import { trackInviteLinkShared } from '../../../lib/analytics';
 
 // ═══════════════════════════════════════════════════════════════════
 // ShareSheet — Bottom sheet modal with two sharing modes:
@@ -13,6 +14,7 @@ import { BrandColors, Spacing, Typography } from '../../design/constants';
 
 interface ShareSheetProps {
   inviteUrl: string;
+  eventId: string;
   eventName: string;
   eventEmoji: string;
   onClose: () => void;
@@ -20,7 +22,7 @@ interface ShareSheetProps {
 
 type Tab = 'qr' | 'card';
 
-export default function ShareSheet({ inviteUrl, eventName, eventEmoji, onClose }: ShareSheetProps) {
+export default function ShareSheet({ inviteUrl, eventId, eventName, eventEmoji, onClose }: ShareSheetProps) {
   const [tab, setTab] = useState<Tab>('qr');
   const [copied, setCopied] = useState(false);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -56,7 +58,8 @@ export default function ShareSheet({ inviteUrl, eventName, eventEmoji, onClose }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [inviteUrl]);
+    trackInviteLinkShared(eventId, 'copy');
+  }, [inviteUrl, eventId]);
 
   // Native share
   const handleShare = useCallback(async () => {
@@ -67,13 +70,14 @@ export default function ShareSheet({ inviteUrl, eventName, eventEmoji, onClose }
           text: `Join ${eventName} on Lazzo! 🎉`,
           url: inviteUrl,
         });
+        trackInviteLinkShared(eventId, 'native_share');
       } catch {
         // User cancelled
       }
     } else {
       handleCopy();
     }
-  }, [eventName, inviteUrl, handleCopy]);
+  }, [eventName, inviteUrl, handleCopy, eventId]);
 
   return (
     <div

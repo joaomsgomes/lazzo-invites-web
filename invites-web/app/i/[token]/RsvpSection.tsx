@@ -5,6 +5,13 @@ import { BrandColors, Spacing } from '../../design/constants';
 import { createBrowserSupabase } from '../../../lib/supabase';
 import OtpInput from './OtpInput';
 import { saveSession } from './SessionManager';
+import {
+  trackRsvpSubmitted,
+  trackRsvpChanged,
+  trackGuestAuthCompleted,
+  identifyUser,
+  getSecondsSincePageLoad,
+} from '../../../lib/analytics';
 
 // ---- Types ----
 
@@ -12,6 +19,7 @@ type RsvpPhase = 'vote' | 'credentials' | 'otp' | 'done';
 
 interface RsvpSectionProps {
   token: string;
+  eventId: string;
   initialGoingCount: number;
   initialCantCount: number;
   eventStatus: string;
@@ -23,6 +31,7 @@ interface RsvpSectionProps {
 
 export default function RsvpSection({
   token,
+  eventId,
   initialGoingCount,
   initialCantCount,
   eventStatus,
@@ -91,6 +100,13 @@ export default function RsvpSection({
         JSON.stringify({ vote, name: storedName, email: storedEmail })
       );
       saveSession(token, storedEmail, storedName);
+
+      // Analytics: track RSVP (re-vote = change)
+      if (confirmedVote && confirmedVote !== vote) {
+        trackRsvpChanged(eventId, confirmedVote, vote === 'going' ? 'going' : 'cant');
+      } else {
+        trackRsvpSubmitted(eventId, vote, getSecondsSincePageLoad());
+      }
 
       setConfirmedVote(vote);
       setConfirmedName(storedName);
@@ -216,6 +232,13 @@ export default function RsvpSection({
 
       // 4b. Save session for persistence across visits
       saveSession(token, email.trim(), name.trim());
+
+      // 4c. Analytics: identify user + track auth + track RSVP
+      if (authData.session?.user?.id) {
+        identifyUser(authData.session.user.id, { role: 'guest' });
+        trackGuestAuthCompleted(eventId, authData.session.user.id);
+      }
+      trackRsvpSubmitted(eventId, selectedVote!, getSecondsSincePageLoad());
 
       // 5. Update UI
       setConfirmedVote(selectedVote!);

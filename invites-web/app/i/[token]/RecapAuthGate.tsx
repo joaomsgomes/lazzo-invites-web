@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import { createBrowserSupabase } from '../../../lib/supabase';
 import OtpInput from './OtpInput';
+import { trackGuestAuthCompleted, identifyUser } from '../../../lib/analytics';
 
 // ═══════════════════════════════════════════════════════════════════
 // RecapAuthGate — OTP verification gate for recap event pages
@@ -47,6 +48,7 @@ function saveRecapAuthSession(token: string, email: string): void {
 
 interface RecapAuthGateProps {
   token: string;
+  eventId: string;
   eventName: string;
   eventEmoji: string;
   children: React.ReactNode;
@@ -54,7 +56,7 @@ interface RecapAuthGateProps {
 
 // ── Component ────────────────────────────────────────────────────
 
-export default function RecapAuthGate({ token, eventName, eventEmoji, children }: RecapAuthGateProps) {
+export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, children }: RecapAuthGateProps) {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null); // null = loading
   const [phase, setPhase] = useState<'email' | 'otp' | 'denied'>('email');
   const [email, setEmail] = useState('');
@@ -167,6 +169,13 @@ export default function RecapAuthGate({ token, eventName, eventEmoji, children }
         // Access granted
         saveRecapAuthSession(token, email.trim());
         if (mountedRef.current) setIsAuthorized(true);
+
+        // Analytics: identify + track auth
+        const { data: { session: authSession } } = await supabase.auth.getSession();
+        if (authSession?.user?.id) {
+          identifyUser(authSession.user.id, { role: 'guest' });
+          trackGuestAuthCompleted(eventId, authSession.user.id);
+        }
       } else {
         // Not a participant
         if (mountedRef.current) setPhase('denied');

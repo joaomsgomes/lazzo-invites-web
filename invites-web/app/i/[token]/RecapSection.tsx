@@ -103,6 +103,7 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded }: 
       {showUpload && (
         <PhotoUploadSheet
           token={token}
+          eventId={event.event_id}
           accentColor={BrandColors.recap}
           eventStatus="recap"
           onPhotoUploaded={onPhotoUploaded}

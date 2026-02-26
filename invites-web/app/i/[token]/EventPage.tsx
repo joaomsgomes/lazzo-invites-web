@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import RsvpSection from './RsvpSection';
 import LivingSection from './LivingSection';
@@ -12,6 +12,13 @@ import ShareSheet from './ShareSheet';
 import { createBrowserSupabase } from '../../../lib/supabase';
 import type { EventData, EventPhoto, GuestRecord } from '../../../lib/supabase';
 import Link from 'next/link';
+import {
+  trackInviteLinkOpened,
+  trackScreenView,
+  trackEventPhaseChanged,
+  trackRecapViewed,
+  recordPageLoadTime,
+} from '../../../lib/analytics';
 
 // ═══════════════════════════════════════════════════════════════════
 // EventPage — Redesigned to match Flutter event detail page exactly
@@ -103,6 +110,26 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
   const [photos, setPhotos] = useState<EventPhoto[]>(initialPhotos);
   const [showGuests, setShowGuests] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const prevStatusRef = useRef(event.status);
+
+  // ── Analytics: track invite link opened + screen view on mount ──
+  useEffect(() => {
+    recordPageLoadTime();
+    trackInviteLinkOpened(event.event_id);
+
+    // Track appropriate screen_viewed based on event phase
+    const screenName =
+      event.status === 'living' ? 'event_living'
+      : event.status === 'recap' ? 'event_recap'
+      : 'event_detail';
+    trackScreenView(screenName, { event_id: event.event_id, event_phase: event.status });
+
+    // Track recap_viewed for recap events
+    if (event.status === 'recap') {
+      trackRecapViewed(event.event_id, initialPhotos.length);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Derive ALL vote counts from the single localGuests source of truth
   const goingCount = useMemo(() => localGuests.filter(g => g.rsvp === 'going').length, [localGuests]);
@@ -158,6 +185,22 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
           .single();
         const d = data as EventData | null;
         if (d?.status && d.status !== liveStatus) {
+          // Track phase change
+          trackEventPhaseChanged(event.event_id, liveStatus, d.status);
+
+          // Track screen_viewed for new phase
+          const newScreen =
+            d.status === 'living' ? 'event_living'
+            : d.status === 'recap' ? 'event_recap'
+            : 'event_detail';
+          trackScreenView(newScreen, { event_id: event.event_id, event_phase: d.status });
+
+          // Track recap_viewed when transitioning to recap
+          if (d.status === 'recap') {
+            trackRecapViewed(event.event_id, photos.length);
+          }
+
+          prevStatusRef.current = d.status;
           setLiveStatus(d.status);
         }
       } catch {
@@ -353,6 +396,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
           <div style={{ marginBottom: Spacing.md }}>
             <RsvpSection
               token={token}
+              eventId={event.event_id}
               initialGoingCount={goingCount}
               initialCantCount={cantCount}
               eventStatus={event.status}
@@ -648,6 +692,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
       {showShare && (
         <ShareSheet
           inviteUrl={typeof window !== 'undefined' ? window.location.href : `${process.env.NEXT_PUBLIC_SITE_URL || ''}/i/${token}`}
+          eventId={event.event_id}
           eventName={event.event_name}
           eventEmoji={event.event_emoji || '📅'}
           onClose={() => setShowShare(false)}
@@ -661,6 +706,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     return (
       <RecapAuthGate
         token={token}
+        eventId={event.event_id}
         eventName={event.event_name}
         eventEmoji={event.event_emoji || '📸'}
       >

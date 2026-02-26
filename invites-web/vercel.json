@@ -8,6 +8,15 @@
           "value": "application/json"
         }
       ]
+    },
+    {
+      "source": "/i/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ]
 }

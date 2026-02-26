@@ -99,6 +99,7 @@ export default function LivingSection({ event, token, photos, onPhotoUploaded, o
       {showUpload && (
         <PhotoUploadSheet
           token={token}
+          eventId={event.event_id}
           accentColor={BrandColors.living}
           eventStatus="living"
           onPhotoUploaded={onPhotoUploaded}

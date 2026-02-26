@@ -7,6 +7,13 @@ import { compressImage, ensureEventParticipant } from '../../../lib/photoUtils';
 import type { EventPhoto } from '../../../lib/supabase';
 import OtpInput from './OtpInput';
 import { saveSession, getValidSession } from './SessionManager';
+import {
+  trackPhotoUploadStarted,
+  trackPhotoUploaded,
+  trackPhotoUploadFailed,
+  trackGuestAuthCompleted,
+  identifyUser,
+} from '../../../lib/analytics';
 
 // ═══════════════════════════════════════════════════════════════════
 // PhotoUploadSheet — Bottom sheet modal for photo capture + upload
@@ -21,6 +28,7 @@ import { saveSession, getValidSession } from './SessionManager';
 
 interface PhotoUploadSheetProps {
   token: string;
+  eventId: string;
   accentColor: string;
   eventStatus: 'living' | 'recap';
   onPhotoUploaded: (photo: EventPhoto) => void;
@@ -31,6 +39,7 @@ type Phase = 'checking' | 'auth-name' | 'auth-otp' | 'picker' | 'uploading' | 's
 
 export default function PhotoUploadSheet({
   token,
+  eventId,
   accentColor,
   eventStatus,
   onPhotoUploaded,
@@ -43,7 +52,6 @@ export default function PhotoUploadSheet({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState('');
-  const [eventId, setEventId] = useState<string | null>(null);
   const [uploadCurrent, setUploadCurrent] = useState(0);
   const [uploadTotal, setUploadTotal] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,7 +101,6 @@ export default function PhotoUploadSheet({
           setUploadProgress('Preparing...');
           const result = await ensureEventParticipant(supabase, token);
           if (result) {
-            setEventId(result.eventId);
             // Save session so next time we skip OTP
             const userEmail = session.user.email || '';
             saveSession(token, userEmail, session.user.user_metadata?.name || userEmail.split('@')[0]);
@@ -180,8 +187,14 @@ export default function PhotoUploadSheet({
       setUploadProgress('Joining event...');
       const result = await ensureEventParticipant(supabase, token);
       if (result) {
-        setEventId(result.eventId);
         if (mountedRef.current) setPhase('picker');
+
+        // Analytics: identify user + track auth
+        const { data: { session: authSession } } = await supabase.auth.getSession();
+        if (authSession?.user?.id) {
+          identifyUser(authSession.user.id, { role: 'guest' });
+          trackGuestAuthCompleted(eventId, authSession.user.id);
+        }
       } else {
         if (mountedRef.current) {
           setError('Could not join event. The invite may have expired.');
@@ -213,6 +226,9 @@ export default function PhotoUploadSheet({
     setError(null);
     setUploadCurrent(0);
     setUploadTotal(imageFiles.length);
+
+    // Analytics: track upload started
+    trackPhotoUploadStarted(eventId, imageFiles.length > 1 ? 'gallery' : 'gallery', imageFiles.length);
 
     try {
       const supabase = createBrowserSupabase();
@@ -250,6 +266,8 @@ export default function PhotoUploadSheet({
             : `Uploading ${i + 1}/${imageFiles.length}...`
         );
 
+        const uploadStartTime = Date.now();
+
         // Upload via server-side API
         const body = new FormData();
         body.append('file', compressed.blob, `photo.${compressed.blob.type === 'image/webp' ? 'webp' : 'jpg'}`);
@@ -282,8 +300,13 @@ export default function PhotoUploadSheet({
           };
           uploadedPhotos.push(newPhoto);
           onPhotoUploaded(newPhoto);
+
+          // Analytics: track individual photo success
+          const uploadDuration = Date.now() - uploadStartTime;
+          trackPhotoUploaded(eventId, uploadDuration, Math.round(imageFiles[i].size / 1024));
         } else {
           errors.push(result.error || `File ${i + 1} failed`);
+          trackPhotoUploadFailed(eventId, result.error || 'unknown', 0);
         }
       }
 
@@ -314,6 +337,8 @@ export default function PhotoUploadSheet({
 
   const openFilePicker = useCallback((capture: boolean) => {
     if (fileInputRef.current) {
+      // Store source for analytics
+      fileInputRef.current.dataset.source = capture ? 'camera' : 'gallery';
       // On mobile, capture="environment" opens camera (single photo only)
       if (capture) {
         fileInputRef.current.setAttribute('capture', 'environment');
