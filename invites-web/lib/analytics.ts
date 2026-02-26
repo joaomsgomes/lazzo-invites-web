@@ -38,6 +38,8 @@ export function initPostHog(): void {
     return;
   }
 
+  console.log(`[Analytics] init — host: ${POSTHOG_HOST}, key: ${POSTHOG_KEY.slice(0, 12)}...`);
+
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
 
@@ -55,6 +57,11 @@ export function initPostHog(): void {
     // Privacy
     respect_dnt: true,
     persistence: 'localStorage',
+
+    // Debug callback — confirms init completed
+    loaded: (ph) => {
+      console.log(`[Analytics] ready — distinct_id: ${ph.get_distinct_id()}`);
+    },
   });
 
   _initialized = true;
