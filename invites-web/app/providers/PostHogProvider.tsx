@@ -1,20 +1,22 @@
 'use client';
 
-import { useEffect } from 'react';
 import { initPostHog } from '../../lib/analytics';
 
 // ═══════════════════════════════════════════════════════════════════
-// PostHogProvider — Initializes PostHog on the client side.
+// PostHogProvider — Initializes PostHog synchronously during hydration.
 //
-// Added to the root layout. Runs once on mount.
-// Does NOT use React context — analytics is accessed via
-// direct imports from lib/analytics.ts (module singleton).
+// Intentionally does NOT use useEffect — PostHog must be ready before
+// any child component's useEffect fires (React runs child effects
+// before parent effects, so a parent useEffect would be too late).
+//
+// initPostHog() is idempotent (guarded by _initialized flag) and
+// safe to call during render — it no-ops on the server via
+// the typeof window === 'undefined' guard inside it.
 // ═══════════════════════════════════════════════════════════════════
 
 export default function PostHogProvider({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    initPostHog();
-  }, []);
+  // Synchronous init — runs during client hydration before any child effects
+  initPostHog();
 
   return <>{children}</>;
 }
