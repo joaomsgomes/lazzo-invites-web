@@ -1,96 +1,32 @@
-'use client';
-
 import posthog from 'posthog-js';
 
 // ═══════════════════════════════════════════════════════════════════
-// Analytics — PostHog wrapper for Lazzo web (Vercel)
+// Analytics — PostHog helpers for Lazzo web (Vercel)
 //
-// Cost-safe configuration:
-// - autocapture: OFF
-// - session_recording: OFF
-// - capture_pageview: OFF (manual only)
-// - capture_pageleave: OFF
+// posthog-js is initialized in app/providers/PostHogProvider.tsx.
+// Calls made before init are automatically queued by the SDK and
+// flushed once init completes — no manual isReady() check needed.
 //
-// Identity flow:
-// 1. Page loads → PostHog generates anonymous distinct_id
-// 2. Guest auth (OTP verified) → identify(supabase_user_id)
-// 3. All prior events merge into authenticated user
+// DO NOT add 'use client' here — this is a plain utility module.
+// It is only imported from 'use client' components, so it is
+// already part of the client bundle.
 //
 // Follows METRICS.md taxonomy — same event names as Flutter app.
 // ═══════════════════════════════════════════════════════════════════
-
-const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY || '';
-const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com';
-
-let _initialized = false;
-
-// ── Initialization ──────────────────────────────────────────────
-
-/**
- * Initialize PostHog. Call once in the app layout (client-side only).
- * Safe to call multiple times — subsequent calls are no-ops.
- */
-export function initPostHog(): void {
-  if (typeof window === 'undefined') return;
-  if (_initialized) return;
-  if (!POSTHOG_KEY) {
-    console.warn('[Analytics] NEXT_PUBLIC_POSTHOG_KEY not set — analytics disabled');
-    return;
-  }
-
-  console.log(`[Analytics] init — host: ${POSTHOG_HOST}, key: ${POSTHOG_KEY.slice(0, 12)}...`);
-
-  posthog.init(POSTHOG_KEY, {
-    api_host: POSTHOG_HOST,
-    ui_host: 'https://eu.posthog.com',
-
-    // COST OPTIMIZATION — critical for $0 bill
-    autocapture: false,
-    disable_session_recording: true,
-    capture_pageview: false,
-    capture_pageleave: false,
-
-    // Disable feature flag fetching — not used on web yet,
-    // avoids 401 noise on /flags/ endpoint
-    advanced_disable_feature_flags: true,
-
-    // Privacy
-    respect_dnt: true,
-    persistence: 'localStorage',
-
-    // Debug callback — confirms init completed
-    loaded: (ph) => {
-      console.log(`[Analytics] ready — distinct_id: ${ph.get_distinct_id()}`);
-    },
-  });
-
-  _initialized = true;
-}
-
-/**
- * Check if PostHog is initialized and ready.
- */
-function isReady(): boolean {
-  return _initialized && typeof window !== 'undefined' && !!POSTHOG_KEY;
-}
 
 // ── Core Tracking ──────────────────────────────────────────────
 
 /**
  * Track a named event with optional properties.
- * Properties are merged with PostHog's automatic properties.
- *
  * Always includes `platform: 'web'` automatically.
  */
 export function trackEvent(
   event: string,
   properties?: Record<string, unknown>,
 ): void {
-  if (!isReady()) return;
-
+  if (typeof window === 'undefined') return;
   const payload = { platform: 'web', ...properties };
   console.log(`[PostHog] event: ${event}`, payload);
-
   posthog.capture(event, payload);
 }
 
@@ -107,8 +43,7 @@ export function trackScreenView(
   screenName: string,
   properties?: Record<string, unknown>,
 ): void {
-  if (!isReady()) return;
-
+  if (typeof window === 'undefined') return;
   posthog.capture('screen_viewed', {
     screen_name: screenName,
     platform: 'web',
@@ -121,81 +56,53 @@ export function trackScreenView(
 /**
  * Identify a user after authentication completes.
  * PostHog aliases the anonymous distinct_id → userId and merges history.
- *
- * Call on:
- * - guest_auth_completed (OTP verified for RSVP)
- * - photo upload auth (OTP verified for upload)
- *
- * @param userId - Supabase user UUID
- * @param properties - Optional user properties (role, email prefix, etc.)
  */
 export function identifyUser(
   userId: string,
   properties?: Record<string, string | boolean | number>,
 ): void {
-  if (!isReady()) return;
-
+  if (typeof window === 'undefined') return;
   console.log(`[PostHog] identify: ${userId}`, { platform: 'web', ...properties });
-  posthog.identify(userId, {
-    platform: 'web',
-    ...properties,
-  });
+  posthog.identify(userId, { platform: 'web', ...properties });
 }
 
 /**
  * Reset identity on logout / session clear.
- * Generates a new anonymous distinct_id.
  */
 export function resetIdentity(): void {
-  if (!isReady()) return;
+  if (typeof window === 'undefined') return;
   console.log('[PostHog] reset identity');
   posthog.reset();
 }
 
 // ── Feature Flags ──────────────────────────────────────────────
 
-/**
- * Get a feature flag value (from local cache — no network call).
- * Safe to call in render paths.
- */
 export function getFeatureFlag(key: string): string | boolean | undefined {
-  if (!isReady()) return undefined;
+  if (typeof window === 'undefined') return undefined;
   return posthog.getFeatureFlag(key);
 }
 
-/**
- * Check if a feature flag is enabled (boolean flags).
- */
 export function isFeatureEnabled(key: string): boolean {
-  if (!isReady()) return false;
+  if (typeof window === 'undefined') return false;
   const value = posthog.getFeatureFlag(key);
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') return value !== 'false' && value !== '';
   return false;
 }
 
-/**
- * Register a callback for when feature flags are loaded.
- * Useful for applying flag-dependent UI on first page load.
- */
 export function onFeatureFlags(callback: () => void): void {
-  if (!isReady()) return;
+  if (typeof window === 'undefined') return;
   posthog.onFeatureFlags(callback);
 }
 
-/**
- * Force reload feature flags from PostHog server.
- * Call sparingly — on auth complete or on long-lived sessions.
- */
 export function reloadFeatureFlags(): void {
-  if (!isReady()) return;
+  if (typeof window === 'undefined') return;
   posthog.reloadFeatureFlags();
 }
 
-// ── Convenience: Typed Event Helpers ───────────────────────────
-// These follow the exact taxonomy from METRICS.md
+// ── Typed Event Helpers ─────────────────────────────────────────
+// Follow exact taxonomy from METRICS.md
 
-/** Guest opens invite link (top of guest funnel) */
 export function trackInviteLinkOpened(eventId: string): void {
   trackEvent('invite_link_opened', {
     event_id: eventId,
@@ -204,11 +111,7 @@ export function trackInviteLinkOpened(eventId: string): void {
   });
 }
 
-/** Guest completes lightweight auth (OTP verified) */
-export function trackGuestAuthCompleted(
-  eventId: string,
-  userId: string,
-): void {
+export function trackGuestAuthCompleted(eventId: string, userId: string): void {
   trackEvent('guest_auth_completed', {
     event_id: eventId,
     auth_method: 'email',
@@ -216,7 +119,6 @@ export function trackGuestAuthCompleted(
   });
 }
 
-/** Guest submits RSVP vote */
 export function trackRsvpSubmitted(
   eventId: string,
   vote: 'going' | 'not_going',
@@ -230,12 +132,7 @@ export function trackRsvpSubmitted(
   });
 }
 
-/** Guest changes RSVP vote */
-export function trackRsvpChanged(
-  eventId: string,
-  fromVote: string,
-  toVote: string,
-): void {
+export function trackRsvpChanged(eventId: string, fromVote: string, toVote: string): void {
   trackEvent('rsvp_changed', {
     event_id: eventId,
     from_vote: fromVote,
@@ -244,7 +141,6 @@ export function trackRsvpChanged(
   });
 }
 
-/** Photo upload started */
 export function trackPhotoUploadStarted(
   eventId: string,
   source: 'camera' | 'gallery',
@@ -257,7 +153,6 @@ export function trackPhotoUploadStarted(
   });
 }
 
-/** Photo successfully uploaded */
 export function trackPhotoUploaded(
   eventId: string,
   uploadDurationMs: number,
@@ -271,7 +166,6 @@ export function trackPhotoUploaded(
   });
 }
 
-/** Photo upload failed */
 export function trackPhotoUploadFailed(
   eventId: string,
   errorType: string,
@@ -284,11 +178,7 @@ export function trackPhotoUploadFailed(
   });
 }
 
-/** Recap viewed by guest */
-export function trackRecapViewed(
-  eventId: string,
-  photoCount: number,
-): void {
+export function trackRecapViewed(eventId: string, photoCount: number): void {
   trackEvent('recap_viewed', {
     event_id: eventId,
     viewer_role: 'guest',
@@ -296,11 +186,7 @@ export function trackRecapViewed(
   });
 }
 
-/** Invite link shared (via share sheet) */
-export function trackInviteLinkShared(
-  eventId: string,
-  shareChannel: string,
-): void {
+export function trackInviteLinkShared(eventId: string, shareChannel: string): void {
   trackEvent('invite_link_shared', {
     event_id: eventId,
     share_channel: shareChannel,
@@ -308,7 +194,6 @@ export function trackInviteLinkShared(
   });
 }
 
-/** Event phase change detected (via polling) */
 export function trackEventPhaseChanged(
   eventId: string,
   fromPhase: string,
@@ -324,7 +209,6 @@ export function trackEventPhaseChanged(
 
 // ── Helpers ─────────────────────────────────────────────────────
 
-/** Check if user has any localStorage session (indicates returning visitor) */
 function hasExistingSession(): boolean {
   if (typeof window === 'undefined') return false;
   try {
@@ -334,22 +218,18 @@ function hasExistingSession(): boolean {
         return true;
       }
     }
-  } catch {
-    // localStorage unavailable
-  }
+  } catch { /* localStorage unavailable */ }
   return false;
 }
 
-// ── Page Load Timestamp (for time_to_rsvp calculation) ────────
+// ── Page Load Timestamp ─────────────────────────────────────────
 
 let _pageLoadTime: number | null = null;
 
-/** Record page load time. Call once when invite page mounts. */
 export function recordPageLoadTime(): void {
   _pageLoadTime = Date.now();
 }
 
-/** Get seconds since page loaded (for time_to_rsvp_seconds). */
 export function getSecondsSincePageLoad(): number {
   if (!_pageLoadTime) return 0;
   return Math.round((Date.now() - _pageLoadTime) / 1000);
