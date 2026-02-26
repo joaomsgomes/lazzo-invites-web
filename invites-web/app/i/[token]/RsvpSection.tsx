@@ -264,7 +264,118 @@ export default function RsvpSection({
     );
   }
 
-  // ---- Render ----
+  // ---- Vote color + label helpers ----
+  const voteColor = confirmedVote === 'going' ? BrandColors.planning : BrandColors.cantVote;
+  const voteLabel = confirmedVote === 'going' ? 'Can' : "Can't";
+  const voteIcon = confirmedVote === 'going' ? (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={voteColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ) : (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={voteColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+
+  // ---- Render: DONE STATE (matches Flutter _buildVotedState) ----
+
+  if (phase === 'done') {
+    return (
+      <div style={{
+        background: BrandColors.bg2,
+        borderRadius: Spacing.radiusMd,
+        overflow: 'hidden',
+        display: 'flex',
+        minHeight: '72px',
+      }}>
+        {/* LEFT: Vote summary (tappable → manage guests) */}
+        <div
+          onClick={onGuestsPress}
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            padding: `${Spacing.sm} ${Spacing.md}`,
+            cursor: onGuestsPress ? 'pointer' : 'default',
+            minWidth: 0,
+          }}
+        >
+          {/* Voter row: stacked avatars + text */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            {/* Stacked avatars */}
+            <StackedAvatars
+              goingCount={initialGoingCount}
+              cantCount={initialCantCount}
+              confirmedVote={confirmedVote}
+              confirmedName={confirmedName}
+            />
+            {/* Voter text */}
+            <p style={{
+              fontSize: '14px',
+              color: BrandColors.text1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              margin: 0,
+            }}>
+              <strong>{confirmedName}</strong>
+              {' voted '}
+              {confirmedVote === 'going' ? 'can' : "can't"}
+            </p>
+          </div>
+
+          {/* Vote counts subtitle */}
+          <p style={{
+            fontSize: '13px',
+            color: BrandColors.text2,
+            marginTop: '4px',
+            margin: 0,
+            marginLeft: 0,
+          }}>
+            {initialGoingCount} can · 0 maybe · {initialCantCount} can&apos;t
+          </p>
+        </div>
+
+        {/* RIGHT: Confirmed vote indicator (tappable → edit vote) */}
+        <button
+          onClick={handleEditVote}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '12px 20px',
+            background: `${voteColor}26`,
+            border: 'none',
+            borderRadius: `0 ${Spacing.radiusMd} ${Spacing.radiusMd} 0`,
+            cursor: 'pointer',
+            minWidth: '64px',
+            transition: 'opacity 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >
+          {voteIcon}
+          <span style={{
+            fontSize: '14px',
+            fontWeight: 600,
+            color: voteColor,
+            marginTop: '2px',
+          }}>
+            {voteLabel}
+          </span>
+        </button>
+      </div>
+    );
+  }
+
+  // ---- Render: VOTE / CREDENTIALS / OTP ----
 
   return (
     <div style={{
@@ -278,33 +389,15 @@ export default function RsvpSection({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: phase === 'done' ? '0' : Spacing.md,
+        marginBottom: Spacing.md,
       }}>
         <p style={{
           fontSize: '15px',
           fontWeight: 600,
           color: BrandColors.text1,
         }}>
-          {phase === 'done' ? 'Vote confirmed' : 'Can you make it?'}
+          Can you make it?
         </p>
-
-        {/* Edit vote button when done */}
-        {phase === 'done' && (
-          <button
-            onClick={handleEditVote}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: BrandColors.planning,
-              fontSize: '13px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              padding: '4px 8px',
-            }}
-          >
-            Edit vote
-          </button>
-        )}
 
         {/* Back button when in credential/otp phase */}
         {(phase === 'credentials' || phase === 'otp') && (
@@ -325,50 +418,31 @@ export default function RsvpSection({
         )}
       </div>
 
-      {/* ---- DONE STATE ---- */}
-      {phase === 'done' && (
-        <div style={{ textAlign: 'center', padding: `${Spacing.xs} 0` }}>
-          <p style={{
-            fontSize: '16px',
-            color: BrandColors.text1,
-            fontWeight: 500,
-            marginBottom: '4px',
-          }}>
-            {confirmedVote === 'going' ? "You're going!" : "You can't make it"}
-          </p>
-          <p style={{ fontSize: '13px', color: BrandColors.text2 }}>
-            Voted as {confirmedName}
-          </p>
-        </div>
-      )}
-
       {/* ---- VOTE BUTTONS ---- */}
-      {phase !== 'done' && (
-        <div style={{
-          display: 'flex',
-          gap: Spacing.sm,
-          marginBottom: (phase === 'credentials' || phase === 'otp') ? Spacing.md : '0',
-        }}>
-          <VoteButton
-            label="Can"
-            count={initialGoingCount}
-            isSelected={selectedVote === 'going'}
-            color={BrandColors.planning}
-            onClick={() => handleVoteClick('going')}
-            onCountPress={onGuestsPress}
-            disabled={loading}
-          />
-          <VoteButton
-            label="Can't"
-            count={initialCantCount}
-            isSelected={selectedVote === 'not_going'}
-            color={BrandColors.cantVote}
-            onClick={() => handleVoteClick('not_going')}
-            onCountPress={onGuestsPress}
-            disabled={loading}
-          />
-        </div>
-      )}
+      <div style={{
+        display: 'flex',
+        gap: Spacing.sm,
+        marginBottom: (phase === 'credentials' || phase === 'otp') ? Spacing.md : '0',
+      }}>
+        <VoteButton
+          label="Can"
+          count={initialGoingCount}
+          isSelected={selectedVote === 'going'}
+          color={BrandColors.planning}
+          onClick={() => handleVoteClick('going')}
+          onCountPress={onGuestsPress}
+          disabled={loading}
+        />
+        <VoteButton
+          label="Can't"
+          count={initialCantCount}
+          isSelected={selectedVote === 'not_going'}
+          color={BrandColors.cantVote}
+          onClick={() => handleVoteClick('not_going')}
+          onCountPress={onGuestsPress}
+          disabled={loading}
+        />
+      </div>
 
       {/* ---- CREDENTIALS FORM (slides in) ---- */}
       <div
@@ -588,5 +662,71 @@ function VoteButton({
         </span>
       )}
     </button>
+  );
+}
+
+
+// ---- Stacked Avatars (matches Flutter _buildStackedAvatars) ----
+// Shows overlapping initial circles for voters
+
+function StackedAvatars({
+  goingCount,
+  cantCount,
+  confirmedVote,
+  confirmedName,
+}: {
+  goingCount: number;
+  cantCount: number;
+  confirmedVote: string | null;
+  confirmedName: string;
+}) {
+  // Show up to 5 avatars based on total relevant count
+  const totalRelevant = confirmedVote === 'going' ? goingCount : cantCount;
+  const count = Math.min(totalRelevant, 5);
+  if (count === 0) return null;
+
+  const avatarSize = 24;
+  const overlap = 6;
+  const totalWidth = avatarSize + (count - 1) * (avatarSize - overlap);
+
+  // Generate initials — first is always the confirmed user, rest are placeholders
+  const initials: string[] = [];
+  initials.push(confirmedName?.[0]?.toUpperCase() || '?');
+  for (let i = 1; i < count; i++) {
+    initials.push(String.fromCharCode(65 + ((i + 3) % 26))); // A, B, C...
+  }
+
+  return (
+    <div style={{
+      position: 'relative',
+      width: `${totalWidth}px`,
+      height: `${avatarSize}px`,
+      flexShrink: 0,
+    }}>
+      {initials.map((initial, i) => (
+        <div
+          key={i}
+          style={{
+            position: 'absolute',
+            left: `${i * (avatarSize - overlap)}px`,
+            top: 0,
+            width: `${avatarSize}px`,
+            height: `${avatarSize}px`,
+            borderRadius: '50%',
+            background: BrandColors.bg3,
+            border: `1.5px solid ${BrandColors.bg2}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '10px',
+            fontWeight: 500,
+            color: BrandColors.text2,
+            zIndex: count - i,
+          }}
+        >
+          {initial}
+        </div>
+      ))}
+    </div>
   );
 }
