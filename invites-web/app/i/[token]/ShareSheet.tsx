@@ -40,6 +40,13 @@ export default function ShareSheet({ inviteUrl, eventId, eventName, eventEmoji, 
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
+  // Lock body scroll while sheet is open
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = original; };
+  }, []);
+
   // Copy link
   const handleCopy = useCallback(async () => {
     try {
