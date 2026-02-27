@@ -20,9 +20,10 @@ interface LivingSectionProps {
   photos: EventPhoto[];
   onPhotoUploaded: (photo: EventPhoto) => void;
   onGuestsPress: () => void;
+  onSharePress: () => void;
 }
 
-export default function LivingSection({ event, token, photos, onPhotoUploaded, onGuestsPress }: LivingSectionProps) {
+export default function LivingSection({ event, token, photos, onPhotoUploaded, onGuestsPress, onSharePress }: LivingSectionProps) {
   const [showUpload, setShowUpload] = useState(false);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
 
@@ -38,6 +39,7 @@ export default function LivingSection({ event, token, photos, onPhotoUploaded, o
 
       {/* ── Action Row (matching Flutter LivingActionRow) ── */}
       <LivingActionRow
+        onSharePress={onSharePress}
         onPhotoPress={() => setShowUpload(true)}
         onGuestsPress={onGuestsPress}
       />
@@ -168,14 +170,33 @@ function TimeLeftPill({ endDatetime }: { endDatetime: string }) {
 // 2 equal-width buttons: Photo (purple) | Guests (bg2)
 
 function LivingActionRow({
+  onSharePress,
   onPhotoPress,
   onGuestsPress,
 }: {
+  onSharePress: () => void;
   onPhotoPress: () => void;
   onGuestsPress: () => void;
 }) {
   return (
     <div style={{ display: 'flex', gap: Spacing.sm }}>
+      {/* Share */}
+      <ActionButton
+        icon={
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+        }
+        label="Share"
+        backgroundColor={BrandColors.bg2}
+        textColor={BrandColors.text1}
+        onClick={onSharePress}
+      />
+
       {/* Photo — opens camera/gallery upload sheet */}
       <ActionButton
         icon={

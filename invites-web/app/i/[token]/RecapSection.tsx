@@ -20,9 +20,10 @@ interface RecapSectionProps {
   token: string;
   photos: EventPhoto[];
   onPhotoUploaded: (photo: EventPhoto) => void;
+  onSharePress: () => void;
 }
 
-export default function RecapSection({ event, token, photos, onPhotoUploaded }: RecapSectionProps) {
+export default function RecapSection({ event, token, photos, onPhotoUploaded, onSharePress }: RecapSectionProps) {
   const [showUpload, setShowUpload] = useState(false);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
 
@@ -41,8 +42,9 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded }: 
         </div>
       )}
 
-      {/* ── Upload Button Row ── */}
+      {/* ── Action Row ── */}
       <RecapActionRow
+        onSharePress={onSharePress}
         onUploadPress={() => setShowUpload(true)}
       />
 
@@ -185,12 +187,45 @@ function RecapTimerPill({ closeTime }: { closeTime: Date }) {
 // 1 button: Upload (full width, orange)
 
 function RecapActionRow({
+  onSharePress,
   onUploadPress,
 }: {
+  onSharePress: () => void;
   onUploadPress: () => void;
 }) {
   return (
     <div style={{ display: 'flex', gap: Spacing.sm }}>
+      {/* Share */}
+      <button
+        onClick={onSharePress}
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: Spacing.xxs,
+          padding: Spacing.md,
+          background: BrandColors.bg2,
+          borderRadius: Spacing.radiusMd,
+          border: 'none',
+          cursor: 'pointer',
+          color: BrandColors.text1,
+          transition: 'transform 0.15s',
+        }}
+        onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+        onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="18" cy="5" r="3" />
+          <circle cx="6" cy="12" r="3" />
+          <circle cx="18" cy="19" r="3" />
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+        </svg>
+        <span style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>Share</span>
+      </button>
+
       {/* Upload Photos */}
       <button
         onClick={onUploadPress}

@@ -5,7 +5,7 @@ import { BrandColors, Spacing, Typography } from '../../design/constants';
 import RsvpSection from './RsvpSection';
 import LivingSection from './LivingSection';
 import RecapSection from './RecapSection';
-import RecapAuthGate from './RecapAuthGate';
+import EventAuthGate from './EventAuthGate';
 import ManageGuestsSheet from './ManageGuestsSheet';
 import LazzoHeader from './LazzoHeader';
 import ShareSheet from './ShareSheet';
@@ -390,6 +390,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               photos={photos}
               onPhotoUploaded={handlePhotoUploaded}
               onGuestsPress={() => setShowGuests(true)}
+              onSharePress={() => setShowShare(true)}
             />
           </div>
         )}
@@ -402,6 +403,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               token={token}
               photos={photos}
               onPhotoUploaded={handlePhotoUploaded}
+              onSharePress={() => setShowShare(true)}
             />
           </div>
         )}
@@ -667,8 +669,8 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
       </div>
     </main>
 
-      {/* ═══════════ STICKY BOTTOM SHARE BAR (all states except ended) ═══════════ */}
-      {liveStatus !== 'ended' && (
+      {/* ═══════════ STICKY BOTTOM SHARE BAR (planning phase only) ═══════════ */}
+      {canVote && (
         <div style={{
           position: 'fixed',
           bottom: 0,
@@ -698,11 +700,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               fontSize: '16px',
               fontWeight: 600,
               color: '#FFFFFF',
-              background: isLiving
-                ? BrandColors.living
-                : isRecap
-                ? BrandColors.recap
-                : BrandColors.planning,
+              background: BrandColors.planning,
               transition: 'opacity 0.15s',
             }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
@@ -715,7 +713,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
               <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
             </svg>
-            {isLiving || isRecap ? 'Share event with friends' : 'Share invite with friends'}
+            Share invite with friends
           </button>
         </div>
       )}
@@ -733,17 +731,32 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     </>
   );
 
-  // Wrap with RecapAuthGate when the event is in recap state
+  // Wrap with EventAuthGate when the event is in living or recap state
+  if (isLiving) {
+    return (
+      <EventAuthGate
+        token={token}
+        eventId={event.event_id}
+        eventName={event.event_name}
+        eventEmoji={event.event_emoji || '🎉'}
+        eventPhase="living"
+      >
+        {pageContent}
+      </EventAuthGate>
+    );
+  }
+
   if (isRecap) {
     return (
-      <RecapAuthGate
+      <EventAuthGate
         token={token}
         eventId={event.event_id}
         eventName={event.event_name}
         eventEmoji={event.event_emoji || '📸'}
+        eventPhase="recap"
       >
         {pageContent}
-      </RecapAuthGate>
+      </EventAuthGate>
     );
   }
 
