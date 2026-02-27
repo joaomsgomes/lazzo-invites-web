@@ -112,6 +112,20 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
   const [showShare, setShowShare] = useState(false);
   const prevStatusRef = useRef(event.status);
 
+  // Track whether the current web visitor has already voted (RSVP'd)
+  const [hasVoted, setHasVoted] = useState(false);
+
+  // Check localStorage on mount for an existing vote
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`lazzo_rsvp_${token}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.vote) setHasVoted(true);
+      }
+    } catch { /* ignore */ }
+  }, [token]);
+
   // ── Analytics: track invite link opened + screen view on mount ──
   useEffect(() => {
     recordPageLoadTime();
@@ -227,6 +241,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
   );
 
   const handleVoteSubmitted = (vote: 'going' | 'not_going', guestName: string) => {
+    setHasVoted(true);
     setLocalGuests(prev => {
       const idx = prev.findIndex(g => g.name === guestName && g.source === 'web');
       if (idx >= 0) {
@@ -513,63 +528,80 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         )}
 
         {/* ═══════════ 8. ORGANIZER + GUESTS (tappable → ManageGuestsSheet) ═══════════ */}
-        <SectionCard>
-          <button
-            onClick={() => setShowGuests(true)}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
-          >
-            {/* Organizer */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: Spacing.sm,
-            }}>
-              <OrganizerAvatar
-                name={event.organizer_name}
-                avatarUrl={event.organizer_avatar}
-              />
-              <div>
-                <p style={{
-                  fontSize: '12px',
-                  color: BrandColors.text2,
+        {/* Only clickable when user has voted OR event is past voting phase (living/recap/ended) */}
+        {(() => {
+          const guestsUnlocked = hasVoted || !canVote; // canVote = pending/confirmed
+          return (
+            <SectionCard>
+              <button
+                onClick={guestsUnlocked ? () => setShowGuests(true) : undefined}
+                disabled={!guestsUnlocked}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: guestsUnlocked ? 'pointer' : 'default',
+                  textAlign: 'left',
+                  opacity: guestsUnlocked ? 1 : 0.5,
+                  transition: 'opacity 0.2s ease',
+                }}
+              >
+                {/* Organizer */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: Spacing.sm,
                 }}>
-                  Organized by
-                </p>
-                <p style={{
-                  fontSize: '14px',
-                  color: BrandColors.text1,
-                  fontWeight: 500,
-                }}>
-                  {event.organizer_name}
-                </p>
-              </div>
-            </div>
+                  <OrganizerAvatar
+                    name={event.organizer_name}
+                    avatarUrl={event.organizer_avatar}
+                  />
+                  <div>
+                    <p style={{
+                      fontSize: '12px',
+                      color: BrandColors.text2,
+                    }}>
+                      Hosted by
+                    </p>
+                    <p style={{
+                      fontSize: '14px',
+                      color: BrandColors.text1,
+                      fontWeight: 500,
+                    }}>
+                      {event.organizer_name}
+                    </p>
+                  </div>
+                </div>
 
-            {/* Guest count + chevron */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: Spacing.xs,
-            }}>
-              <span style={{ fontSize: '14px', color: BrandColors.text2 }}>
-                <strong style={{ color: BrandColors.text1 }}>{localGuests.length}</strong>
-              </span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </button>
-        </SectionCard>
+                {/* Guest count + chevron (or lock hint) */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: Spacing.xs,
+                }}>
+                  {guestsUnlocked ? (
+                    <>
+                      <span style={{ fontSize: '14px', color: BrandColors.text2 }}>
+                        <strong style={{ color: BrandColors.text1 }}>{localGuests.length}</strong>
+                      </span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: '12px', color: BrandColors.text2 }}>
+                      RSVP to see guests
+                    </span>
+                  )}
+                </div>
+              </button>
+            </SectionCard>
+          );
+        })()}
 
         {/* ── ManageGuestsSheet (full-screen overlay) ── */}
         {showGuests && (
