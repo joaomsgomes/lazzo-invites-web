@@ -353,33 +353,34 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         </div>
 
         {/* ═══════════ 2. STATUS CHIP (matching Flutter EventStatusChip) ═══════════ */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginBottom: Spacing.lg,
-          marginTop: Spacing.sm,
-        }}>
-          <span style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '6px 16px',
-            borderRadius: Spacing.radiusPill,
-            fontSize: '14px',
-            fontWeight: 500,
-            color: statusConfig.color === BrandColors.text2 ? BrandColors.text2 : '#FFFFFF',
-            background: liveStatus === 'confirmed'
-              ? BrandColors.planning
-              : liveStatus === 'living'
-              ? BrandColors.living
-              : liveStatus === 'recap'
-              ? BrandColors.recap
-              : BrandColors.bg2,
-            border: `1px solid ${liveStatus === 'pending' ? BrandColors.bg3 : 'transparent'}`,
-            transition: 'all 0.4s ease',
+        {/* Hidden for living — the TimeLeftPill already shows time remaining */}
+        {!isLiving && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: Spacing.lg,
+            marginTop: Spacing.sm,
           }}>
-            {statusConfig.label}
-          </span>
-        </div>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '6px 16px',
+              borderRadius: Spacing.radiusPill,
+              fontSize: '14px',
+              fontWeight: 500,
+              color: statusConfig.color === BrandColors.text2 ? BrandColors.text2 : '#FFFFFF',
+              background: liveStatus === 'confirmed'
+                ? BrandColors.planning
+                : liveStatus === 'recap'
+                ? BrandColors.recap
+                : BrandColors.bg2,
+              border: `1px solid ${liveStatus === 'pending' ? BrandColors.bg3 : 'transparent'}`,
+              transition: 'all 0.4s ease',
+            }}>
+              {statusConfig.label}
+            </span>
+          </div>
+        )}
 
         {/* ═══════════ 3. LIVING SECTION ═══════════ */}
         {isLiving && (
