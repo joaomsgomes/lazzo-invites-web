@@ -131,6 +131,9 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     recordPageLoadTime();
     trackInviteLinkOpened(event.event_id);
 
+    // invite_landing — top of guest funnel (fires once, regardless of phase)
+    trackScreenView('invite_landing', { event_id: event.event_id, event_phase: event.status });
+
     // Track appropriate screen_viewed based on event phase
     const screenName =
       event.status === 'living' ? 'event_living'

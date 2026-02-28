@@ -44,11 +44,9 @@ export function trackScreenView(
   properties?: Record<string, unknown>,
 ): void {
   if (typeof window === 'undefined') return;
-  posthog.capture('screen_viewed', {
-    screen_name: screenName,
-    platform: 'web',
-    ...properties,
-  });
+  const payload = { screen_name: screenName, platform: 'web', ...properties };
+  console.log(`[PostHog] screen_viewed: ${screenName}`, payload);
+  posthog.capture('screen_viewed', payload);
 }
 
 // ── Identity ────────────────────────────────────────────────────
@@ -186,10 +184,13 @@ export function trackRecapViewed(eventId: string, photoCount: number): void {
   });
 }
 
-export function trackInviteLinkShared(eventId: string, shareChannel: string): void {
+export function trackInviteLinkShared(
+  eventId: string,
+  shareMethod: 'copy_link' | 'share',
+): void {
   trackEvent('invite_link_shared', {
     event_id: eventId,
-    share_channel: shareChannel,
+    share_method: shareMethod,
     user_role: 'guest',
   });
 }

@@ -66,7 +66,7 @@ export default function ShareSheet({ inviteUrl, eventId, eventName, eventEmoji, 
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-    trackInviteLinkShared(eventId, 'copy');
+    trackInviteLinkShared(eventId, 'copy_link');
   }, [inviteUrl, eventId]);
 
   // Native share
@@ -78,7 +78,7 @@ export default function ShareSheet({ inviteUrl, eventId, eventName, eventEmoji, 
           text: `Join ${eventName} on Lazzo! 🎉`,
           url: inviteUrl,
         });
-        trackInviteLinkShared(eventId, 'native_share');
+        trackInviteLinkShared(eventId, 'share');
       } catch {
         // User cancelled
       }
