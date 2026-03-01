@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import PhotoUploadSheet from './PhotoUploadSheet';
+import ShareSheet from './ShareSheet';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -43,7 +44,10 @@ function formatDateRange(start: string | null, end: string | null): string {
 
 export default function MemorySheet({ event, photos, token, onPhotoUploaded, onSharePress, onClose }: MemorySheetProps) {
   const [showUpload, setShowUpload] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+
+  const inviteUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   // Lock body scroll
   useEffect(() => {
@@ -132,7 +136,7 @@ export default function MemorySheet({ event, photos, token, onPhotoUploaded, onS
 
         {/* Share button — right-aligned (iOS share icon) */}
         <button
-          onClick={onSharePress}
+          onClick={() => setShowShare(true)}
           style={{
             background: 'none',
             border: 'none',
@@ -342,6 +346,19 @@ export default function MemorySheet({ event, photos, token, onPhotoUploaded, onS
           onPhotoUploaded={onPhotoUploaded}
           onClose={() => setShowUpload(false)}
         />
+      )}
+
+      {/* ── Share Sheet (rendered above MemorySheet) ── */}
+      {showShare && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100 }}>
+          <ShareSheet
+            inviteUrl={inviteUrl}
+            eventId={event.event_id}
+            eventName={event.event_name}
+            eventEmoji={event.event_emoji || '📅'}
+            onClose={() => setShowShare(false)}
+          />
+        </div>
       )}
 
       {/* ── Lightbox ── */}
