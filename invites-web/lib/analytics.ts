@@ -119,12 +119,12 @@ export function trackGuestAuthCompleted(eventId: string, userId: string): void {
 
 export function trackRsvpSubmitted(
   eventId: string,
-  vote: 'going' | 'not_going',
+  vote: 'going' | 'not_going' | 'maybe',
   timeToRsvpSeconds: number,
 ): void {
   trackEvent('rsvp_submitted', {
     event_id: eventId,
-    vote: vote === 'going' ? 'going' : 'cant',
+    vote: vote === 'going' ? 'going' : vote === 'maybe' ? 'maybe' : 'cant',
     time_to_rsvp_seconds: timeToRsvpSeconds,
     user_role: 'guest',
   });

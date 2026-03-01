@@ -8,55 +8,66 @@ interface AppRedirectProps {
 
 export default function AppRedirect({ token }: AppRedirectProps) {
   useEffect(() => {
-    // Tenta abrir a app via deep link
-    const appScheme = `lazzo://invite/${token}`;
-    const universalLink = window.location.href;
-    
-    // Detecta se é mobile
+    // Detect if user is on a mobile device
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (!isMobile) {
-      // Desktop - não faz nada, mostra a página
-      return;
+    if (!isMobile) return; // Desktop — show web page
+
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
+    // ── Strategy: Use Universal Links / App Links ──
+    // The web page is already served at lazzo.app/i/{token}.
+    // iOS Universal Links and Android App Links are configured via
+    // .well-known/apple-app-site-association and .well-known/assetlinks.json.
+    //
+    // When a user taps a lazzo.app/i/{token} link from another app (WhatsApp,
+    // iMessage, etc.), the OS intercepts and opens the native app directly
+    // — this component does NOT need to do anything for that case.
+    //
+    // This component handles the case where the user opens the link in a
+    // browser (e.g., copies URL and pastes in Safari/Chrome).
+    // We try the custom scheme as a fallback.
+
+    const appScheme = `lazzo://invite/${token}`;
+
+    // Use window.location to attempt app open (more reliable than iframe)
+    // Set a short timeout — if the page is still visible, the app didn't open
+    const now = Date.now();
+
+    // For iOS, use a link click approach (more reliable than iframe)
+    if (isIOS) {
+      // Try Universal Link first (same URL but the OS may intercept)
+      // Then fall back to custom scheme
+      const link = document.createElement('a');
+      link.href = appScheme;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup after attempt
+      setTimeout(() => {
+        document.body.removeChild(link);
+      }, 100);
+    } else if (isAndroid) {
+      // Android: Use intent URL for more reliable app opening
+      const intentUrl = `intent://invite/${token}#Intent;scheme=lazzo;package=com.lazzo.app;end`;
+
+      // Try intent URL
+      const link = document.createElement('a');
+      link.href = intentUrl;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+
+      setTimeout(() => {
+        document.body.removeChild(link);
+      }, 100);
     }
 
-    // Tenta abrir na app usando custom scheme
-    // Isto funciona se a app estiver instalada
-    const now = Date.now();
-    
-    // Cria um iframe invisível para tentar abrir a app
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = appScheme;
-    document.body.appendChild(iframe);
-    
-    // Se após 2 segundos ainda estiver na página, significa que a app não está instalada
-    // ou não conseguiu abrir - nesse caso mantém a página web visível
-    const timeout = setTimeout(() => {
-      document.body.removeChild(iframe);
-      
-      // Se a página ainda está visível após 2s, mostra o conteúdo web
-      // (usuário não tem a app ou não conseguiu abrir)
-    }, 2000);
-    
-    // Se a página for escondida (app abriu), cancela o timeout
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        clearTimeout(timeout);
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Cleanup
-    return () => {
-      clearTimeout(timeout);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (document.body.contains(iframe)) {
-        document.body.removeChild(iframe);
-      }
-    };
+    // If app doesn't open within 2s, page stays visible (web fallback)
+    // No action needed — the web page is already rendering underneath
+
   }, [token]);
 
-  return null; // Este componente não renderiza nada
+  return null; // This component doesn't render anything
 }

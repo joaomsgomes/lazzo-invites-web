@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import PhotoGrid from './PhotoGrid';
 import PhotoUploadSheet from './PhotoUploadSheet';
+import MemorySheet from './MemorySheet';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -26,6 +27,7 @@ interface RecapSectionProps {
 export default function RecapSection({ event, token, photos, onPhotoUploaded, onSharePress }: RecapSectionProps) {
   const [showUpload, setShowUpload] = useState(false);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [showMemory, setShowMemory] = useState(false);
 
   // Calculate recap close time (end_datetime + 24h)
   const recapCloseTime = event.end_datetime
@@ -46,6 +48,7 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded, on
       <RecapActionRow
         onSharePress={onSharePress}
         onUploadPress={() => setShowUpload(true)}
+        onMemoryPress={() => setShowMemory(true)}
       />
 
       {/* ── Memories Card (matching Flutter MemoryPage) ── */}
@@ -64,7 +67,7 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded, on
         }}>
           <div>
             <p style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>
-              Memories
+              Photos
             </p>
             {photos.length > 0 && (
               <p style={{
@@ -110,6 +113,15 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded, on
           eventStatus="recap"
           onPhotoUploaded={onPhotoUploaded}
           onClose={() => setShowUpload(false)}
+        />
+      )}
+
+      {/* ── Memory Sheet ── */}
+      {showMemory && (
+        <MemorySheet
+          event={event}
+          photos={photos}
+          onClose={() => setShowMemory(false)}
         />
       )}
 
@@ -189,9 +201,11 @@ function RecapTimerPill({ closeTime }: { closeTime: Date }) {
 function RecapActionRow({
   onSharePress,
   onUploadPress,
+  onMemoryPress,
 }: {
   onSharePress: () => void;
   onUploadPress: () => void;
+  onMemoryPress: () => void;
 }) {
   return (
     <div style={{ display: 'flex', gap: Spacing.sm }}>
@@ -224,6 +238,35 @@ function RecapActionRow({
           <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
         </svg>
         <span style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>Share</span>
+      </button>
+
+      {/* Memory */}
+      <button
+        onClick={onMemoryPress}
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: Spacing.xxs,
+          padding: Spacing.md,
+          background: BrandColors.bg2,
+          borderRadius: Spacing.radiusMd,
+          border: 'none',
+          cursor: 'pointer',
+          color: BrandColors.text1,
+          transition: 'transform 0.15s',
+        }}
+        onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+        onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+        <span style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>Memory</span>
       </button>
 
       {/* Upload Photos */}

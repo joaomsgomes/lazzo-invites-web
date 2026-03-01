@@ -21,9 +21,10 @@ interface RsvpSectionProps {
   token: string;
   eventId: string;
   initialGoingCount: number;
+  initialMaybeCount: number;
   initialCantCount: number;
   eventStatus: string;
-  onVoteSubmitted: (vote: 'going' | 'not_going', guestName: string) => void;
+  onVoteSubmitted: (vote: 'going' | 'not_going' | 'maybe', guestName: string) => void;
   onGuestsPress?: () => void;
 }
 
@@ -33,13 +34,14 @@ export default function RsvpSection({
   token,
   eventId,
   initialGoingCount,
+  initialMaybeCount,
   initialCantCount,
   eventStatus,
   onVoteSubmitted,
   onGuestsPress,
 }: RsvpSectionProps) {
   const [phase, setPhase] = useState<RsvpPhase>('vote');
-  const [selectedVote, setSelectedVote] = useState<'going' | 'not_going' | null>(null);
+  const [selectedVote, setSelectedVote] = useState<'going' | 'not_going' | 'maybe' | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -48,6 +50,7 @@ export default function RsvpSection({
   const [confirmedVote, setConfirmedVote] = useState<string | null>(null);
   const [confirmedName, setConfirmedName] = useState<string>('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [showAlreadyVotedPopup, setShowAlreadyVotedPopup] = useState(false);
 
   // Check localStorage for existing vote AND restore stored credentials
   useEffect(() => {
@@ -78,7 +81,7 @@ export default function RsvpSection({
   // ---- Handlers ----
 
   /** Submit vote directly using stored credentials (no OTP needed) */
-  const submitVoteDirect = useCallback(async (vote: 'going' | 'not_going', storedName: string, storedEmail: string) => {
+  const submitVoteDirect = useCallback(async (vote: 'going' | 'not_going' | 'maybe', storedName: string, storedEmail: string) => {
     setLoading(true);
     setError(null);
 
@@ -121,7 +124,7 @@ export default function RsvpSection({
     }
   }, [token, onVoteSubmitted]);
 
-  const handleVoteClick = useCallback((vote: 'going' | 'not_going') => {
+  const handleVoteClick = useCallback((vote: 'going' | 'not_going' | 'maybe') => {
     setSelectedVote(vote);
     setError(null);
 
@@ -197,7 +200,43 @@ export default function RsvpSection({
         return;
       }
 
-      // 2. Update user name in public.users (best effort — may fail due to RLS)
+      // 2. Check if this email already has an RSVP for this event
+      try {
+        const checkRes = await fetch(
+          `/api/check-guest-rsvp?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email.trim())}`
+        );
+        const checkData = await checkRes.json();
+
+        if (checkData.exists && checkData.guest) {
+          // Email already voted — restore their data and show popup
+          const existingVote = checkData.guest.rsvp as 'going' | 'not_going' | 'maybe';
+          const existingName = checkData.guest.name || name.trim();
+
+          // Save to localStorage so they can re-vote without OTP
+          localStorage.setItem(
+            `lazzo_rsvp_${token}`,
+            JSON.stringify({
+              vote: existingVote,
+              name: existingName,
+              email: email.trim(),
+            })
+          );
+          saveSession(token, email.trim(), existingName);
+
+          setConfirmedVote(existingVote);
+          setConfirmedName(existingName);
+          setSelectedVote(existingVote);
+          setName(existingName);
+          onVoteSubmitted(existingVote, existingName);
+          setShowAlreadyVotedPopup(true);
+          setPhase('done');
+          return;
+        }
+      } catch {
+        // If check fails, proceed with normal flow
+      }
+
+      // 3. Update user name in public.users (best effort — may fail due to RLS)
       if (authData.session?.user?.id) {
         await supabase
           .from('users')
@@ -206,7 +245,7 @@ export default function RsvpSection({
           .then(() => { /* ignore result */ });
       }
 
-      // 3. Submit RSVP via RPC
+      // 4. Submit RSVP via RPC
       const { error: rsvpError } = await supabase.rpc('upsert_event_guest_rsvp_by_token', {
         p_token: token,
         p_guest_name: name.trim(),
@@ -288,11 +327,17 @@ export default function RsvpSection({
   }
 
   // ---- Vote color + label helpers ----
-  const voteColor = confirmedVote === 'going' ? BrandColors.planning : BrandColors.cantVote;
-  const voteLabel = confirmedVote === 'going' ? 'Can' : "Can't";
+  const voteColor = confirmedVote === 'going' ? BrandColors.planning : confirmedVote === 'maybe' ? BrandColors.warning : BrandColors.cantVote;
+  const voteLabel = confirmedVote === 'going' ? 'Can' : confirmedVote === 'maybe' ? 'Maybe' : "Can't";
   const voteIcon = confirmedVote === 'going' ? (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={voteColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ) : confirmedVote === 'maybe' ? (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={voteColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
   ) : (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={voteColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -305,7 +350,74 @@ export default function RsvpSection({
 
   if (phase === 'done') {
     return (
-      <div style={{
+      <>
+        {/* Already voted popup overlay */}
+        {showAlreadyVotedPopup && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: Spacing.md,
+          }}>
+            <div style={{
+              background: BrandColors.bg2,
+              borderRadius: Spacing.radiusMd,
+              padding: Spacing.lg,
+              maxWidth: '320px',
+              width: '100%',
+              textAlign: 'center',
+            }}>
+              <p style={{
+                fontSize: '40px',
+                margin: 0,
+                marginBottom: Spacing.sm,
+              }}>
+                ✋
+              </p>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: 700,
+                color: BrandColors.text1,
+                margin: 0,
+                marginBottom: Spacing.xs,
+              }}>
+                Already voted
+              </h3>
+              <p style={{
+                fontSize: '14px',
+                color: BrandColors.text2,
+                margin: 0,
+                marginBottom: Spacing.md,
+              }}>
+                This email has already been used to vote. Your existing vote has been restored.
+              </p>
+              <button
+                onClick={() => setShowAlreadyVotedPopup(false)}
+                style={{
+                  width: '100%',
+                  padding: `${Spacing.sm} ${Spacing.md}`,
+                  background: BrandColors.planning,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: Spacing.radiusSm,
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Ok
+              </button>
+            </div>
+          </div>
+        )}
+        <div style={{
         background: BrandColors.bg2,
         borderRadius: Spacing.radiusMd,
         overflow: 'hidden',
@@ -349,7 +461,7 @@ export default function RsvpSection({
             }}>
               <strong>{confirmedName}</strong>
               {' voted '}
-              {confirmedVote === 'going' ? 'can' : "can't"}
+              {confirmedVote === 'going' ? 'can' : confirmedVote === 'maybe' ? 'maybe' : "can't"}
             </p>
           </div>
 
@@ -361,7 +473,7 @@ export default function RsvpSection({
             margin: 0,
             marginLeft: 0,
           }}>
-            {initialGoingCount} can · 0 maybe · {initialCantCount} can&apos;t
+            {initialGoingCount} can · {initialMaybeCount} maybe · {initialCantCount} can&apos;t
           </p>
         </div>
 
@@ -395,6 +507,7 @@ export default function RsvpSection({
           </span>
         </button>
       </div>
+      </>
     );
   }
 
@@ -441,7 +554,7 @@ export default function RsvpSection({
         )}
       </div>
 
-      {/* ---- VOTE BUTTONS ---- */}
+      {/* ---- VOTE BUTTONS (3-button layout matching Flutter) ---- */}
       <div style={{
         display: 'flex',
         gap: Spacing.sm,
@@ -452,7 +565,18 @@ export default function RsvpSection({
           count={initialGoingCount}
           isSelected={selectedVote === 'going'}
           color={BrandColors.planning}
+          icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
           onClick={() => handleVoteClick('going')}
+          onCountPress={onGuestsPress}
+          disabled={loading}
+        />
+        <VoteButton
+          label="Maybe"
+          count={initialMaybeCount}
+          isSelected={selectedVote === 'maybe'}
+          color={BrandColors.warning}
+          icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>}
+          onClick={() => handleVoteClick('maybe')}
           onCountPress={onGuestsPress}
           disabled={loading}
         />
@@ -461,6 +585,7 @@ export default function RsvpSection({
           count={initialCantCount}
           isSelected={selectedVote === 'not_going'}
           color={BrandColors.cantVote}
+          icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>}
           onClick={() => handleVoteClick('not_going')}
           onCountPress={onGuestsPress}
           disabled={loading}
@@ -620,6 +745,7 @@ function VoteButton({
   count,
   isSelected,
   color,
+  icon,
   onClick,
   onCountPress,
   disabled,
@@ -628,6 +754,7 @@ function VoteButton({
   count: number;
   isSelected: boolean;
   color: string;
+  icon: React.ReactNode;
   onClick: () => void;
   onCountPress?: () => void;
   disabled?: boolean;
@@ -639,22 +766,27 @@ function VoteButton({
       style={{
         flex: 1,
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '8px',
-        padding: '12px 16px',
+        gap: '4px',
+        padding: '16px 8px',
         background: isSelected ? color : BrandColors.bg2,
         border: `1.5px solid ${isSelected ? color : BrandColors.border}`,
         borderRadius: '10px',
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.2s ease',
         opacity: disabled ? 0.6 : 1,
+        color: isSelected ? BrandColors.text1 : BrandColors.text2,
       }}
     >
+      <span style={{ color: isSelected ? '#FFFFFF' : BrandColors.text1 }}>
+        {icon}
+      </span>
       <span style={{
         fontSize: '14px',
         fontWeight: 600,
-        color: isSelected ? BrandColors.text1 : BrandColors.text2,
+        color: isSelected ? '#FFFFFF' : BrandColors.text1,
       }}>
         {label}
       </span>
@@ -677,7 +809,7 @@ function VoteButton({
             fontSize: '12px',
             fontWeight: 600,
             background: isSelected ? 'rgba(255,255,255,0.2)' : BrandColors.bg1,
-            color: isSelected ? BrandColors.text1 : BrandColors.text2,
+            color: isSelected ? '#FFFFFF' : BrandColors.text2,
             cursor: onCountPress ? 'pointer' : 'inherit',
           }}
         >

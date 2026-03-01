@@ -150,6 +150,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
 
   // Derive ALL vote counts from the single localGuests source of truth
   const goingCount = useMemo(() => localGuests.filter(g => g.rsvp === 'going').length, [localGuests]);
+  const maybeCount = useMemo(() => localGuests.filter(g => g.rsvp === 'maybe').length, [localGuests]);
   const cantCount = useMemo(() => localGuests.filter(g => g.rsvp === 'not_going').length, [localGuests]);
 
   // Handler for when a new photo is uploaded from Living/Recap sections
@@ -243,7 +244,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     [event.location_lat, event.location_lng, event.location_name]
   );
 
-  const handleVoteSubmitted = (vote: 'going' | 'not_going', guestName: string) => {
+  const handleVoteSubmitted = (vote: 'going' | 'not_going' | 'maybe', guestName: string) => {
     setHasVoted(true);
     setLocalGuests(prev => {
       const idx = prev.findIndex(g => g.name === guestName && g.source === 'web');
@@ -356,8 +357,8 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         </div>
 
         {/* ═══════════ 2. STATUS CHIP (matching Flutter EventStatusChip) ═══════════ */}
-        {/* Hidden for living — the TimeLeftPill already shows time remaining */}
-        {!isLiving && (
+        {/* Hidden for living (TimeLeftPill) and recap (RecapTimerPill) */}
+        {!isLiving && !isRecap && (
           <div style={{
             display: 'flex',
             justifyContent: 'center',
@@ -419,6 +420,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               token={token}
               eventId={event.event_id}
               initialGoingCount={goingCount}
+              initialMaybeCount={maybeCount}
               initialCantCount={cantCount}
               eventStatus={event.status}
               onVoteSubmitted={handleVoteSubmitted}

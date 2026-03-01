@@ -303,7 +303,7 @@ function AllPhotosSheet({
           Back
         </button>
         <p style={{ fontSize: '16px', fontWeight: 600, color: BrandColors.text1 }}>
-          All Photos
+          Manage Photos
         </p>
         <div style={{ width: '60px' }} /> {/* spacer for centering */}
       </div>
