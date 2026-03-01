@@ -121,6 +121,9 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded, on
         <MemorySheet
           event={event}
           photos={photos}
+          token={token}
+          onPhotoUploaded={onPhotoUploaded}
+          onSharePress={onSharePress}
           onClose={() => setShowMemory(false)}
         />
       )}
@@ -231,13 +234,40 @@ function RecapActionRow({
         onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="18" cy="5" r="3" />
-          <circle cx="6" cy="12" r="3" />
-          <circle cx="18" cy="19" r="3" />
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+          <polyline points="16 6 12 2 8 6" />
+          <line x1="12" y1="2" x2="12" y2="15" />
         </svg>
         <span style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>Share</span>
+      </button>
+
+      {/* Upload Photos (center) */}
+      <button
+        onClick={onUploadPress}
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: Spacing.xxs,
+          padding: Spacing.md,
+          background: BrandColors.recap,
+          borderRadius: Spacing.radiusMd,
+          border: 'none',
+          cursor: 'pointer',
+          color: '#FFFFFF',
+          transition: 'transform 0.15s',
+        }}
+        onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+        onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <line x1="12" y1="8" x2="12" y2="16" />
+          <line x1="8" y1="12" x2="16" y2="12" />
+        </svg>
+        <span style={{ ...Typography.labelLarge, color: '#FFFFFF' }}>Upload</span>
       </button>
 
       {/* Memory */}
@@ -267,35 +297,6 @@ function RecapActionRow({
           <polyline points="21 15 16 10 5 21" />
         </svg>
         <span style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>Memory</span>
-      </button>
-
-      {/* Upload Photos */}
-      <button
-        onClick={onUploadPress}
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: Spacing.xxs,
-          padding: Spacing.md,
-          background: BrandColors.recap,
-          borderRadius: Spacing.radiusMd,
-          border: 'none',
-          cursor: 'pointer',
-          color: '#FFFFFF',
-          transition: 'transform 0.15s',
-        }}
-        onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.97)'; }}
-        onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-          <line x1="12" y1="8" x2="12" y2="16" />
-          <line x1="8" y1="12" x2="16" y2="12" />
-        </svg>
-        <span style={{ ...Typography.labelLarge, color: '#FFFFFF' }}>Upload</span>
       </button>
     </div>
   );
