@@ -3,15 +3,15 @@ import posthog from 'posthog-js';
 // ═══════════════════════════════════════════════════════════════════
 // Analytics — PostHog helpers for Lazzo web (Vercel)
 //
-// posthog-js is initialized in app/providers/PostHogProvider.tsx.
-// Calls made before init are automatically queued by the SDK and
-// flushed once init completes — no manual isReady() check needed.
+// posthog-js is initialized at module scope in
+// app/providers/PostHogProvider.tsx (runs before any useEffect).
 //
 // DO NOT add 'use client' here — this is a plain utility module.
 // It is only imported from 'use client' components, so it is
 // already part of the client bundle.
 //
 // Follows METRICS.md taxonomy — same event names as Flutter app.
+// Each helper has exactly one console.log for debug visibility.
 // ═══════════════════════════════════════════════════════════════════
 
 // ── Core Tracking ──────────────────────────────────────────────
@@ -135,6 +135,22 @@ export function trackRsvpChanged(eventId: string, fromVote: string, toVote: stri
     event_id: eventId,
     from_vote: fromVote,
     to_vote: toVote,
+    user_role: 'guest',
+  });
+}
+
+/**
+ * Track when a guest taps a vote button (Can / Can't) on web.
+ * Fires BEFORE auth — lets us measure intent vs completion:
+ *   rsvp_intent_started → guest_auth_completed → rsvp_submitted
+ */
+export function trackRsvpIntentStarted(
+  eventId: string,
+  vote: 'going' | 'not_going',
+): void {
+  trackEvent('rsvp_intent_started', {
+    event_id: eventId,
+    vote: vote === 'going' ? 'going' : 'cant',
     user_role: 'guest',
   });
 }

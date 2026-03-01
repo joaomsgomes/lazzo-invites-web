@@ -8,6 +8,7 @@ import { saveSession } from './SessionManager';
 import {
   trackRsvpSubmitted,
   trackRsvpChanged,
+  trackRsvpIntentStarted,
   trackGuestAuthCompleted,
   identifyUser,
   getSecondsSincePageLoad,
@@ -124,6 +125,9 @@ export default function RsvpSection({
   const handleVoteClick = useCallback((vote: 'going' | 'not_going') => {
     setSelectedVote(vote);
     setError(null);
+
+    // Track intent — fires before auth, measures how many guests tap vote
+    trackRsvpIntentStarted(eventId, vote);
 
     // If we have stored credentials from a previous vote, submit directly
     if (name.trim() && email.trim()) {
