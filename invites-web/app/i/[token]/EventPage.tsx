@@ -150,6 +150,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
 
   // Derive ALL vote counts from the single localGuests source of truth
   const goingCount = useMemo(() => localGuests.filter(g => g.rsvp === 'going').length, [localGuests]);
+  const maybeCount = useMemo(() => localGuests.filter(g => g.rsvp === 'maybe').length, [localGuests]);
   const cantCount = useMemo(() => localGuests.filter(g => g.rsvp === 'not_going').length, [localGuests]);
 
   // Handler for when a new photo is uploaded from Living/Recap sections
@@ -243,7 +244,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     [event.location_lat, event.location_lng, event.location_name]
   );
 
-  const handleVoteSubmitted = (vote: 'going' | 'not_going', guestName: string) => {
+  const handleVoteSubmitted = (vote: 'going' | 'not_going' | 'maybe', guestName: string) => {
     setHasVoted(true);
     setLocalGuests(prev => {
       const idx = prev.findIndex(g => g.name === guestName && g.source === 'web');
@@ -356,8 +357,8 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         </div>
 
         {/* ═══════════ 2. STATUS CHIP (matching Flutter EventStatusChip) ═══════════ */}
-        {/* Hidden for living — the TimeLeftPill already shows time remaining */}
-        {!isLiving && (
+        {/* Hidden for living (TimeLeftPill) and recap (RecapTimerPill) */}
+        {!isLiving && !isRecap && (
           <div style={{
             display: 'flex',
             justifyContent: 'center',
@@ -419,6 +420,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               token={token}
               eventId={event.event_id}
               initialGoingCount={goingCount}
+              initialMaybeCount={maybeCount}
               initialCantCount={cantCount}
               eventStatus={event.status}
               onVoteSubmitted={handleVoteSubmitted}
@@ -711,11 +713,9 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
             onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="18" cy="5" r="3" />
-              <circle cx="6" cy="12" r="3" />
-              <circle cx="18" cy="19" r="3" />
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
             </svg>
             Share invite with friends
           </button>

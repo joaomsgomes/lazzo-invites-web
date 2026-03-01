@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import type { GuestRecord } from '../../../lib/supabase';
 
@@ -55,6 +55,12 @@ function getRsvpColor(rsvp: GuestRecord['rsvp']): string {
 
 export default function ManageGuestsSheet({ guests, eventStatus, onClose }: ManageGuestsSheetProps) {
   const [filter, setFilter] = useState<RsvpFilter>(null);
+
+  // Lock body scroll when sheet is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
   const isLivingOrRecap = eventStatus === 'living' || eventStatus === 'recap';
   const accentColor = eventStatus === 'living' ? BrandColors.living
@@ -143,7 +149,7 @@ export default function ManageGuestsSheet({ guests, eventStatus, onClose }: Mana
             {/* Living/Recap: Participants + Photos summary cards */}
             <SummaryCard
               label="Participants"
-              count={guests.length}
+              count={guests.filter(g => g.rsvp !== 'pending').length}
               color={accentColor}
             />
             <SummaryCard

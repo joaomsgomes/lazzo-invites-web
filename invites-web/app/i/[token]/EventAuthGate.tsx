@@ -228,16 +228,13 @@ export default function EventAuthGate({
           {phase === 'denied' && (
             <>
               <div style={{
-                width: '64px',
-                height: '64px',
-                background: BrandColors.bg3,
-                borderRadius: '50%',
                 margin: '0 auto',
                 marginBottom: Spacing.md,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '28px',
+                fontSize: '56px',
+                lineHeight: 1,
               }}>
                 🔒
               </div>
@@ -267,6 +264,7 @@ export default function EventAuthGate({
                 style={{
                   width: '100%',
                   justifyContent: 'center',
+                  background: accentColor,
                 }}
               >
                 Try a different email
@@ -278,16 +276,13 @@ export default function EventAuthGate({
           {phase === 'email' && (
             <>
               <div style={{
-                width: '64px',
-                height: '64px',
-                background: BrandColors.bg3,
-                borderRadius: '50%',
                 margin: '0 auto',
                 marginBottom: Spacing.md,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '28px',
+                fontSize: '56px',
+                lineHeight: 1,
               }}>
                 {eventEmoji}
               </div>
