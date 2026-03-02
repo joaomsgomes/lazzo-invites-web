@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import { createBrowserSupabase } from '../../../lib/supabase';
 import OtpInput from './OtpInput';
-import { trackGuestAuthCompleted, identifyUser } from '../../../lib/analytics';
+import { trackGuestAuthCompleted, trackAuthStarted, identifyUser } from '../../../lib/analytics';
 
 // ═══════════════════════════════════════════════════════════════════
 // RecapAuthGate — OTP verification gate for recap event pages
@@ -116,6 +116,7 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
       }
 
       if (mountedRef.current) {
+        trackAuthStarted(eventId);
         setPhase('otp');
         setOtpCode('');
         setResendCooldown(60);

@@ -192,11 +192,33 @@ export function trackPhotoUploadFailed(
   });
 }
 
-export function trackRecapViewed(eventId: string, photoCount: number): void {
-  trackEvent('recap_viewed', {
+/**
+ * Track when auth flow starts (OTP sent, user arrives at verification page).
+ * Fires in RsvpSection, PhotoUploadSheet, RecapAuthGate — any OTP flow.
+ */
+export function trackAuthStarted(
+  eventId: string,
+  authType: 'guest_lightweight' = 'guest_lightweight',
+): void {
+  trackEvent('auth_started', {
     event_id: eventId,
-    viewer_role: 'guest',
-    photo_count: photoCount,
+    auth_type: authType,
+  });
+}
+
+/**
+ * Track when a user views the memory page (MemorySheet on web).
+ * Replaces the removed recap_viewed event — richer context via view_source + event_phase.
+ */
+export function trackMemoryViewed(
+  eventId: string,
+  viewSource: 'recap' | 'memory_ready' | 'home',
+  eventPhase: string,
+): void {
+  trackEvent('memory_viewed', {
+    event_id: eventId,
+    view_source: viewSource,
+    event_phase: eventPhase,
   });
 }
 

@@ -10,6 +10,7 @@ import {
   trackRsvpChanged,
   trackRsvpIntentStarted,
   trackGuestAuthCompleted,
+  trackAuthStarted,
   identifyUser,
   getSecondsSincePageLoad,
 } from '../../../lib/analytics';
@@ -172,6 +173,9 @@ export default function RsvpSection({
         return;
       }
 
+      // Analytics: OTP sent → auth flow started
+      trackAuthStarted(eventId);
+
       setPhase('otp');
       setOtpCode('');
       setResendCooldown(60);
@@ -228,6 +232,13 @@ export default function RsvpSection({
             })
           );
           saveSession(token, email.trim(), existingName);
+
+          // Analytics: identify user + track auth even for already-voted users
+          // The OTP was verified above, so the user IS authenticated
+          if (authData.session?.user?.id) {
+            identifyUser(authData.session.user.id, { role: 'guest' });
+            trackGuestAuthCompleted(eventId, authData.session.user.id);
+          }
 
           setConfirmedVote(existingVote);
           setConfirmedName(existingName);

@@ -5,6 +5,7 @@ import { BrandColors, Spacing, Typography } from '../../design/constants';
 import PhotoUploadSheet from './PhotoUploadSheet';
 import ShareSheet from './ShareSheet';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
+import { trackMemoryViewed } from '../../../lib/analytics';
 
 // ═══════════════════════════════════════════════════════════════════
 // MemorySheet — Full-screen overlay matching Flutter's MemoryPage
@@ -53,6 +54,12 @@ export default function MemorySheet({ event, photos, token, onPhotoUploaded, onS
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  // Analytics: track memory_viewed on mount
+  useEffect(() => {
+    trackMemoryViewed(event.event_id, 'recap', event.status);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const subtitle = [
