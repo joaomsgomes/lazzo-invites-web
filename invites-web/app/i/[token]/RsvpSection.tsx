@@ -129,8 +129,10 @@ export default function RsvpSection({
     setSelectedVote(vote);
     setError(null);
 
-    // Track intent — fires before auth, measures how many guests tap vote
-    trackRsvpIntentStarted(eventId, vote);
+    // Track intent — fires before auth, measures how many guests tap vote (only going/not_going)
+    if (vote === 'going' || vote === 'not_going') {
+      trackRsvpIntentStarted(eventId, vote);
+    }
 
     // If we have stored credentials from a previous vote, submit directly
     if (name.trim() && email.trim()) {
