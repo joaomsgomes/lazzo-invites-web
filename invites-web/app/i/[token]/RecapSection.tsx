@@ -5,6 +5,7 @@ import { BrandColors, Spacing, Typography } from '../../design/constants';
 import PhotoGrid from './PhotoGrid';
 import PhotoUploadSheet from './PhotoUploadSheet';
 import MemorySheet from './MemorySheet';
+import ManagePhotosSheet from './ManagePhotosSheet';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -20,14 +21,17 @@ interface RecapSectionProps {
   event: EventData;
   token: string;
   photos: EventPhoto[];
+  coverPhotoId: string | null;
+  onCoverChanged: (photoId: string | null) => void;
   onPhotoUploaded: (photo: EventPhoto) => void;
   onSharePress: () => void;
 }
 
-export default function RecapSection({ event, token, photos, onPhotoUploaded, onSharePress }: RecapSectionProps) {
+export default function RecapSection({ event, token, photos, coverPhotoId, onCoverChanged, onPhotoUploaded, onSharePress }: RecapSectionProps) {
   const [showUpload, setShowUpload] = useState(false);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [showMemory, setShowMemory] = useState(false);
+  const [showManagePhotos, setShowManagePhotos] = useState(false);
 
   // Calculate recap close time (end_datetime + 24h)
   const recapCloseTime = event.end_datetime
@@ -81,7 +85,7 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded, on
           </div>
           {photos.length > 0 && (
             <div
-              onClick={() => setShowAllPhotos(true)}
+              onClick={() => setShowManagePhotos(true)}
               style={{ cursor: 'pointer', padding: 4 }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -125,6 +129,22 @@ export default function RecapSection({ event, token, photos, onPhotoUploaded, on
           onPhotoUploaded={onPhotoUploaded}
           onSharePress={onSharePress}
           onClose={() => setShowMemory(false)}
+        />
+      )}
+
+      {/* ── Manage Photos Sheet ── */}
+      {showManagePhotos && (
+        <ManagePhotosSheet
+          photos={photos}
+          token={token}
+          coverPhotoId={coverPhotoId}
+          accentColor={BrandColors.recap}
+          onCoverChanged={onCoverChanged}
+          onAddPhoto={() => {
+            setShowManagePhotos(false);
+            setShowUpload(true);
+          }}
+          onClose={() => setShowManagePhotos(false)}
         />
       )}
 

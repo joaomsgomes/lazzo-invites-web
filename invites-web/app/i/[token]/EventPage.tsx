@@ -108,6 +108,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
   const [localGuests, setLocalGuests] = useState<GuestRecord[]>(guests);
   const [liveStatus, setLiveStatus] = useState(event.status);
   const [photos, setPhotos] = useState<EventPhoto[]>(initialPhotos);
+  const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
   const [showGuests, setShowGuests] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const prevStatusRef = useRef(event.status);
@@ -167,7 +168,11 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
       try {
         const res = await fetch(`/api/event-photos?token=${encodeURIComponent(token)}`);
         if (!res.ok) return;
-        const { photos: dbPhotos } = await res.json() as { photos: EventPhoto[] };
+        const { photos: dbPhotos, coverPhotoId: dbCoverId } = await res.json() as { photos: EventPhoto[]; coverPhotoId: string | null };
+
+        // Update cover photo ID
+        if (dbCoverId !== undefined) setCoverPhotoId(dbCoverId);
+
         if (!dbPhotos || dbPhotos.length === 0) return;
 
         // Merge: keep any client-only photos (just uploaded, not yet in DB) + all DB photos
@@ -229,6 +234,31 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     const interval = setInterval(poll, 15_000);
     return () => clearInterval(interval);
   }, [token, liveStatus]);
+
+  // ── Poll guests every 30s for fresh data ──
+  useEffect(() => {
+    const fetchGuests = async () => {
+      try {
+        const res = await fetch(`/api/event-guests?token=${encodeURIComponent(token)}`);
+        if (!res.ok) return;
+        const { guests: dbGuests } = await res.json() as { guests: GuestRecord[] };
+        if (!dbGuests || dbGuests.length === 0) return;
+        setLocalGuests(dbGuests);
+      } catch {
+        // Silent — graceful degradation
+      }
+    };
+
+    // Initial fetch after 5s (give SSR data time to render first)
+    const initialTimer = setTimeout(fetchGuests, 5_000);
+
+    // Then poll every 30s
+    const interval = setInterval(fetchGuests, 30_000);
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, [token]);
 
   // Derive display values from liveStatus (reacts to status changes)
   const statusConfig = useMemo(() => getStatusConfig(liveStatus), [liveStatus]);
@@ -393,6 +423,8 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               event={event}
               token={token}
               photos={photos}
+              coverPhotoId={coverPhotoId}
+              onCoverChanged={setCoverPhotoId}
               onPhotoUploaded={handlePhotoUploaded}
               onGuestsPress={() => setShowGuests(true)}
               onSharePress={() => setShowShare(true)}
@@ -407,6 +439,8 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               event={event}
               token={token}
               photos={photos}
+              coverPhotoId={coverPhotoId}
+              onCoverChanged={setCoverPhotoId}
               onPhotoUploaded={handlePhotoUploaded}
               onSharePress={() => setShowShare(true)}
             />
@@ -616,6 +650,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
           <ManageGuestsSheet
             guests={localGuests}
             eventStatus={liveStatus}
+            photoCount={photos.length}
             onClose={() => setShowGuests(false)}
           />
         )}

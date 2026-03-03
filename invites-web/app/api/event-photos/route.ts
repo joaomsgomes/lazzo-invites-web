@@ -49,8 +49,17 @@ export async function GET(req: NextRequest) {
       .order('captured_at', { ascending: false })
       .limit(50);
 
+    // 2b. Get cover_photo_id from events table
+    const { data: eventRow } = await serviceClient
+      .from('events')
+      .select('cover_photo_id')
+      .eq('id', linkData.event_id)
+      .single();
+
+    const coverPhotoId = eventRow?.cover_photo_id ?? null;
+
     if (photosError || !rows || rows.length === 0) {
-      return NextResponse.json({ photos: [] });
+      return NextResponse.json({ photos: [], coverPhotoId });
     }
 
     // 3. Generate signed URLs
@@ -67,8 +76,8 @@ export async function GET(req: NextRequest) {
       captured_at: row.captured_at as string,
     }));
 
-    return NextResponse.json({ photos });
+    return NextResponse.json({ photos, coverPhotoId });
   } catch {
-    return NextResponse.json({ photos: [] });
+    return NextResponse.json({ photos: [], coverPhotoId: null });
   }
 }

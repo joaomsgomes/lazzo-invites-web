@@ -11,6 +11,7 @@ type RsvpFilter = 'going' | 'maybe' | 'not_going' | null;
 interface ManageGuestsSheetProps {
   guests: GuestRecord[];
   eventStatus: string;
+  photoCount?: number;
   onClose: () => void;
 }
 
@@ -53,7 +54,7 @@ function getRsvpColor(rsvp: GuestRecord['rsvp']): string {
 
 // ── ManageGuestsSheet ──
 
-export default function ManageGuestsSheet({ guests, eventStatus, onClose }: ManageGuestsSheetProps) {
+export default function ManageGuestsSheet({ guests, eventStatus, photoCount = 0, onClose }: ManageGuestsSheetProps) {
   const [filter, setFilter] = useState<RsvpFilter>(null);
 
   // Lock body scroll when sheet is open
@@ -153,8 +154,8 @@ export default function ManageGuestsSheet({ guests, eventStatus, onClose }: Mana
               color={accentColor}
             />
             <SummaryCard
-              label="Votes"
-              count={counts.going + counts.maybe + counts.not_going}
+              label="Photos"
+              count={photoCount}
               color={accentColor}
             />
           </>

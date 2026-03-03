@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import PhotoGrid from './PhotoGrid';
 import PhotoUploadSheet from './PhotoUploadSheet';
+import ManagePhotosSheet from './ManagePhotosSheet';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -18,14 +19,17 @@ interface LivingSectionProps {
   event: EventData;
   token: string;
   photos: EventPhoto[];
+  coverPhotoId: string | null;
+  onCoverChanged: (photoId: string | null) => void;
   onPhotoUploaded: (photo: EventPhoto) => void;
   onGuestsPress: () => void;
   onSharePress: () => void;
 }
 
-export default function LivingSection({ event, token, photos, onPhotoUploaded, onGuestsPress, onSharePress }: LivingSectionProps) {
+export default function LivingSection({ event, token, photos, coverPhotoId, onCoverChanged, onPhotoUploaded, onGuestsPress, onSharePress }: LivingSectionProps) {
   const [showUpload, setShowUpload] = useState(false);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [showManagePhotos, setShowManagePhotos] = useState(false);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.md }}>
@@ -74,7 +78,7 @@ export default function LivingSection({ event, token, photos, onPhotoUploaded, o
           </div>
           {photos.length > 0 && (
             <div
-              onClick={() => setShowAllPhotos(true)}
+              onClick={() => setShowManagePhotos(true)}
               style={{ cursor: 'pointer', padding: 4 }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -106,6 +110,22 @@ export default function LivingSection({ event, token, photos, onPhotoUploaded, o
           eventStatus="living"
           onPhotoUploaded={onPhotoUploaded}
           onClose={() => setShowUpload(false)}
+        />
+      )}
+
+      {/* ── Manage Photos Sheet ── */}
+      {showManagePhotos && (
+        <ManagePhotosSheet
+          photos={photos}
+          token={token}
+          coverPhotoId={coverPhotoId}
+          accentColor={BrandColors.living}
+          onCoverChanged={onCoverChanged}
+          onAddPhoto={() => {
+            setShowManagePhotos(false);
+            setShowUpload(true);
+          }}
+          onClose={() => setShowManagePhotos(false)}
         />
       )}
 
