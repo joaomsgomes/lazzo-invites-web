@@ -16,7 +16,7 @@ import {
   trackInviteLinkOpened,
   trackScreenView,
   trackEventPhaseChanged,
-  trackRecapViewed,
+  trackMemoryViewed,
   recordPageLoadTime,
 } from '../../../lib/analytics';
 
@@ -142,9 +142,9 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
       : 'event_detail';
     trackScreenView(screenName, { event_id: event.event_id, event_phase: event.status });
 
-    // Track recap_viewed for recap events
+    // Track memory_viewed for recap events (replaces removed recap_viewed)
     if (event.status === 'recap') {
-      trackRecapViewed(event.event_id, initialPhotos.length);
+      trackMemoryViewed(event.event_id, 'recap', event.status);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -218,9 +218,9 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
             : 'event_detail';
           trackScreenView(newScreen, { event_id: event.event_id, event_phase: d.status });
 
-          // Track recap_viewed when transitioning to recap
+          // Track memory_viewed when transitioning to recap (replaces removed recap_viewed)
           if (d.status === 'recap') {
-            trackRecapViewed(event.event_id, photos.length);
+            trackMemoryViewed(event.event_id, 'recap', d.status);
           }
 
           prevStatusRef.current = d.status;

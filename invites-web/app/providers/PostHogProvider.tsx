@@ -6,35 +6,27 @@ import posthog from 'posthog-js';
 // ═══════════════════════════════════════════════════════════════════
 // PostHogProvider — Single 'use client' boundary for PostHog init.
 //
-// This is the ONLY place posthog-js is initialized. There must be
-// NO separate PostHog "array snippet" or <script> tag anywhere.
+// CRITICAL: posthog.init() runs at MODULE SCOPE (not useEffect).
+// React runs child effects before parent effects, so if init were
+// inside useEffect, page-level analytics (invite_landing, etc.)
+// would fire before PostHog is initialized and be silently dropped.
 //
-// posthog-js queues posthog.capture() calls made before init and
-// flushes them automatically once init completes. So child components
-// firing events in their useEffect (even before this one runs) works
-// correctly — events are buffered and sent after init.
+// Module-scope init guarantees PostHog is ready before any
+// component effect runs. This is the PostHog-recommended approach
+// for Next.js App Router.
 // ═══════════════════════════════════════════════════════════════════
 
 const IS_DEBUG = process.env.NEXT_PUBLIC_POSTHOG_DEBUG === 'true';
 
-export default function PostHogProvider({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-    const host = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com';
+// ── Module-scope init (runs once on import, before any useEffect) ──
+if (typeof window !== 'undefined') {
+  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+  const host = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com';
 
-    if (!key) {
-      console.warn('[PostHog] NEXT_PUBLIC_POSTHOG_KEY not set — analytics disabled');
-      return;
-    }
-
-    if (posthog.__loaded) {
-      if (IS_DEBUG) console.log('[PostHog] already initialized');
-      return;
-    }
-
-    console.log(
-      `[PostHog] init — host: ${host}, key present: ${!!key}`,
-    );
+  if (!key) {
+    console.warn('[PostHog] NEXT_PUBLIC_POSTHOG_KEY not set — analytics disabled');
+  } else if (!posthog.__loaded) {
+    console.log(`[PostHog] init — host: ${host}, key present: ${!!key}`);
 
     posthog.init(key, {
       api_host: host,
@@ -47,9 +39,6 @@ export default function PostHogProvider({ children }: { children: React.ReactNod
       capture_pageleave: false,
 
       // ── Prevent 404s to eu-assets.i.posthog.com/array/.../config.js ──
-      // The SDK's RequestRouter tries to fetch remote config from the
-      // assets CDN, which returns 404 for self-serve EU projects.
-      // Disabling decide + external deps stops those requests entirely.
       advanced_disable_decide: true,
       advanced_disable_feature_flags: true,
       disable_external_dependency_loading: true,
@@ -60,21 +49,24 @@ export default function PostHogProvider({ children }: { children: React.ReactNod
 
       loaded: (ph) => {
         console.log(`[PostHog] ready — distinct_id: ${ph.get_distinct_id()}`);
-
-        // ── Debug mode (set NEXT_PUBLIC_POSTHOG_DEBUG=true on Vercel) ──
-        if (IS_DEBUG) {
-          // Expose on window so DevTools can call window.posthog.capture(...)
-          (window as unknown as Record<string, unknown>).posthog = ph;
-          if (typeof ph.debug === 'function') {
-            ph.debug(true);
-          }
-          console.log(
-            '[PostHog] DEBUG mode ON — window.posthog available.\n' +
-            'Test: window.posthog.capture("debug_web_test", { t: Date.now() })',
-          );
-        }
       },
     });
+  }
+}
+
+export default function PostHogProvider({ children }: { children: React.ReactNode }) {
+  // ── Debug mode (set NEXT_PUBLIC_POSTHOG_DEBUG=true on Vercel) ──
+  useEffect(() => {
+    if (!IS_DEBUG || typeof window === 'undefined' || !posthog.__loaded) return;
+
+    (window as unknown as Record<string, unknown>).posthog = posthog;
+    if (typeof posthog.debug === 'function') {
+      posthog.debug(true);
+    }
+    console.log(
+      '[PostHog] DEBUG mode ON — window.posthog available.\n' +
+      'Test: window.posthog.capture("debug_web_test", { t: Date.now() })',
+    );
   }, []);
 
   return <>{children}</>;

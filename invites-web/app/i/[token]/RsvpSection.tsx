@@ -8,7 +8,9 @@ import { saveSession } from './SessionManager';
 import {
   trackRsvpSubmitted,
   trackRsvpChanged,
+  trackRsvpIntentStarted,
   trackGuestAuthCompleted,
+  trackAuthStarted,
   identifyUser,
   getSecondsSincePageLoad,
 } from '../../../lib/analytics';
@@ -128,6 +130,11 @@ export default function RsvpSection({
     setSelectedVote(vote);
     setError(null);
 
+    // Track intent — fires before auth, measures how many guests tap vote (only going/not_going)
+    if (vote === 'going' || vote === 'not_going') {
+      trackRsvpIntentStarted(eventId, vote);
+    }
+
     // If we have stored credentials from a previous vote, submit directly
     if (name.trim() && email.trim()) {
       submitVoteDirect(vote, name.trim(), email.trim());
@@ -165,6 +172,9 @@ export default function RsvpSection({
         setError(otpError.message);
         return;
       }
+
+      // Analytics: OTP sent → auth flow started
+      trackAuthStarted(eventId);
 
       setPhase('otp');
       setOtpCode('');
@@ -222,6 +232,13 @@ export default function RsvpSection({
             })
           );
           saveSession(token, email.trim(), existingName);
+
+          // Analytics: identify user + track auth even for already-voted users
+          // The OTP was verified above, so the user IS authenticated
+          if (authData.session?.user?.id) {
+            identifyUser(authData.session.user.id, { role: 'guest' });
+            trackGuestAuthCompleted(eventId, authData.session.user.id);
+          }
 
           setConfirmedVote(existingVote);
           setConfirmedName(existingName);

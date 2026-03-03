@@ -12,6 +12,7 @@ import {
   trackPhotoUploaded,
   trackPhotoUploadFailed,
   trackGuestAuthCompleted,
+  trackAuthStarted,
   identifyUser,
 } from '../../../lib/analytics';
 
@@ -144,7 +145,10 @@ export default function PhotoUploadSheet({
         options: { shouldCreateUser: true },
       });
       if (otpError) throw otpError;
-      if (mountedRef.current) setPhase('auth-otp');
+      if (mountedRef.current) {
+        trackAuthStarted(eventId);
+        setPhase('auth-otp');
+      }
     } catch (e: unknown) {
       if (mountedRef.current) {
         setError(e instanceof Error ? e.message : 'Failed to send code');
