@@ -184,9 +184,9 @@ export default function EndedSection({
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '4px',
+            gap: '8px',
             padding: `0 ${Spacing.md}`,
-            marginTop: coverPhotos.length > 0 ? '4px' : '0',
+            marginTop: coverPhotos.length > 0 ? '8px' : '0',
             paddingBottom: Spacing.md,
           }}>
             {gridPhotos.map((photo, i) => (
@@ -197,7 +197,7 @@ export default function EndedSection({
                   position: 'relative',
                   aspectRatio: '4/5',
                   overflow: 'hidden',
-                  borderRadius: '4px',
+                  borderRadius: '6px',
                   cursor: 'pointer',
                   background: BrandColors.bg3,
                 }}
@@ -261,7 +261,7 @@ function CoverMosaic({
       style={{
         width: '100%',
         aspectRatio: '16/9',
-        borderRadius: Spacing.radiusMd,
+        borderRadius: '16px',
         overflow: 'hidden',
         cursor: 'pointer',
         background: BrandColors.bg3,

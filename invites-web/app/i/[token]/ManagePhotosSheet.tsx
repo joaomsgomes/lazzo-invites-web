@@ -43,6 +43,7 @@ export default function ManagePhotosSheet({
   const [localCoverId, setLocalCoverId] = useState<string | null>(coverPhotoId);
   const [settingCover, setSettingCover] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [showCoverSelector, setShowCoverSelector] = useState(false);
 
   // Lock body scroll
   useEffect(() => {
@@ -159,7 +160,10 @@ export default function ManagePhotosSheet({
 
         {/* ── Cover Selection Card (matching Flutter CoverSelectionCard) ── */}
         {photos.length > 0 && (
-          <div style={{ marginBottom: Spacing.lg }}>
+          <div
+            onClick={() => setShowCoverSelector(true)}
+            style={{ marginBottom: Spacing.lg, cursor: 'pointer' }}
+          >
             <CoverSelectionCard
               coverPhoto={coverPhoto}
               accentColor={accentColor}
@@ -232,17 +236,16 @@ export default function ManagePhotosSheet({
             gridTemplateColumns: `repeat(${COLUMNS}, 1fr)`,
             gap: `${GAP}px`,
           }}>
-            {photos.map((photo) => {
-              const isCover = photo.photo_id === localCoverId;
+            {photos.map((photo, idx) => {
               return (
                 <div
                   key={photo.photo_id}
-                  onClick={() => handleSetCover(photo.photo_id)}
+                  onClick={() => setLightboxIdx(idx)}
                   style={{
                     aspectRatio: '4/5',
                     borderRadius: Spacing.radiusSm,
                     overflow: 'hidden',
-                    cursor: settingCover ? 'wait' : 'pointer',
+                    cursor: 'pointer',
                     position: 'relative',
                     background: BrandColors.bg3,
                   }}
@@ -308,6 +311,20 @@ export default function ManagePhotosSheet({
           currentIdx={lightboxIdx}
           onIndexChange={setLightboxIdx}
           onClose={() => setLightboxIdx(null)}
+        />
+      )}
+
+      {/* ── Cover Selector Bottom Sheet ── */}
+      {showCoverSelector && (
+        <CoverSelectorSheet
+          photos={photos}
+          currentCoverId={localCoverId}
+          onSelect={async (photoId) => {
+            await handleSetCover(photoId);
+            setShowCoverSelector(false);
+          }}
+          onClose={() => setShowCoverSelector(false)}
+          settingCover={settingCover}
         />
       )}
     </div>
@@ -543,6 +560,143 @@ function PhotoLightbox({
         fontWeight: 500,
       }}>
         {currentIdx + 1} / {photos.length}
+      </div>
+    </div>
+  );
+}
+
+
+// ── Cover Selector Bottom Sheet ────────────────────────────────
+// Matches Flutter _showPhotoSelector: modal with 3-col grid to pick cover
+
+function CoverSelectorSheet({
+  photos,
+  currentCoverId,
+  onSelect,
+  onClose,
+  settingCover,
+}: {
+  photos: EventPhoto[];
+  currentCoverId: string | null;
+  onSelect: (photoId: string) => void;
+  onClose: () => void;
+  settingCover: boolean;
+}) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1500,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%',
+          maxWidth: '520px',
+          maxHeight: '70vh',
+          background: BrandColors.bg2,
+          borderRadius: `${Spacing.radiusMd} ${Spacing.radiusMd} 0 0`,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Handle bar */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          padding: `${Spacing.sm} 0`,
+        }}>
+          <div style={{
+            width: '36px',
+            height: '4px',
+            borderRadius: '2px',
+            background: BrandColors.text2,
+            opacity: 0.4,
+          }} />
+        </div>
+
+        {/* Title */}
+        <p style={{
+          ...Typography.titleMediumEmph,
+          color: BrandColors.text1,
+          textAlign: 'center',
+          margin: 0,
+          marginBottom: Spacing.md,
+        }}>
+          Select a cover
+        </p>
+
+        {/* Photo Grid */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: `0 ${Spacing.md}`,
+          paddingBottom: `max(env(safe-area-inset-bottom), ${Spacing.md})`,
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: `${GAP}px`,
+          }}>
+            {photos.map((photo) => {
+              const isSelected = photo.photo_id === currentCoverId;
+              return (
+                <div
+                  key={photo.photo_id}
+                  onClick={() => !settingCover && onSelect(photo.photo_id)}
+                  style={{
+                    aspectRatio: '4/5',
+                    borderRadius: Spacing.radiusSm,
+                    overflow: 'hidden',
+                    cursor: settingCover ? 'wait' : 'pointer',
+                    position: 'relative',
+                    background: BrandColors.bg3,
+                    border: isSelected ? `2px solid ${BrandColors.text1}` : '2px solid transparent',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <img
+                    src={photo.url}
+                    alt=""
+                    loading="lazy"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+                  {isSelected && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '4px',
+                      right: '4px',
+                      width: '22px',
+                      height: '22px',
+                      borderRadius: '50%',
+                      background: BrandColors.text1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={BrandColors.bg1} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

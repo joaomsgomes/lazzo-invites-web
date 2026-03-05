@@ -549,7 +549,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         )}
 
         {/* ═══════════ 7. DATE & TIME CARD (matching Flutter DateTimeWidget) ═══════════ */}
-        {hasDate && !isRecap && !isEnded && (
+        {hasDate && !isLiving && !isRecap && !isEnded && (
           <SectionCard>
             <SectionHeader title="Date & Time" />
             <div style={{
@@ -808,6 +808,20 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         eventName={event.event_name}
         eventEmoji={event.event_emoji || '📸'}
         eventPhase="recap"
+      >
+        {pageContent}
+      </EventAuthGate>
+    );
+  }
+
+  if (isEnded) {
+    return (
+      <EventAuthGate
+        token={token}
+        eventId={event.event_id}
+        eventName={event.event_name}
+        eventEmoji={event.event_emoji || '📸'}
+        eventPhase="ended"
       >
         {pageContent}
       </EventAuthGate>

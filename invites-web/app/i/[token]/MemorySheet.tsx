@@ -255,8 +255,8 @@ export default function MemorySheet({ event, photos, token, coverPhotoId, onPhot
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '4px',
-                marginTop: coverPhotos.length > 0 ? '4px' : '0',
+                gap: '8px',
+                marginTop: coverPhotos.length > 0 ? '8px' : '0',
               }}>
                 {gridPhotos.map((photo, i) => (
                   <div
@@ -266,7 +266,7 @@ export default function MemorySheet({ event, photos, token, coverPhotoId, onPhot
                       position: 'relative',
                       aspectRatio: '4/5',
                       overflow: 'hidden',
-                      borderRadius: '4px',
+                      borderRadius: '6px',
                       cursor: 'pointer',
                       background: BrandColors.bg3,
                     }}
@@ -405,7 +405,7 @@ function CoverMosaic({
         style={{
           width: '100%',
           aspectRatio: '16/9',
-          borderRadius: Spacing.radiusMd,
+          borderRadius: '16px',
           overflow: 'hidden',
           cursor: 'pointer',
           background: BrandColors.bg3,
@@ -425,8 +425,8 @@ function CoverMosaic({
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '4px',
-        borderRadius: Spacing.radiusMd,
+        gap: '8px',
+        borderRadius: '6px',
         overflow: 'hidden',
       }}>
         {photos.map((photo, i) => (
@@ -437,6 +437,7 @@ function CoverMosaic({
               aspectRatio: '4/5',
               overflow: 'hidden',
               cursor: 'pointer',
+              borderRadius: '6px',
               background: BrandColors.bg3,
             }}
           >
@@ -457,9 +458,9 @@ function CoverMosaic({
       display: 'grid',
       gridTemplateColumns: '2fr 1fr',
       gridTemplateRows: '1fr 1fr',
-      gap: '4px',
+      gap: '8px',
       height: '280px',
-      borderRadius: Spacing.radiusMd,
+      borderRadius: '6px',
       overflow: 'hidden',
     }}>
       <div

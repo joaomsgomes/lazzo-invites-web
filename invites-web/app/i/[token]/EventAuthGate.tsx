@@ -54,8 +54,8 @@ interface EventAuthGateProps {
   eventId: string;
   eventName: string;
   eventEmoji: string;
-  /** 'living' or 'recap' — affects copy and accent color */
-  eventPhase: 'living' | 'recap';
+  /** 'living', 'recap', or 'ended' — affects copy and accent color */
+  eventPhase: 'living' | 'recap' | 'ended';
   children: React.ReactNode;
 }
 
@@ -190,7 +190,7 @@ export default function EventAuthGate({
   if (isAuthorized) return <>{children}</>;
 
   // Color based on phase
-  const accentColor = eventPhase === 'living' ? BrandColors.living : BrandColors.recap;
+  const accentColor = eventPhase === 'living' ? BrandColors.living : eventPhase === 'recap' ? BrandColors.recap : BrandColors.text2;
   const phaseLabel = eventPhase === 'living' ? 'live event' : 'memories';
 
   // Not authorized → show overlay
