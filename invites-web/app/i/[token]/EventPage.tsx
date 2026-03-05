@@ -195,13 +195,20 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     return () => clearInterval(interval);
   }, [token, liveStatus]);
 
-  // ── Poll event status every 15s to detect host actions (confirm, etc.) ──
+  // ── Poll event status to detect transitions (confirm, living, recap, ended) ──
   // Uses the token-gated RPC so it works without user authentication.
+  // Polls every 15s normally, every 5s when near a known transition time.
+  // Also sets precise timers at start_datetime and end_datetime for instant reaction.
   useEffect(() => {
-    // Only poll for statuses that can change (pending → confirmed, etc.)
+    // No polling needed for ended events
     if (liveStatus === 'ended') return;
 
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+    let transitionTimeout: ReturnType<typeof setTimeout> | null = null;
+    let destroyed = false;
+
     const poll = async () => {
+      if (destroyed) return;
       try {
         const supabase = createBrowserSupabase();
         const { data } = await supabase
@@ -219,7 +226,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
             : 'event_detail';
           trackScreenView(newScreen, { event_id: event.event_id, event_phase: d.status });
 
-          // Track memory_viewed when transitioning to recap (replaces removed recap_viewed)
+          // Track memory_viewed when transitioning to recap
           if (d.status === 'recap') {
             trackMemoryViewed(event.event_id, 'recap', d.status);
           }
@@ -232,8 +239,47 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
       }
     };
 
-    const interval = setInterval(poll, 15_000);
-    return () => clearInterval(interval);
+    // Determine the next transition datetime for this status
+    // pending/confirmed → living at start_datetime
+    // living → recap at end_datetime
+    const nextTransitionIso =
+      (liveStatus === 'pending' || liveStatus === 'confirmed') ? event.start_datetime
+      : liveStatus === 'living' ? event.end_datetime
+      : null;
+
+    const nextTransitionMs = nextTransitionIso ? new Date(nextTransitionIso).getTime() : null;
+    const now = Date.now();
+
+    // If within 2 min of transition, poll faster (5s); otherwise normal 15s
+    const isNearTransition = nextTransitionMs != null && nextTransitionMs - now < 2 * 60 * 1000 && nextTransitionMs - now > 0;
+    const pollMs = isNearTransition ? 5_000 : 15_000;
+
+    pollInterval = setInterval(poll, pollMs);
+
+    // Set a precise timer at the transition moment to trigger an immediate poll
+    if (nextTransitionMs != null && nextTransitionMs > now) {
+      const delay = nextTransitionMs - now + 1_000; // +1s buffer for server processing
+      transitionTimeout = setTimeout(() => {
+        if (destroyed) return;
+        poll();
+        // After the transition moment, switch to fast polling for 2 minutes
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(poll, 5_000);
+        // Return to normal polling after 2 minutes
+        setTimeout(() => {
+          if (destroyed || !pollInterval) return;
+          clearInterval(pollInterval);
+          pollInterval = setInterval(poll, 15_000);
+        }, 2 * 60 * 1000);
+      }, delay);
+    }
+
+    return () => {
+      destroyed = true;
+      if (pollInterval) clearInterval(pollInterval);
+      if (transitionTimeout) clearTimeout(transitionTimeout);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, liveStatus]);
 
   // ── Poll guests every 30s for fresh data ──
