@@ -126,6 +126,7 @@ export default function RecapSection({ event, token, photos, coverPhotoId, onCov
           event={event}
           photos={photos}
           token={token}
+          coverPhotoId={coverPhotoId}
           onPhotoUploaded={onPhotoUploaded}
           onSharePress={onSharePress}
           onClose={() => setShowMemory(false)}
@@ -172,12 +173,12 @@ function RecapTimerPill({ closeTime }: { closeTime: Date }) {
 
     if (hours > 0) {
       return {
-        text: minutes > 0 ? `Closes in ${hours}h ${minutes}m` : `Closes in ${hours}h`,
+        text: minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`,
         closingSoon,
       };
     }
     if (minutes > 0) {
-      return { text: `Closes in ${minutes}m`, closingSoon };
+      return { text: `${minutes}m`, closingSoon };
     }
     return { text: 'Closing soon', closingSoon: true };
   }, [closeTime]);

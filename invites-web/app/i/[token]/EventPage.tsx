@@ -5,6 +5,7 @@ import { BrandColors, Spacing, Typography } from '../../design/constants';
 import RsvpSection from './RsvpSection';
 import LivingSection from './LivingSection';
 import RecapSection from './RecapSection';
+import EndedSection from './EndedSection';
 import EventAuthGate from './EventAuthGate';
 import ManageGuestsSheet from './ManageGuestsSheet';
 import LazzoHeader from './LazzoHeader';
@@ -264,6 +265,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
   const statusConfig = useMemo(() => getStatusConfig(liveStatus), [liveStatus]);
   const isLiving = liveStatus === 'living';
   const isRecap = liveStatus === 'recap';
+  const isEnded = liveStatus === 'ended';
   const canVote = liveStatus === 'pending' || liveStatus === 'confirmed';
   const hasLocation = Boolean(event.location_name);
   const hasCoords = Boolean(event.location_lat && event.location_lng);
@@ -387,8 +389,8 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         </div>
 
         {/* ═══════════ 2. STATUS CHIP (matching Flutter EventStatusChip) ═══════════ */}
-        {/* Hidden for living (TimeLeftPill) and recap (RecapTimerPill) */}
-        {!isLiving && !isRecap && (
+        {/* Hidden for living (TimeLeftPill), recap (RecapTimerPill), and ended (EndedSection) */}
+        {!isLiving && !isRecap && !isEnded && (
           <div style={{
             display: 'flex',
             justifyContent: 'center',
@@ -442,6 +444,19 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               coverPhotoId={coverPhotoId}
               onCoverChanged={setCoverPhotoId}
               onPhotoUploaded={handlePhotoUploaded}
+              onSharePress={() => setShowShare(true)}
+            />
+          </div>
+        )}
+
+        {/* ═══════════ 3c. ENDED SECTION ═══════════ */}
+        {isEnded && (
+          <div style={{ marginBottom: Spacing.md }}>
+            <EndedSection
+              event={event}
+              token={token}
+              photos={photos}
+              coverPhotoId={coverPhotoId}
               onSharePress={() => setShowShare(true)}
             />
           </div>
@@ -534,7 +549,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
         )}
 
         {/* ═══════════ 7. DATE & TIME CARD (matching Flutter DateTimeWidget) ═══════════ */}
-        {hasDate && !isRecap && (
+        {hasDate && !isRecap && !isEnded && (
           <SectionCard>
             <SectionHeader title="Date & Time" />
             <div style={{

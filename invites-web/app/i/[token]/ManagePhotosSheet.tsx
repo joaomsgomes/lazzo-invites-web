@@ -245,8 +245,6 @@ export default function ManagePhotosSheet({
                     cursor: settingCover ? 'wait' : 'pointer',
                     position: 'relative',
                     background: BrandColors.bg3,
-                    border: isCover ? `2px solid ${accentColor}` : '2px solid transparent',
-                    transition: 'border-color 0.2s',
                   }}
                 >
                   <img
@@ -260,46 +258,6 @@ export default function ManagePhotosSheet({
                       display: 'block',
                     }}
                   />
-                  {/* Cover badge */}
-                  {isCover && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '6px',
-                      left: '6px',
-                      background: accentColor,
-                      borderRadius: Spacing.radiusPill,
-                      padding: '2px 8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="#FFFFFF" stroke="none">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </svg>
-                      <span style={{ fontSize: '10px', fontWeight: 600, color: '#FFFFFF' }}>
-                        Cover
-                      </span>
-                    </div>
-                  )}
-                  {/* Tap indicator when not the cover */}
-                  {!isCover && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '6px',
-                      left: '6px',
-                      background: 'rgba(0,0,0,0.4)',
-                      borderRadius: '50%',
-                      width: '24px',
-                      height: '24px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </svg>
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -383,7 +341,6 @@ function CoverSelectionCard({
           aspectRatio: '1',
           borderRadius: Spacing.radiusMd,
           overflow: 'hidden',
-          border: `2px solid ${accentColor}`,
           background: BrandColors.bg3,
         }}>
           <img
@@ -396,33 +353,35 @@ function CoverSelectionCard({
               display: 'block',
             }}
           />
+          {/* Remove cover button — matches Flutter: 28×28 80% black circle with white close */}
+          {onRemove && (
+            <button
+              onClick={onRemove}
+              disabled={settingCover}
+              style={{
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: 'rgba(0, 0, 0, 0.8)',
+                border: 'none',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: settingCover ? 'wait' : 'pointer',
+                padding: 0,
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
         </div>
-        {/* Remove cover button */}
-        {onRemove && (
-          <button
-            onClick={onRemove}
-            disabled={settingCover}
-            style={{
-              position: 'absolute',
-              top: '-8px',
-              right: '-8px',
-              width: '28px',
-              height: '28px',
-              borderRadius: '50%',
-              background: BrandColors.cantVote,
-              border: '2px solid ' + BrandColors.bg1,
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: settingCover ? 'wait' : 'pointer',
-              fontSize: '14px',
-              fontWeight: 600,
-            }}
-          >
-            ✕
-          </button>
-        )}
         <p style={{
           textAlign: 'center',
           fontSize: '12px',
@@ -435,7 +394,7 @@ function CoverSelectionCard({
     );
   }
 
-  // Placeholder
+  // Placeholder — matches Flutter CoverSelectionCard placeholder
   return (
     <div style={{
       width: '100%',
@@ -445,7 +404,7 @@ function CoverSelectionCard({
       <div style={{
         aspectRatio: '1',
         borderRadius: Spacing.radiusMd,
-        border: `2px dashed ${BrandColors.border}`,
+        border: `1px solid ${BrandColors.border}`,
         background: BrandColors.bg2,
         display: 'flex',
         flexDirection: 'column',
@@ -453,18 +412,18 @@ function CoverSelectionCard({
         justifyContent: 'center',
         gap: Spacing.xs,
       }}>
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <polyline points="21 15 16 10 5 21" />
+        {/* Star outline icon — matching Flutter Icons.star_outline */}
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
         <p style={{
-          fontSize: '13px',
+          fontSize: '14px',
+          fontWeight: 500,
           color: BrandColors.text2,
           textAlign: 'center',
           padding: `0 ${Spacing.md}`,
         }}>
-          Tap a photo below to set as cover
+          Tap to select a cover
         </p>
       </div>
       <p style={{

@@ -53,6 +53,7 @@ export default function RsvpSection({
   const [confirmedName, setConfirmedName] = useState<string>('');
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showAlreadyVotedPopup, setShowAlreadyVotedPopup] = useState(false);
+  const [isAppUser, setIsAppUser] = useState(false);
 
   // Check localStorage for existing vote AND restore stored credentials
   useEffect(() => {
@@ -66,6 +67,7 @@ export default function RsvpSection({
         setEmail(parsed.email || '');
         setPhase('done');
         setSelectedVote(parsed.vote);
+        if (parsed.source === 'app') setIsAppUser(true);
       }
     } catch { /* ignore */ }
   }, [token]);
@@ -84,6 +86,16 @@ export default function RsvpSection({
 
   /** Submit vote directly using stored credentials (no OTP needed) */
   const submitVoteDirect = useCallback(async (vote: 'going' | 'not_going' | 'maybe', storedName: string, storedEmail: string) => {
+    // App users can't change their vote from the web — just show current vote
+    if (isAppUser) {
+      setConfirmedVote(confirmedVote || vote);
+      setConfirmedName(storedName);
+      setPhase('done');
+      setSelectedVote((confirmedVote as 'going' | 'not_going' | 'maybe' | null) || vote);
+      setShowAlreadyVotedPopup(true);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -124,7 +136,7 @@ export default function RsvpSection({
     } finally {
       setLoading(false);
     }
-  }, [token, onVoteSubmitted]);
+  }, [token, onVoteSubmitted, isAppUser, confirmedVote]);
 
   const handleVoteClick = useCallback((vote: 'going' | 'not_going' | 'maybe') => {
     setSelectedVote(vote);
@@ -221,6 +233,9 @@ export default function RsvpSection({
           // Email already voted — restore their data and show popup
           const existingVote = checkData.guest.rsvp as 'going' | 'not_going' | 'maybe';
           const existingName = checkData.guest.name || name.trim();
+          const isFromApp = checkData.source === 'app';
+
+          if (isFromApp) setIsAppUser(true);
 
           // Save to localStorage so they can re-vote without OTP
           localStorage.setItem(
@@ -229,6 +244,7 @@ export default function RsvpSection({
               vote: existingVote,
               name: existingName,
               email: email.trim(),
+              ...(isFromApp ? { source: 'app' } : {}),
             })
           );
           saveSession(token, email.trim(), existingName);
@@ -413,7 +429,9 @@ export default function RsvpSection({
                 margin: 0,
                 marginBottom: Spacing.md,
               }}>
-                This email has already been used to vote. Your existing vote has been restored.
+                {isAppUser
+                  ? 'This email is linked to a Lazzo account that already voted via the app. To change your vote, use the app.'
+                  : 'This email has already been used to vote. Your existing vote has been restored.'}
               </p>
               <button
                 onClick={() => setShowAlreadyVotedPopup(false)}

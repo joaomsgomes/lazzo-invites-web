@@ -20,6 +20,7 @@ interface MemorySheetProps {
   event: EventData;
   photos: EventPhoto[];
   token: string;
+  coverPhotoId?: string | null;
   onPhotoUploaded: (photo: EventPhoto) => void;
   onSharePress: () => void;
   onClose: () => void;
@@ -43,7 +44,7 @@ function formatDateRange(start: string | null, end: string | null): string {
   return s.toLocaleDateString('en-GB', opts);
 }
 
-export default function MemorySheet({ event, photos, token, onPhotoUploaded, onSharePress, onClose }: MemorySheetProps) {
+export default function MemorySheet({ event, photos, token, coverPhotoId, onPhotoUploaded, onSharePress, onClose }: MemorySheetProps) {
   const [showUpload, setShowUpload] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
@@ -74,9 +75,13 @@ export default function MemorySheet({ event, photos, token, onPhotoUploaded, onS
   if (participantCount > 0) statsItems.push(`${participantCount} participant${participantCount !== 1 ? 's' : ''}`);
   const statsText = statsItems.join(' · ');
 
-  // Cover mosaic: first 3 photos
-  const coverPhotos = photos.slice(0, 3);
-  const gridPhotos = photos.slice(3);
+  // Cover mosaic: only use selected cover photo (matches Flutter memory.coverPhotos / memory.gridPhotos)
+  const coverPhotos = coverPhotoId
+    ? photos.filter(p => p.photo_id === coverPhotoId)
+    : [];
+  const gridPhotos = coverPhotoId
+    ? photos.filter(p => p.photo_id !== coverPhotoId)
+    : photos;
 
   return (
     <div style={{
@@ -251,7 +256,7 @@ export default function MemorySheet({ event, photos, token, onPhotoUploaded, onS
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
                 gap: '4px',
-                marginTop: '4px',
+                marginTop: coverPhotos.length > 0 ? '4px' : '0',
               }}>
                 {gridPhotos.map((photo, i) => (
                   <div
@@ -259,7 +264,7 @@ export default function MemorySheet({ event, photos, token, onPhotoUploaded, onS
                     onClick={() => setLightboxIdx(coverPhotos.length + i)}
                     style={{
                       position: 'relative',
-                      aspectRatio: '1',
+                      aspectRatio: '4/5',
                       overflow: 'hidden',
                       borderRadius: '4px',
                       cursor: 'pointer',

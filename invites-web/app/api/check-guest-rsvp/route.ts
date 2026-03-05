@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ exists: false });
     }
 
-    // 2. Check for existing RSVP with this email
+    // 2. Check for existing web RSVP with this email
     const { data: rsvp, error: rsvpError } = await serviceClient
       .from('event_guest_rsvps')
       .select('id, guest_name, rsvp, updated_at')
@@ -52,18 +52,56 @@ export async function GET(req: NextRequest) {
       .limit(1)
       .maybeSingle();
 
-    if (rsvpError || !rsvp) {
-      return NextResponse.json({ exists: false });
+    if (!rsvpError && rsvp) {
+      return NextResponse.json({
+        exists: true,
+        guest: {
+          name: rsvp.guest_name,
+          rsvp: rsvp.rsvp,
+          votedAt: rsvp.updated_at,
+        },
+      });
     }
 
-    return NextResponse.json({
-      exists: true,
-      guest: {
-        name: rsvp.guest_name,
-        rsvp: rsvp.rsvp,
-        votedAt: rsvp.updated_at,
-      },
-    });
+    // 3. Check if this email belongs to an app user who is already an event participant
+    const normalizedEmail = email.trim().toLowerCase();
+    const { data: appUser } = await serviceClient
+      .from('users')
+      .select('id, name')
+      .eq('email', normalizedEmail)
+      .limit(1)
+      .maybeSingle();
+
+    if (appUser) {
+      const { data: participant } = await serviceClient
+        .from('event_participants')
+        .select('user_id, rsvp, confirmed_at')
+        .eq('pevent_id', linkData.event_id)
+        .eq('user_id', appUser.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (participant) {
+        // Map app RSVP enum (yes/no/maybe/pending) to web format (going/not_going/maybe)
+        const rsvpMap: Record<string, string> = {
+          yes: 'going',
+          no: 'not_going',
+          maybe: 'maybe',
+          pending: 'going', // treat pending as going (they accepted the invite)
+        };
+        return NextResponse.json({
+          exists: true,
+          source: 'app',
+          guest: {
+            name: appUser.name,
+            rsvp: rsvpMap[participant.rsvp] || 'going',
+            votedAt: participant.confirmed_at,
+          },
+        });
+      }
+    }
+
+    return NextResponse.json({ exists: false });
   } catch {
     return NextResponse.json({ exists: false });
   }
