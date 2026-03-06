@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import type { EventPhoto } from '../../../lib/supabase';
 
@@ -204,7 +204,7 @@ export default function ManagePhotosSheet({
             background: BrandColors.bg2,
             borderRadius: Spacing.radiusMd,
           }}>
-            <div style={{ fontSize: '32px', marginBottom: Spacing.sm }}>📷</div>
+            <div style={{ fontSize: '32px', marginBottom: Spacing.sm }}></div>
             <p style={{ fontSize: '16px', fontWeight: 600, color: BrandColors.text1, marginBottom: Spacing.xxs }}>
               No photos yet
             </p>
@@ -470,10 +470,52 @@ function PhotoLightbox({
   onIndexChange: (idx: number) => void;
   onClose: () => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isUserScrolling = useRef(false);
+  const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    const prevTouchAction = document.body.style.touchAction;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    document.body.style.touchAction = 'none';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouchAction;
+    };
   }, []);
+
+  // Scroll to currentIdx on mount and when currentIdx changes programmatically
+  useEffect(() => {
+    if (scrollRef.current && !isUserScrolling.current) {
+      const container = scrollRef.current;
+      const targetX = currentIdx * container.clientWidth;
+      container.scrollTo({ left: targetX, behavior: 'smooth' });
+    }
+  }, [currentIdx]);
+
+  // Detect which photo is visible after scroll ends, update index
+  const handleScroll = useCallback(() => {
+    isUserScrolling.current = true;
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+    scrollTimeout.current = setTimeout(() => {
+      isUserScrolling.current = false;
+      if (scrollRef.current) {
+        const container = scrollRef.current;
+        const w = container.clientWidth;
+        if (w > 0) {
+          const newIdx = Math.round(container.scrollLeft / w);
+          const clamped = Math.max(0, Math.min(newIdx, photos.length - 1));
+          onIndexChange(clamped);
+        }
+      }
+    }, 100);
+  }, [photos.length, onIndexChange]);
+
+  const goTo = useCallback((idx: number) => {
+    isUserScrolling.current = false;
+    onIndexChange(idx);
+  }, [onIndexChange]);
 
   return (
     <div style={{
@@ -483,8 +525,7 @@ function PhotoLightbox({
       background: 'rgba(0,0,0,0.95)',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
+      touchAction: 'none',
     }}>
       {/* Close */}
       <button
@@ -510,40 +551,78 @@ function PhotoLightbox({
         ✕
       </button>
 
-      {/* Photo */}
-      <img
-        src={photos[currentIdx].url}
-        alt=""
+      {/* Horizontally scrollable photo strip */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
         style={{
-          maxWidth: '90%',
-          maxHeight: '80%',
-          objectFit: 'contain',
-          borderRadius: Spacing.radiusSm,
+          flex: 1,
+          display: 'flex',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
         }}
-      />
+      >
+        {photos.map((photo) => (
+          <div
+            key={photo.photo_id}
+            style={{
+              flex: '0 0 100%',
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              scrollSnapAlign: 'center',
+              padding: Spacing.md,
+              boxSizing: 'border-box',
+            }}
+          >
+            <img
+              src={photo.url}
+              alt=""
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+                borderRadius: Spacing.radiusSm,
+                userSelect: 'none',
+                pointerEvents: 'none',
+              } as React.CSSProperties}
+              draggable={false}
+            />
+          </div>
+        ))}
+      </div>
 
-      {/* Nav buttons */}
+      {/* Nav: Previous */}
       {currentIdx > 0 && (
         <button
-          onClick={() => onIndexChange(currentIdx - 1)}
+          onClick={() => goTo(currentIdx - 1)}
           style={{
             position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
             background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff',
             width: '40px', height: '40px', borderRadius: '50%', fontSize: '20px',
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 2001,
           }}
         >
           ‹
         </button>
       )}
+      {/* Nav: Next */}
       {currentIdx < photos.length - 1 && (
         <button
-          onClick={() => onIndexChange(currentIdx + 1)}
+          onClick={() => goTo(currentIdx + 1)}
           style={{
             position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
             background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff',
             width: '40px', height: '40px', borderRadius: '50%', fontSize: '20px',
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 2001,
           }}
         >
           ›
@@ -554,13 +633,21 @@ function PhotoLightbox({
       <div style={{
         position: 'absolute',
         bottom: 'max(env(safe-area-inset-bottom), 20px)',
+        left: 0,
+        right: 0,
         textAlign: 'center',
         fontSize: '14px',
         color: 'rgba(255,255,255,0.7)',
         fontWeight: 500,
+        zIndex: 2001,
       }}>
         {currentIdx + 1} / {photos.length}
       </div>
+
+      {/* Hide scrollbar */}
+      <style>{`
+        div[style*="scroll-snap-type"]::-webkit-scrollbar { display: none; }
+      `}</style>
     </div>
   );
 }

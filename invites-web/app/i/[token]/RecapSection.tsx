@@ -5,6 +5,7 @@ import { BrandColors, Spacing, Typography } from '../../design/constants';
 import PhotoGrid from './PhotoGrid';
 import PhotoUploadSheet from './PhotoUploadSheet';
 import ManagePhotosSheet from './ManagePhotosSheet';
+import MemorySheet from './MemorySheet';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -30,6 +31,7 @@ export default function RecapSection({ event, token, photos, coverPhotoId, onCov
   const [showUpload, setShowUpload] = useState(false);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [showManagePhotos, setShowManagePhotos] = useState(false);
+  const [showMemory, setShowMemory] = useState(false);
 
   // Calculate recap close time (end_datetime + 24h)
   const recapCloseTime = event.end_datetime
@@ -50,7 +52,7 @@ export default function RecapSection({ event, token, photos, coverPhotoId, onCov
       <RecapActionRow
         onSharePress={onSharePress}
         onUploadPress={() => setShowUpload(true)}
-        onMemoryPress={() => setShowManagePhotos(true)}
+        onMemoryPress={() => setShowMemory(true)}
       />
 
       {/* ── Memories Card (matching Flutter MemoryPage) ── */}
@@ -132,6 +134,19 @@ export default function RecapSection({ event, token, photos, coverPhotoId, onCov
             setShowUpload(true);
           }}
           onClose={() => setShowManagePhotos(false)}
+        />
+      )}
+
+      {/* ── Memory Sheet (full memory page like in the app) ── */}
+      {showMemory && (
+        <MemorySheet
+          event={event}
+          photos={photos}
+          token={token}
+          coverPhotoId={coverPhotoId}
+          onPhotoUploaded={onPhotoUploaded}
+          onSharePress={onSharePress}
+          onClose={() => setShowMemory(false)}
         />
       )}
 
