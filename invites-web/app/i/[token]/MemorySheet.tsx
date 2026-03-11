@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import PhotoUploadSheet from './PhotoUploadSheet';
 import ShareSheet from './ShareSheet';
+import HybridPhotoGrid from './HybridPhotoGrid';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
 import { trackMemoryViewed } from '../../../lib/analytics';
 
@@ -250,40 +251,16 @@ export default function MemorySheet({ event, photos, token, coverPhotoId, onPhot
               <CoverMosaic photos={coverPhotos} onPhotoTap={setLightboxIdx} />
             )}
 
-            {/* Grid photos (3-column, matching Flutter HybridPhotoGrid) */}
+            {/* Grid photos (matching Flutter HybridPhotoGrid algorithm) */}
             {gridPhotos.length > 0 && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '8px',
-                marginTop: coverPhotos.length > 0 ? '8px' : '0',
-              }}>
-                {gridPhotos.map((photo, i) => (
-                  <div
-                    key={photo.photo_id}
-                    onClick={() => setLightboxIdx(coverPhotos.length + i)}
-                    style={{
-                      position: 'relative',
-                      aspectRatio: '4/5',
-                      overflow: 'hidden',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      background: BrandColors.bg3,
-                    }}
-                  >
-                    <img
-                      src={photo.url}
-                      alt=""
-                      loading="lazy"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block',
-                      }}
-                    />
-                  </div>
-                ))}
+              <div style={{ marginTop: coverPhotos.length > 0 ? '8px' : '0' }}>
+                <HybridPhotoGrid
+                  photos={gridPhotos}
+                  onPhotoTap={(photoId) => {
+                    const idx = photos.findIndex(p => p.photo_id === photoId);
+                    if (idx >= 0) setLightboxIdx(idx);
+                  }}
+                />
               </div>
             )}
           </div>

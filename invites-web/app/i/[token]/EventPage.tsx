@@ -386,8 +386,8 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
             {event.event_name}
           </h1>
 
-          {/* Location Info Row — clickable → Google Maps */}
-          {hasLocation && (
+          {/* Location Info Row — clickable → Google Maps (hidden when ended) */}
+          {hasLocation && !isEnded && (
             <a
               href={hasCoords || event.location_name ? mapsUrl : undefined}
               target="_blank"
@@ -412,8 +412,8 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
             </a>
           )}
 
-          {/* Date Info Row */}
-          {hasDate && (
+          {/* Date Info Row (hidden when ended) */}
+          {hasDate && !isEnded && (
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -524,8 +524,8 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
           </div>
         )}
 
-        {/* ═══════════ 5. DETAILS CARD (matching Flutter EventDetailsWidget) ═══════════ */}
-        {event.event_description && (
+        {/* ═══════════ 5. DETAILS CARD (hidden when ended) ═══════════ */}
+        {event.event_description && !isEnded && (
           <SectionCard>
             <SectionHeader title="Details" />
             <div style={{ marginTop: Spacing.sm }}>
@@ -540,8 +540,8 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
           </SectionCard>
         )}
 
-        {/* ═══════════ 6. LOCATION CARD (matching Flutter LocationWidget) ═══════════ */}
-        {hasLocation && (
+        {/* ═══════════ 6. LOCATION CARD (hidden when ended) ═══════════ */}
+        {hasLocation && !isEnded && (
           <SectionCard>
             <div>
               <SectionHeader title="Location" />
@@ -630,9 +630,9 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
           </SectionCard>
         )}
 
-        {/* ═══════════ 8. ORGANIZER + GUESTS (tappable → ManageGuestsSheet) ═══════════ */}
+        {/* ═══════════ 8. ORGANIZER + GUESTS (hidden when ended) ═══════════ */}
         {/* Only clickable when user has voted OR event is past voting phase (living/recap/ended) */}
-        {(() => {
+        {!isEnded && (() => {
           const guestsUnlocked = hasVoted || !canVote; // canVote = pending/confirmed
           return (
             <SectionCard>
