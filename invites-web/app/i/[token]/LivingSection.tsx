@@ -151,9 +151,9 @@ function TimeLeftPill({ endDatetime }: { endDatetime: string }) {
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
     if (hours > 0) {
-      return minutes > 0 ? `${hours}h ${minutes}m left` : `${hours}h left`;
+      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
     }
-    if (minutes > 0) return `${minutes}m left`;
+    if (minutes > 0) return `${minutes}m`;
     return 'Ending soon';
   }, [endDatetime]);
 

@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import PhotoGrid from './PhotoGrid';
 import PhotoUploadSheet from './PhotoUploadSheet';
-import MemorySheet from './MemorySheet';
 import ManagePhotosSheet from './ManagePhotosSheet';
+import MemorySheet from './MemorySheet';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -30,8 +30,8 @@ interface RecapSectionProps {
 export default function RecapSection({ event, token, photos, coverPhotoId, onCoverChanged, onPhotoUploaded, onSharePress }: RecapSectionProps) {
   const [showUpload, setShowUpload] = useState(false);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
-  const [showMemory, setShowMemory] = useState(false);
   const [showManagePhotos, setShowManagePhotos] = useState(false);
+  const [showMemory, setShowMemory] = useState(false);
 
   // Calculate recap close time (end_datetime + 24h)
   const recapCloseTime = event.end_datetime
@@ -120,17 +120,6 @@ export default function RecapSection({ event, token, photos, coverPhotoId, onCov
         />
       )}
 
-      {/* ── Memory Sheet ── */}
-      {showMemory && (
-        <MemorySheet
-          event={event}
-          photos={photos}
-          token={token}
-          onPhotoUploaded={onPhotoUploaded}
-          onSharePress={onSharePress}
-          onClose={() => setShowMemory(false)}
-        />
-      )}
 
       {/* ── Manage Photos Sheet ── */}
       {showManagePhotos && (
@@ -145,6 +134,19 @@ export default function RecapSection({ event, token, photos, coverPhotoId, onCov
             setShowUpload(true);
           }}
           onClose={() => setShowManagePhotos(false)}
+        />
+      )}
+
+      {/* ── Memory Sheet (full memory page like in the app) ── */}
+      {showMemory && (
+        <MemorySheet
+          event={event}
+          photos={photos}
+          token={token}
+          coverPhotoId={coverPhotoId}
+          onPhotoUploaded={onPhotoUploaded}
+          onSharePress={onSharePress}
+          onClose={() => setShowMemory(false)}
         />
       )}
 
@@ -172,12 +174,12 @@ function RecapTimerPill({ closeTime }: { closeTime: Date }) {
 
     if (hours > 0) {
       return {
-        text: minutes > 0 ? `Closes in ${hours}h ${minutes}m` : `Closes in ${hours}h`,
+        text: minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`,
         closingSoon,
       };
     }
     if (minutes > 0) {
-      return { text: `Closes in ${minutes}m`, closingSoon };
+      return { text: `${minutes}m`, closingSoon };
     }
     return { text: 'Closing soon', closingSoon: true };
   }, [closeTime]);

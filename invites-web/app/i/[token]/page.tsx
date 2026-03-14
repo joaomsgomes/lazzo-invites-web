@@ -196,9 +196,9 @@ export default async function InvitePage({
     );
   }
 
-  // ── Fetch photos for living/recap events ──
+  // ── Fetch photos for living/recap/ended events ──
   let photos: EventPhoto[] = [];
-  if (event.status === 'living' || event.status === 'recap') {
+  if (event.status === 'living' || event.status === 'recap' || event.status === 'ended') {
     photos = await fetchEventPhotos(token);
   }
 

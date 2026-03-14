@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import PhotoUploadSheet from './PhotoUploadSheet';
 import ShareSheet from './ShareSheet';
+import HybridPhotoGrid from './HybridPhotoGrid';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
 import { trackMemoryViewed } from '../../../lib/analytics';
 
@@ -20,6 +21,7 @@ interface MemorySheetProps {
   event: EventData;
   photos: EventPhoto[];
   token: string;
+  coverPhotoId?: string | null;
   onPhotoUploaded: (photo: EventPhoto) => void;
   onSharePress: () => void;
   onClose: () => void;
@@ -43,7 +45,7 @@ function formatDateRange(start: string | null, end: string | null): string {
   return s.toLocaleDateString('en-GB', opts);
 }
 
-export default function MemorySheet({ event, photos, token, onPhotoUploaded, onSharePress, onClose }: MemorySheetProps) {
+export default function MemorySheet({ event, photos, token, coverPhotoId, onPhotoUploaded, onSharePress, onClose }: MemorySheetProps) {
   const [showUpload, setShowUpload] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
@@ -74,9 +76,13 @@ export default function MemorySheet({ event, photos, token, onPhotoUploaded, onS
   if (participantCount > 0) statsItems.push(`${participantCount} participant${participantCount !== 1 ? 's' : ''}`);
   const statsText = statsItems.join(' · ');
 
-  // Cover mosaic: first 3 photos
-  const coverPhotos = photos.slice(0, 3);
-  const gridPhotos = photos.slice(3);
+  // Cover mosaic: only use selected cover photo (matches Flutter memory.coverPhotos / memory.gridPhotos)
+  const coverPhotos = coverPhotoId
+    ? photos.filter(p => p.photo_id === coverPhotoId)
+    : [];
+  const gridPhotos = coverPhotoId
+    ? photos.filter(p => p.photo_id !== coverPhotoId)
+    : photos;
 
   return (
     <div style={{
@@ -245,40 +251,16 @@ export default function MemorySheet({ event, photos, token, onPhotoUploaded, onS
               <CoverMosaic photos={coverPhotos} onPhotoTap={setLightboxIdx} />
             )}
 
-            {/* Grid photos (3-column, matching Flutter HybridPhotoGrid) */}
+            {/* Grid photos (matching Flutter HybridPhotoGrid algorithm) */}
             {gridPhotos.length > 0 && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '4px',
-                marginTop: '4px',
-              }}>
-                {gridPhotos.map((photo, i) => (
-                  <div
-                    key={photo.photo_id}
-                    onClick={() => setLightboxIdx(coverPhotos.length + i)}
-                    style={{
-                      position: 'relative',
-                      aspectRatio: '1',
-                      overflow: 'hidden',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      background: BrandColors.bg3,
-                    }}
-                  >
-                    <img
-                      src={photo.url}
-                      alt=""
-                      loading="lazy"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block',
-                      }}
-                    />
-                  </div>
-                ))}
+              <div style={{ marginTop: coverPhotos.length > 0 ? '8px' : '0' }}>
+                <HybridPhotoGrid
+                  photos={gridPhotos}
+                  onPhotoTap={(photoId) => {
+                    const idx = photos.findIndex(p => p.photo_id === photoId);
+                    if (idx >= 0) setLightboxIdx(idx);
+                  }}
+                />
               </div>
             )}
           </div>
@@ -400,7 +382,7 @@ function CoverMosaic({
         style={{
           width: '100%',
           aspectRatio: '16/9',
-          borderRadius: Spacing.radiusMd,
+          borderRadius: '16px',
           overflow: 'hidden',
           cursor: 'pointer',
           background: BrandColors.bg3,
@@ -420,8 +402,8 @@ function CoverMosaic({
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '4px',
-        borderRadius: Spacing.radiusMd,
+        gap: '8px',
+        borderRadius: '6px',
         overflow: 'hidden',
       }}>
         {photos.map((photo, i) => (
@@ -432,6 +414,7 @@ function CoverMosaic({
               aspectRatio: '4/5',
               overflow: 'hidden',
               cursor: 'pointer',
+              borderRadius: '6px',
               background: BrandColors.bg3,
             }}
           >
@@ -452,9 +435,9 @@ function CoverMosaic({
       display: 'grid',
       gridTemplateColumns: '2fr 1fr',
       gridTemplateRows: '1fr 1fr',
-      gap: '4px',
+      gap: '8px',
       height: '280px',
-      borderRadius: Spacing.radiusMd,
+      borderRadius: '6px',
       overflow: 'hidden',
     }}>
       <div
@@ -517,28 +500,73 @@ function PhotoLightbox({
   onClose: () => void;
 }) {
   const [idx, setIdx] = useState(currentIdx);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isUserScrolling = useRef(false);
+  const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    const prevTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouchAction;
+    };
+  }, []);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft' && idx > 0) setIdx(idx - 1);
-      if (e.key === 'ArrowRight' && idx < photos.length - 1) setIdx(idx + 1);
+      if (e.key === 'ArrowLeft' && idx > 0) goTo(idx - 1);
+      if (e.key === 'ArrowRight' && idx < photos.length - 1) goTo(idx + 1);
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [idx, photos.length, onClose]);
 
+  // Scroll to idx on mount and when idx changes programmatically
+  useEffect(() => {
+    if (scrollRef.current && !isUserScrolling.current) {
+      const container = scrollRef.current;
+      const targetX = idx * container.clientWidth;
+      container.scrollTo({ left: targetX, behavior: 'smooth' });
+    }
+  }, [idx]);
+
+  // Detect which photo is visible after scroll ends
+  const handleScroll = useCallback(() => {
+    isUserScrolling.current = true;
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+    scrollTimeout.current = setTimeout(() => {
+      isUserScrolling.current = false;
+      if (scrollRef.current) {
+        const container = scrollRef.current;
+        const w = container.clientWidth;
+        if (w > 0) {
+          const newIdx = Math.round(container.scrollLeft / w);
+          const clamped = Math.max(0, Math.min(newIdx, photos.length - 1));
+          setIdx(clamped);
+        }
+      }
+    }, 100);
+  }, [photos.length]);
+
+  const goTo = useCallback((newIdx: number) => {
+    isUserScrolling.current = false;
+    setIdx(newIdx);
+  }, []);
+
   return (
     <div
-      onClick={onClose}
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 2000,
         background: 'rgba(0,0,0,0.95)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: 'column',
+        touchAction: 'none',
       }}
     >
       {/* Close button */}
@@ -565,25 +593,57 @@ function PhotoLightbox({
         ✕
       </button>
 
-      {/* Photo */}
-      <img
-        src={photos[idx].url}
-        alt=""
-        onClick={(e) => e.stopPropagation()}
+      {/* Horizontally scrollable photo strip */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
         style={{
-          maxWidth: '90%',
-          maxHeight: '85vh',
-          objectFit: 'contain',
-          borderRadius: Spacing.radiusSm,
-          userSelect: 'none',
+          flex: 1,
+          display: 'flex',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
         }}
-        draggable={false}
-      />
+      >
+        {photos.map((photo) => (
+          <div
+            key={photo.photo_id}
+            style={{
+              flex: '0 0 100%',
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              scrollSnapAlign: 'center',
+              padding: Spacing.md,
+              boxSizing: 'border-box',
+            }}
+          >
+            <img
+              src={photo.url}
+              alt=""
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+                borderRadius: Spacing.radiusSm,
+                userSelect: 'none',
+                pointerEvents: 'none',
+              } as React.CSSProperties}
+              draggable={false}
+            />
+          </div>
+        ))}
+      </div>
 
       {/* Nav: Previous */}
       {idx > 0 && (
         <button
-          onClick={(e) => { e.stopPropagation(); setIdx(idx - 1); }}
+          onClick={() => goTo(idx - 1)}
           style={{
             position: 'absolute',
             left: '12px',
@@ -610,7 +670,7 @@ function PhotoLightbox({
       {/* Nav: Next */}
       {idx < photos.length - 1 && (
         <button
-          onClick={(e) => { e.stopPropagation(); setIdx(idx + 1); }}
+          onClick={() => goTo(idx + 1)}
           style={{
             position: 'absolute',
             right: '12px',
@@ -648,6 +708,11 @@ function PhotoLightbox({
       }}>
         {idx + 1} / {photos.length}
       </div>
+
+      {/* Hide scrollbar */}
+      <style>{`
+        div[style*="scroll-snap-type"]::-webkit-scrollbar { display: none; }
+      `}</style>
     </div>
   );
 }

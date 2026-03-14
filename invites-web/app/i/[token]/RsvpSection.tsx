@@ -53,6 +53,7 @@ export default function RsvpSection({
   const [confirmedName, setConfirmedName] = useState<string>('');
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showAlreadyVotedPopup, setShowAlreadyVotedPopup] = useState(false);
+  const [isAppUser, setIsAppUser] = useState(false);
 
   // Check localStorage for existing vote AND restore stored credentials
   useEffect(() => {
@@ -66,6 +67,7 @@ export default function RsvpSection({
         setEmail(parsed.email || '');
         setPhase('done');
         setSelectedVote(parsed.vote);
+        if (parsed.source === 'app') setIsAppUser(true);
       }
     } catch { /* ignore */ }
   }, [token]);
@@ -84,6 +86,15 @@ export default function RsvpSection({
 
   /** Submit vote directly using stored credentials (no OTP needed) */
   const submitVoteDirect = useCallback(async (vote: 'going' | 'not_going' | 'maybe', storedName: string, storedEmail: string) => {
+    // App users can't change their vote from the web — just show current vote
+    if (isAppUser) {
+      setConfirmedVote(confirmedVote || vote);
+      setConfirmedName(storedName);
+      setPhase('done');
+      setSelectedVote((confirmedVote as 'going' | 'not_going' | 'maybe' | null) || vote);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -124,7 +135,7 @@ export default function RsvpSection({
     } finally {
       setLoading(false);
     }
-  }, [token, onVoteSubmitted]);
+  }, [token, onVoteSubmitted, isAppUser, confirmedVote]);
 
   const handleVoteClick = useCallback((vote: 'going' | 'not_going' | 'maybe') => {
     setSelectedVote(vote);
@@ -221,6 +232,9 @@ export default function RsvpSection({
           // Email already voted — restore their data and show popup
           const existingVote = checkData.guest.rsvp as 'going' | 'not_going' | 'maybe';
           const existingName = checkData.guest.name || name.trim();
+          const isFromApp = checkData.source === 'app';
+
+          if (isFromApp) setIsAppUser(true);
 
           // Save to localStorage so they can re-vote without OTP
           localStorage.setItem(
@@ -229,6 +243,7 @@ export default function RsvpSection({
               vote: existingVote,
               name: existingName,
               email: email.trim(),
+              ...(isFromApp ? { source: 'app' } : {}),
             })
           );
           saveSession(token, email.trim(), existingName);
@@ -391,13 +406,32 @@ export default function RsvpSection({
               width: '100%',
               textAlign: 'center',
             }}>
-              <p style={{
-                fontSize: '40px',
-                margin: 0,
+              {/* Icon: app user = login/welcome, web user = info */}
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                background: isAppUser ? `${BrandColors.planning}20` : `${BrandColors.warning}20`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto',
                 marginBottom: Spacing.sm,
               }}>
-                ✋
-              </p>
+                {isAppUser ? (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={BrandColors.planning} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                    <polyline points="16 11 18 13 22 9" />
+                  </svg>
+                ) : (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={BrandColors.warning} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                )}
+              </div>
               <h3 style={{
                 fontSize: '18px',
                 fontWeight: 700,
@@ -405,7 +439,7 @@ export default function RsvpSection({
                 margin: 0,
                 marginBottom: Spacing.xs,
               }}>
-                Already voted
+                {isAppUser ? 'Account found' : 'Already voted'}
               </h3>
               <p style={{
                 fontSize: '14px',
@@ -413,7 +447,9 @@ export default function RsvpSection({
                 margin: 0,
                 marginBottom: Spacing.md,
               }}>
-                This email has already been used to vote. Your existing vote has been restored.
+                {isAppUser
+                  ? 'This email is linked to your Lazzo account. Your vote has been loaded from the app.'
+                  : 'This email has already been used to vote. Your existing vote has been restored.'}
               </p>
               <button
                 onClick={() => setShowAlreadyVotedPopup(false)}
@@ -495,34 +531,60 @@ export default function RsvpSection({
         </div>
 
         {/* RIGHT: Confirmed vote indicator (tappable → edit vote) */}
-        <button
-          onClick={handleEditVote}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '12px 20px',
-            background: `${voteColor}26`,
-            border: 'none',
-            borderRadius: `0 ${Spacing.radiusMd} ${Spacing.radiusMd} 0`,
-            cursor: 'pointer',
-            minWidth: '64px',
-            transition: 'opacity 0.15s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-        >
-          {voteIcon}
-          <span style={{
-            fontSize: '14px',
-            fontWeight: 600,
-            color: voteColor,
-            marginTop: '2px',
-          }}>
-            {voteLabel}
-          </span>
-        </button>
+        {/* RIGHT: Confirmed vote indicator — tappable to edit (disabled for app users) */}
+        {isAppUser ? (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '12px 20px',
+              background: `${voteColor}26`,
+              borderRadius: `0 ${Spacing.radiusMd} ${Spacing.radiusMd} 0`,
+              minWidth: '64px',
+            }}
+          >
+            {voteIcon}
+            <span style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              color: voteColor,
+              marginTop: '2px',
+            }}>
+              {voteLabel}
+            </span>
+          </div>
+        ) : (
+          <button
+            onClick={handleEditVote}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '12px 20px',
+              background: `${voteColor}26`,
+              border: 'none',
+              borderRadius: `0 ${Spacing.radiusMd} ${Spacing.radiusMd} 0`,
+              cursor: 'pointer',
+              minWidth: '64px',
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            {voteIcon}
+            <span style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              color: voteColor,
+              marginTop: '2px',
+            }}>
+              {voteLabel}
+            </span>
+          </button>
+        )}
       </div>
       </>
     );
