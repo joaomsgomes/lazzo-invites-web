@@ -16,6 +16,11 @@
 - API keys and secrets only in env; never in client code.
 - Small, focused components; shared logic in `lib/`.
 
+### Required analyzers (before opening a PR)
+
+- **Always run** `npm run lint` in the `invites-web/` directory after any code change.
+- Do not ignore any warnings or errors introduced by your changes; fix them before opening a PR.
+
 ## Naming and conventions
 
 - Components: PascalCase. Files: PascalCase for components (e.g. `EventPage.tsx`), camelCase or kebab-case for utilities.
