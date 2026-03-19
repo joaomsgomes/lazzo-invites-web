@@ -21,6 +21,7 @@ Always read and follow these, regardless of task:
 - **Reusable UI** — Shared design and constants in `app/design/`; keep data access and types in `lib/`.
 - **Main app as backend source of truth** — Do not duplicate schema or backend logic; reference lazzo-web-version for schema and Supabase rules (see [.agents/database.md](.agents/database.md)).
 - **Move-don't-delete** — When relocating components or code, move or replace; do not delete without a replacement.
+- **Always run analyzers after changes** — After *any* implementation change, run `npm run lint` at the repo root to catch errors before pushing.
 
 ## Repository structure
 
