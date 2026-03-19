@@ -13,7 +13,7 @@ export default function AppRedirect({ token }: AppRedirectProps) {
     if (!isMobile) return; // Desktop — show web page
 
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const isAndroid = /Android/i.test(navigator.userAgent);
+    // const isAndroid = /Android/i.test(navigator.userAgent);
 
     // ── Strategy: Use Universal Links / App Links ──
     // The web page is already served at lazzo.app/i/{token}.
@@ -34,10 +34,11 @@ export default function AppRedirect({ token }: AppRedirectProps) {
     // Set a short timeout — if the page is still visible, the app didn't open
     const now = Date.now();
 
-    // For iOS, use a link click approach (more reliable than iframe)
+    // For iOS, use a link click approach (more reliable than iframe).
+    // For Android we deliberately DO NOT trigger any custom scheme / intent
+    // to avoid Chrome redirecting users to Google Play when the app
+    // is not installed — they should stay on the web invite.
     if (isIOS) {
-      // Try Universal Link first (same URL but the OS may intercept)
-      // Then fall back to custom scheme
       const link = document.createElement('a');
       link.href = appScheme;
       link.style.display = 'none';
@@ -45,20 +46,6 @@ export default function AppRedirect({ token }: AppRedirectProps) {
       link.click();
 
       // Cleanup after attempt
-      setTimeout(() => {
-        document.body.removeChild(link);
-      }, 100);
-    } else if (isAndroid) {
-      // Android: Use intent URL for more reliable app opening
-      const intentUrl = `intent://invite/${token}#Intent;scheme=lazzo;package=com.lazzo.app;end`;
-
-      // Try intent URL
-      const link = document.createElement('a');
-      link.href = intentUrl;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-
       setTimeout(() => {
         document.body.removeChild(link);
       }, 100);
