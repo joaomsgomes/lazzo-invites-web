@@ -36,20 +36,15 @@ export default function PhotoGrid({
   onShowAllPhotosChange,
 }: PhotoGridProps) {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
-  const [internalShowAll, setInternalShowAll] = useState(false);
-  
+  const [internalShowAll, setInternalShowAll] = useState(() => externalShowAll ?? false);
+
   const showAllPhotos = externalShowAll ?? internalShowAll;
   const setShowAllPhotos = useCallback((val: boolean) => {
-    setInternalShowAll(val);
-    onShowAllPhotosChange?.(val);
-  }, [onShowAllPhotosChange]);
-
-  // Sync external to internal
-  useEffect(() => {
-    if (externalShowAll !== undefined) {
-      setInternalShowAll(externalShowAll);
+    if (externalShowAll === undefined) {
+      setInternalShowAll(val);
     }
-  }, [externalShowAll]);
+    onShowAllPhotosChange?.(val);
+  }, [externalShowAll, onShowAllPhotosChange]);
 
   const totalCount = photos.length;
 

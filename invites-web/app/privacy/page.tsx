@@ -73,7 +73,7 @@ export default function PrivacyPolicyPage() {
           lineHeight: 1.7,
         }}>
           <p style={{ marginBottom: Spacing.lg }}>
-            This Privacy Policy explains how the <strong>Lazzo</strong> app ("we", "our", "the app") collects, uses, and shares information when you use the app and related services.
+            This Privacy Policy explains how the <strong>Lazzo</strong> app (&quot;we&quot;, &quot;our&quot;, &quot;the app&quot;) collects, uses, and shares information when you use the app and related services.
           </p>
 
           <div style={{
@@ -188,7 +188,7 @@ export default function PrivacyPolicyPage() {
             6) Who we share information with
           </h2>
           <p style={{ marginBottom: Spacing.xs }}>
-            We share information only as needed to operate the app, with service providers ("processors"), such as:
+            We share information only as needed to operate the app, with service providers (&quot;processors&quot;), such as:
           </p>
           <ul style={{ paddingLeft: Spacing.lg, marginBottom: Spacing.md }}>
             <li><strong>Supabase</strong> (authentication, database, and file storage) — stores your account data, profile information, event data, photos, and messages on secure cloud servers</li>

@@ -138,8 +138,6 @@ export default function LivingSection({ event, token, photos, coverPhotoId, onCo
 // Matches Flutter's LivingTimeLeftPill: purple pill, clock icon, countdown
 
 function TimeLeftPill({ endDatetime }: { endDatetime: string }) {
-  const [timeLeft, setTimeLeft] = useState('');
-
   const calcTimeLeft = useCallback(() => {
     const now = new Date();
     const end = new Date(endDatetime);
@@ -156,9 +154,9 @@ function TimeLeftPill({ endDatetime }: { endDatetime: string }) {
     if (minutes > 0) return `${minutes}m`;
     return 'Ending soon';
   }, [endDatetime]);
+  const [timeLeft, setTimeLeft] = useState(() => calcTimeLeft());
 
   useEffect(() => {
-    setTimeLeft(calcTimeLeft());
     const interval = setInterval(() => setTimeLeft(calcTimeLeft()), 60_000);
     return () => clearInterval(interval);
   }, [calcTimeLeft]);
