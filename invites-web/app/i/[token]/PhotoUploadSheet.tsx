@@ -179,13 +179,13 @@ export default function PhotoUploadSheet({
 
       // Update user name (best effort)
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        await supabase
-          .from('users')
-          .update({ name: name.trim() })
-          .eq('id', session.user.id)
-          .then(() => {});
-      }
+        if (session?.user?.id) {
+          await supabase
+            .from('users')
+            .update({ name: name.trim() })
+            .eq('id', session.user.id)
+            .then(() => {});
+        }
 
       // Ensure event participant
       setUploadProgress('Joining event...');
@@ -196,7 +196,11 @@ export default function PhotoUploadSheet({
         // Analytics: identify user + track auth
         const { data: { session: authSession } } = await supabase.auth.getSession();
         if (authSession?.user?.id) {
-          identifyUser(authSession.user.id, { role: 'guest' });
+          identifyUser(authSession.user.id, {
+            role: 'guest',
+            email: email.trim(),
+            $name: displayName,
+          });
           trackGuestAuthCompleted(eventId, authSession.user.id);
         }
       } else {

@@ -251,7 +251,11 @@ export default function RsvpSection({
           // Analytics: identify user + track auth even for already-voted users
           // The OTP was verified above, so the user IS authenticated
           if (authData.session?.user?.id) {
-            identifyUser(authData.session.user.id, { role: 'guest' });
+            identifyUser(authData.session.user.id, {
+              role: 'guest',
+              email: email.trim(),
+              $name: existingName,
+            });
             trackGuestAuthCompleted(eventId, authData.session.user.id);
           }
 
@@ -306,7 +310,11 @@ export default function RsvpSection({
 
       // 4c. Analytics: identify user + track auth + track RSVP
       if (authData.session?.user?.id) {
-        identifyUser(authData.session.user.id, { role: 'guest' });
+        identifyUser(authData.session.user.id, {
+          role: 'guest',
+          email: email.trim(),
+          $name: name.trim(),
+        });
         trackGuestAuthCompleted(eventId, authData.session.user.id);
       }
       trackRsvpSubmitted(eventId, selectedVote!, getSecondsSincePageLoad());

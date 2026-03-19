@@ -168,13 +168,17 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
 
       if (isParticipant) {
         // Access granted
-        saveRecapAuthSession(token, email.trim());
+        const trimmedEmail = email.trim();
+        saveRecapAuthSession(token, trimmedEmail);
         if (mountedRef.current) setIsAuthorized(true);
 
         // Analytics: identify + track auth
         const { data: { session: authSession } } = await supabase.auth.getSession();
         if (authSession?.user?.id) {
-          identifyUser(authSession.user.id, { role: 'guest' });
+          identifyUser(authSession.user.id, {
+            role: 'guest',
+            email: trimmedEmail,
+          });
           trackGuestAuthCompleted(eventId, authSession.user.id);
         }
       } else {
