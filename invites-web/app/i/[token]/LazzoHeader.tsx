@@ -9,7 +9,7 @@ import { BrandColors, Spacing } from '../../design/constants';
 // Sticky top bar encouraging app installs, matching web standards.
 // ═══════════════════════════════════════════════════════════════════
 
-const APP_STORE_URL = process.env.NEXT_PUBLIC_APPSTORE_URL || '#';
+const APP_STORE_URL = 'https://testflight.apple.com/join/KtqX99vr';
 const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAYSTORE_URL || '#';
 
 export default function LazzoHeader() {
