@@ -12,6 +12,7 @@ import LazzoHeader from './LazzoHeader';
 import ShareSheet from './ShareSheet';
 import { createBrowserSupabase } from '../../../lib/supabase';
 import type { EventData, EventPhoto, GuestRecord } from '../../../lib/supabase';
+import { resolveAvatarUrl } from '../../../lib/avatar';
 import Link from 'next/link';
 import {
   trackInviteLinkOpened,
@@ -91,7 +92,7 @@ function getStatusConfig(status: string): { label: string; color: string } {
 }
 
 function getGoogleMapsUrl(lat: number | null, lng: number | null, name: string | null): string {
-  if (lat && lng) return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  https://getlazzo.com/i/InsX6ZhG9YTaXPlXI1jvjE8F  if (lat != null && lng != null) return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
   if (name) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`;
   return '#';
 }
@@ -314,13 +315,28 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
   const isEnded = liveStatus === 'ended';
   const canVote = liveStatus === 'pending' || liveStatus === 'confirmed';
   const hasLocation = Boolean(event.location_name);
-  const hasCoords = Boolean(event.location_lat && event.location_lng);
+  const hasCoords = event.location_lat != null && event.location_lng != null;
   const hasDate = Boolean(event.start_datetime);
 
   const mapsUrl = useMemo(
     () => getGoogleMapsUrl(event.location_lat, event.location_lng, event.location_name),
     [event.location_lat, event.location_lng, event.location_name]
   );
+
+  // Map preview using Google Maps embed (no API key).
+  // Clicking the widget still opens the destination in Google Maps.
+  const mapPreviewSrc = useMemo(() => {
+    const hasNumericCoords = hasCoords
+      && Number.isFinite(Number(event.location_lat))
+      && Number.isFinite(Number(event.location_lng));
+
+    const query = hasNumericCoords
+      ? `${event.location_lat},${event.location_lng}`
+      : [event.location_name, event.location_address].filter(Boolean).join(', ');
+
+    if (!query) return null;
+    return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`;
+  }, [hasCoords, event.location_lat, event.location_lng, event.location_name, event.location_address]);
 
   const handleVoteSubmitted = (vote: 'going' | 'not_going' | 'maybe', guestName: string) => {
     setHasVoted(true);
@@ -559,12 +575,14 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               )}
             </div>
 
-            {/* Map placeholder — tappable to open Google Maps */}
+            {/* Map preview — users can "see" location without clicking. */}
             <a
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Open event location in Maps"
               style={{
+                position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -576,20 +594,58 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
                 textDecoration: 'none',
                 cursor: 'pointer',
                 transition: 'opacity 0.15s',
+                overflow: 'hidden',
               }}
             >
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-                <line x1="8" y1="2" x2="8" y2="18" />
-                <line x1="16" y1="6" x2="16" y2="22" />
-              </svg>
-              <span style={{
-                fontSize: '14px',
-                color: BrandColors.text2,
-                marginTop: Spacing.xs,
-              }}>
-                Tap to open in Maps
-              </span>
+              {mapPreviewSrc ? (
+                <iframe
+                  title="Event location preview"
+                  src={mapPreviewSrc}
+                  loading="lazy"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    border: 0,
+                    // Make the preview non-interactive; tap anywhere opens Maps.
+                    pointerEvents: 'none',
+                    filter: 'saturate(0.95) contrast(0.95)',
+                  }}
+                />
+              ) : (
+                <>
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                    <line x1="8" y1="2" x2="8" y2="18" />
+                    <line x1="16" y1="6" x2="16" y2="22" />
+                  </svg>
+                </>
+              )}
+
+              <div
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  width: '100%',
+                  padding: Spacing.sm,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: mapPreviewSrc ? 'linear-gradient(to top, rgba(0,0,0,0.5), rgba(0,0,0,0.1))' : 'transparent',
+                  pointerEvents: 'none',
+                }}
+              >
+                <span style={{
+                  fontSize: '14px',
+                  color: mapPreviewSrc ? '#FFFFFF' : BrandColors.text2,
+                  marginTop: mapPreviewSrc ? 0 : Spacing.xs,
+                  fontWeight: mapPreviewSrc ? 600 : 400,
+                }}>
+                  {mapPreviewSrc ? 'Open in Maps' : 'Tap to open in Maps'}
+                </span>
+              </div>
             </a>
           </SectionCard>
         )}
@@ -958,12 +1014,7 @@ function CalendarIconSquare({
 
 /** Organizer avatar circle */
 function OrganizerAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const fullUrl = avatarUrl
-    ? avatarUrl.startsWith('http')
-      ? avatarUrl
-      : `${supabaseUrl}/storage/v1/object/public/avatars/${avatarUrl}`
-    : null;
+  const fullUrl = resolveAvatarUrl(avatarUrl);
 
   return (
     <div style={{
@@ -987,6 +1038,23 @@ function OrganizerAvatar({ name, avatarUrl }: { name: string; avatarUrl: string 
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           onError={(e) => {
             const img = e.target as HTMLImageElement;
+            if (img.dataset.fallbackTried === '1') {
+              img.style.display = 'none';
+              if (img.parentElement) {
+                img.parentElement.textContent = name?.[0]?.toUpperCase() || '?';
+              }
+              return;
+            }
+
+            img.dataset.fallbackTried = '1';
+            if (avatarUrl && !avatarUrl.startsWith('http')) {
+              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+              if (supabaseUrl) {
+                img.src = `${supabaseUrl}/storage/v1/object/public/avatars/${avatarUrl}`;
+                return;
+              }
+            }
+
             img.style.display = 'none';
             if (img.parentElement) {
               img.parentElement.textContent = name?.[0]?.toUpperCase() || '?';
