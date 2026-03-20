@@ -95,9 +95,20 @@ export default function ManageGuestsSheet({ guests, eventStatus, photoCount = 0,
         background: BrandColors.bg1,
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'center',
         fontFamily: Typography.fontFamily,
       }}
     >
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
+          maxWidth: '520px',
+          minHeight: 0,
+        }}
+      >
       {/* ── AppBar ── */}
       <div
         style={{
@@ -229,6 +240,7 @@ export default function ManageGuestsSheet({ guests, eventStatus, photoCount = 0,
             ))
           )}
         </div>
+      </div>
       </div>
     </div>
   );

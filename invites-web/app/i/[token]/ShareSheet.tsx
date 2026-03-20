@@ -152,8 +152,16 @@ export default function ShareSheet({ inviteUrl, eventId, eventName, eventEmoji, 
           />
         </div>
 
-        {/* Content — fixed height to prevent jumping between tabs */}
-        <div style={{ minHeight: '340px', display: 'flex', alignItems: 'stretch' }}>
+        {/* Content — vertical rhythm aligned with app (breathing room top/bottom) */}
+        <div style={{
+          minHeight: '360px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          justifyContent: 'center',
+          paddingTop: Spacing.lg,
+          paddingBottom: Spacing.xl,
+        }}>
           {tab === 'qr' ? (
             <QrCodeTab inviteUrl={inviteUrl} />
           ) : (
@@ -301,12 +309,13 @@ function QrCodeTab({ inviteUrl }: { inviteUrl: string }) {
   return (
     <div style={{
       width: '100%',
-      padding: Spacing.lg,
+      padding: `${Spacing.md} ${Spacing.lg} ${Spacing.lg}`,
       background: BrandColors.bg3,
       borderRadius: Spacing.radiusMd,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: Spacing.md,
     }}>
       <div style={{
@@ -359,7 +368,7 @@ function InviteCardTab({ inviteUrl, eventName, eventEmoji }: {
       onKeyDown={(e) => { if (e.key === 'Enter') handleCardClick(); }}
       style={{
         width: '100%',
-        padding: Spacing.xl,
+        padding: `${Spacing.xl} ${Spacing.lg}`,
         background: BrandColors.bg1,
         borderRadius: Spacing.radiusMd,
         border: `0.5px solid ${BrandColors.border}`,
@@ -368,11 +377,7 @@ function InviteCardTab({ inviteUrl, eventName, eventEmoji }: {
         flexDirection: 'column',
         alignItems: 'center',
         gap: Spacing.lg,
-        transition: 'transform 0.15s',
       }}
-      onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
-      onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
     >
       {/* Big emoji */}
       <div style={{ fontSize: '72px', lineHeight: 1 }}>

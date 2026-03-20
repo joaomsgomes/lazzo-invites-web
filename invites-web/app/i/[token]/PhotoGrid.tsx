@@ -71,7 +71,7 @@ export default function PhotoGrid({
   if (totalCount === 0 && showAddCard) {
     return (
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COLUMNS}, 1fr)`, gap: `${GAP}px` }}>
-        <AddPhotoCard accentColor={accentColor} onClick={onAddPhoto} />
+        <AddPhotoCard onClick={onAddPhoto} />
       </div>
     );
   }
@@ -155,7 +155,7 @@ export default function PhotoGrid({
         })}
 
         {addCardFits && (
-          <AddPhotoCard accentColor={accentColor} onClick={onAddPhoto} />
+          <AddPhotoCard onClick={onAddPhoto} />
         )}
       </div>
 
@@ -173,7 +173,6 @@ export default function PhotoGrid({
       {showAllPhotos && (
         <AllPhotosSheet
           photos={photos}
-          accentColor={accentColor}
           onAddPhoto={onAddPhoto}
           showAddCard={showAddCard}
           onClose={() => setShowAllPhotos(false)}
@@ -190,43 +189,33 @@ export default function PhotoGrid({
 
 // ── Add Photo Card ─────────────────────────────────────────────
 
-function AddPhotoCard({
-  accentColor,
+/** Dashed + “Add” — static style (no hover-only affordance; matches intended pressed/hover look as default). */
+export function AddPhotoCard({
   onClick,
 }: {
-  accentColor: string;
   onClick?: () => void;
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       style={{
         aspectRatio: '4/5',
         borderRadius: Spacing.radiusSm,
-        border: `2px dashed ${accentColor}40`,
-        background: `${accentColor}10`,
+        border: `2px dashed ${BrandColors.text2}`,
+        background: BrandColors.bg3,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '4px',
+        gap: Spacing.xxs,
         cursor: 'pointer',
-        transition: 'background 0.15s, border-color 0.15s',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = `${accentColor}20`;
-        e.currentTarget.style.borderColor = `${accentColor}80`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = `${accentColor}10`;
-        e.currentTarget.style.borderColor = `${accentColor}40`;
       }}
     >
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19" />
-        <line x1="5" y1="12" x2="19" y2="12" />
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={BrandColors.text2} strokeWidth="2" strokeLinecap="round" aria-hidden>
+        <path d="M12 5v14M5 12h14" />
       </svg>
-      <span style={{ fontSize: '11px', fontWeight: 500, color: accentColor }}>
+      <span style={{ fontSize: '11px', fontWeight: 500, color: BrandColors.text2 }}>
         Add
       </span>
     </button>
@@ -239,14 +228,12 @@ function AddPhotoCard({
 
 function AllPhotosSheet({
   photos,
-  accentColor,
   onAddPhoto,
   showAddCard,
   onClose,
   onPhotoClick,
 }: {
   photos: EventPhoto[];
-  accentColor: string;
   onAddPhoto?: () => void;
   showAddCard: boolean;
   onClose: () => void;
@@ -340,7 +327,7 @@ function AllPhotosSheet({
             </div>
           ))}
           {showAddCard && (
-            <AddPhotoCard accentColor={accentColor} onClick={onAddPhoto} />
+            <AddPhotoCard onClick={onAddPhoto} />
           )}
         </div>
       </div>
