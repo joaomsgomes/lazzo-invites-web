@@ -517,7 +517,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
               initialGoingCount={goingCount}
               initialMaybeCount={maybeCount}
               initialCantCount={cantCount}
-              eventStatus={event.status}
+              eventStatus={liveStatus}
               onVoteSubmitted={handleVoteSubmitted}
               onGuestsPress={() => setShowGuests(true)}
             />
