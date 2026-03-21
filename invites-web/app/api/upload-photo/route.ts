@@ -24,6 +24,11 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+function fallbackNameFromEmail(email: string): string {
+  const local = email.split('@')[0] ?? '';
+  return local.replace(/[._-]/g, ' ').trim() || 'Guest';
+}
+
 export async function POST(req: NextRequest) {
   // 1. Check service role key is configured
   if (!serviceRoleKey) {
@@ -46,6 +51,7 @@ export async function POST(req: NextRequest) {
     const isPortrait = formData.get('isPortrait') === 'true';
     const fallbackEmail = formData.get('email') as string | null;
     const userName = formData.get('userName') as string | null;
+    const normalizedFallbackEmail = fallbackEmail?.trim().toLowerCase() || null;
 
     if (!file || !token) {
       return NextResponse.json({ error: 'Missing file or token' }, { status: 400 });
@@ -73,18 +79,56 @@ export async function POST(req: NextRequest) {
     }
 
     // Fallback: look up user by email (valid when user previously completed OTP)
-    if (!userId && fallbackEmail) {
+    if (!userId && normalizedFallbackEmail) {
       // Use service role to query public.users by email
       const { data: userRow } = await serviceClient
         .from('users')
         .select('id')
-        .eq('email', fallbackEmail.toLowerCase())
+        .eq('email', normalizedFallbackEmail)
         .limit(1)
         .maybeSingle();
 
       if (userRow?.id) {
         userId = userRow.id;
-        userEmail = fallbackEmail;
+        userEmail = normalizedFallbackEmail;
+      } else {
+        // Guests validated by EventAuthGate may not yet exist in public.users.
+        // Re-validate token + email and provision a user row for upload ownership.
+        const { data: hasInviteAccess, error: verifyError } = await serviceClient.rpc(
+          'verify_event_access_by_email',
+          { p_token: token, p_email: normalizedFallbackEmail }
+        );
+
+        if (!verifyError && hasInviteAccess) {
+          const provisionalUserId = crypto.randomUUID();
+          const displayName = userName?.trim() || fallbackNameFromEmail(normalizedFallbackEmail);
+
+          const { data: createdUser } = await serviceClient
+            .from('users')
+            .upsert(
+              { id: provisionalUserId, email: normalizedFallbackEmail, name: displayName },
+              { onConflict: 'email' }
+            )
+            .select('id, email')
+            .maybeSingle();
+
+          if (createdUser?.id) {
+            userId = createdUser.id;
+            userEmail = createdUser.email ?? normalizedFallbackEmail;
+          } else {
+            // Defensive fallback when DB returns no row from upsert.
+            const { data: existingAfterUpsert } = await serviceClient
+              .from('users')
+              .select('id, email')
+              .eq('email', normalizedFallbackEmail)
+              .limit(1)
+              .maybeSingle();
+            if (existingAfterUpsert?.id) {
+              userId = existingAfterUpsert.id;
+              userEmail = existingAfterUpsert.email ?? normalizedFallbackEmail;
+            }
+          }
+        }
       }
     }
 

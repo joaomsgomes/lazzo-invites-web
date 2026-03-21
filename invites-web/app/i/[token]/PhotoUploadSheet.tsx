@@ -57,6 +57,7 @@ export default function PhotoUploadSheet({
   const [uploadProgress, setUploadProgress] = useState('');
   const [uploadCurrent, setUploadCurrent] = useState(0);
   const [uploadTotal, setUploadTotal] = useState(0);
+  const [sessionCheckVersion, setSessionCheckVersion] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mountedRef = useRef(true);
 
@@ -121,7 +122,13 @@ export default function PhotoUploadSheet({
     return () => {
       clearTimeout(safety);
     };
-  }, [token]);
+  }, [token, sessionCheckVersion]);
+
+  const triggerSessionRecheck = useCallback(() => {
+    setError(null);
+    setPhase('checking');
+    setSessionCheckVersion((v) => v + 1);
+  }, []);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files;
@@ -216,8 +223,12 @@ export default function PhotoUploadSheet({
           const uploadDuration = Date.now() - uploadStartTime;
           trackPhotoUploaded(eventId, uploadDuration, Math.round(imageFiles[i].size / 1024));
         } else {
-          errors.push(result.error || `File ${i + 1} failed`);
-          trackPhotoUploadFailed(eventId, result.error || 'unknown', 0);
+          const apiError = result.error || `File ${i + 1} failed`;
+          const normalizedError = apiError === 'Not authenticated'
+            ? 'Your session could not be verified. Re-check your identity and try again.'
+            : apiError;
+          errors.push(normalizedError);
+          trackPhotoUploadFailed(eventId, normalizedError, 0);
         }
       }
 
@@ -495,6 +506,25 @@ export default function PhotoUploadSheet({
             >
               Try Again
             </button>
+            {error?.includes('session') && (
+              <button
+                type="button"
+                onClick={triggerSessionRecheck}
+                style={{
+                  marginLeft: Spacing.sm,
+                  padding: `${Spacing.sm} ${Spacing.lg}`,
+                  background: BrandColors.bg3,
+                  color: BrandColors.text1,
+                  border: 'none',
+                  borderRadius: Spacing.radiusSmAlt,
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Re-check Identity
+              </button>
+            )}
           </div>
         )}
 

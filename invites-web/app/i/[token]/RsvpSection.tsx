@@ -55,6 +55,7 @@ export default function RsvpSection({
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showAlreadyVotedPopup, setShowAlreadyVotedPopup] = useState(false);
   const [isAppUser, setIsAppUser] = useState(false);
+  const [hasVerifiedIdentity, setHasVerifiedIdentity] = useState(false);
   const normalizedEmail = email.trim().toLowerCase();
   const isEmailValid = EMAIL_REGEX.test(normalizedEmail);
 
@@ -70,6 +71,7 @@ export default function RsvpSection({
         setEmail(parsed.email || '');
         setPhase('done');
         setSelectedVote(parsed.vote);
+        setHasVerifiedIdentity(Boolean(parsed.email && parsed.vote));
         if (parsed.source === 'app') setIsAppUser(true);
       }
     } catch { /* ignore */ }
@@ -149,15 +151,15 @@ export default function RsvpSection({
       trackRsvpIntentStarted(eventId, vote);
     }
 
-    // If we have stored credentials from a previous vote, submit directly
-    if (name.trim() && email.trim()) {
+    // Only allow direct submit when identity was previously verified.
+    if (hasVerifiedIdentity && name.trim() && email.trim()) {
       submitVoteDirect(vote, name.trim(), email.trim());
       return;
     }
 
     // No stored credentials — show the credential + OTP flow
     setPhase('credentials');
-  }, [name, email, submitVoteDirect]);
+  }, [name, email, hasVerifiedIdentity, submitVoteDirect]);
 
   const handleSendOtp = useCallback(async () => {
     const trimmedName = name.trim();
@@ -250,6 +252,7 @@ export default function RsvpSection({
             })
           );
           saveSession(token, email.trim(), existingName);
+          setHasVerifiedIdentity(true);
 
           // Analytics: identify user + track auth even for already-voted users
           // The OTP was verified above, so the user IS authenticated
@@ -310,6 +313,7 @@ export default function RsvpSection({
 
       // 4b. Save session for persistence across visits
       saveSession(token, email.trim(), name.trim());
+      setHasVerifiedIdentity(true);
 
       // 4c. Analytics: identify user + track auth + track RSVP
       if (authData.session?.user?.id) {

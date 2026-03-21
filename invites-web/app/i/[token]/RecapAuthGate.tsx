@@ -20,6 +20,8 @@ import { trackGuestAuthCompleted, trackAuthStarted, identifyUser } from '../../.
 
 const RECAP_AUTH_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 const STORAGE_KEY_PREFIX = 'lazzo_recap_auth_';
+const EVENT_AUTH_STORAGE_PREFIX = 'lazzo_event_auth_';
+const EVENT_AUTH_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface RecapAuthSession {
@@ -43,6 +45,30 @@ function saveRecapAuthSession(token: string, email: string): void {
   try {
     const session: RecapAuthSession = { email, authenticatedAt: Date.now() };
     localStorage.setItem(`${STORAGE_KEY_PREFIX}${token}`, JSON.stringify(session));
+  } catch { /* silent */ }
+}
+
+interface EventAuthSession {
+  email: string;
+  authenticatedAt: number;
+}
+
+function getEventAuthSession(token: string): EventAuthSession | null {
+  try {
+    const raw = localStorage.getItem(`${EVENT_AUTH_STORAGE_PREFIX}${token}`);
+    if (!raw) return null;
+    const session: EventAuthSession = JSON.parse(raw);
+    if (Date.now() - session.authenticatedAt > EVENT_AUTH_TTL_MS) return null;
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+function saveEventAuthSession(token: string, email: string): void {
+  try {
+    const session: EventAuthSession = { email, authenticatedAt: Date.now() };
+    localStorage.setItem(`${EVENT_AUTH_STORAGE_PREFIX}${token}`, JSON.stringify(session));
   } catch { /* silent */ }
 }
 
@@ -77,8 +103,11 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
 
   // Check for existing session on mount
   useEffect(() => {
-    const session = getRecapAuthSession(token);
+    const recapSession = getRecapAuthSession(token);
+    const eventSession = getEventAuthSession(token);
+    const session = recapSession ?? eventSession;
     if (session) {
+      setEmail(session.email);
       setIsAuthorized(true);
     } else {
       setIsAuthorized(false);
@@ -190,6 +219,7 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
         // Access granted
         const trimmedEmail = email.trim();
         saveRecapAuthSession(token, trimmedEmail);
+        saveEventAuthSession(token, trimmedEmail);
         if (mountedRef.current) setIsAuthorized(true);
 
         // Analytics: identify + track auth
