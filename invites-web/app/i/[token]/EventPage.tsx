@@ -836,6 +836,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     return (
       <EventAuthGate
         token={token}
+        eventId={event.event_id}
         eventName={event.event_name}
         eventEmoji={event.event_emoji || '🎉'}
         eventPhase="living"
@@ -849,6 +850,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     return (
       <EventAuthGate
         token={token}
+        eventId={event.event_id}
         eventName={event.event_name}
         eventEmoji={event.event_emoji || '📸'}
         eventPhase="recap"
@@ -862,6 +864,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
     return (
       <EventAuthGate
         token={token}
+        eventId={event.event_id}
         eventName={event.event_name}
         eventEmoji={event.event_emoji || '📸'}
         eventPhase="ended"
