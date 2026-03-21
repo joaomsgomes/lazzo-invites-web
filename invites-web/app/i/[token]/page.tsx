@@ -156,7 +156,7 @@ export default async function InvitePage({
                 'Something went wrong. Please try again later.'}
             </p>
 
-            <a
+            <Link
               href="/"
               style={{
                 display: 'block',
@@ -173,7 +173,7 @@ export default async function InvitePage({
               }}
             >
               Back to Home
-            </a>
+            </Link>
 
             <div
               style={{

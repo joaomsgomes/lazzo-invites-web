@@ -161,6 +161,19 @@ a {
   border-color: var(--planning);
 }
 
+/* Invite auth overlays — match living / recap accent on focus */
+.input-field-accent-living:focus {
+  border-color: var(--living);
+}
+
+.input-field-accent-recap:focus {
+  border-color: var(--recap);
+}
+
+.input-field-accent-ended:focus {
+  border-color: var(--border);
+}
+
 .input-field::placeholder {
   color: var(--text2);
   opacity: 0.7;

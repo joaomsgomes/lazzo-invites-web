@@ -515,6 +515,11 @@ function PhotoLightbox({
     };
   }, []);
 
+  const goTo = useCallback((newIdx: number) => {
+    isUserScrolling.current = false;
+    setIdx(newIdx);
+  }, []);
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -523,7 +528,7 @@ function PhotoLightbox({
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [idx, photos.length, onClose]);
+  }, [goTo, idx, photos.length, onClose]);
 
   // Scroll to idx on mount and when idx changes programmatically
   useEffect(() => {
@@ -551,11 +556,6 @@ function PhotoLightbox({
       }
     }, 100);
   }, [photos.length]);
-
-  const goTo = useCallback((newIdx: number) => {
-    isUserScrolling.current = false;
-    setIdx(newIdx);
-  }, []);
 
   return (
     <div

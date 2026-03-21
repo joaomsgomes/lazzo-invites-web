@@ -7,9 +7,11 @@ interface OtpInputProps {
   length: number;
   onChange: (value: string) => void;
   disabled?: boolean;
+  /** Focus / filled border colour (e.g. living purple, recap orange). Defaults to planning green. */
+  accentColor?: string;
 }
 
-export default function OtpInput({ length, onChange, disabled }: OtpInputProps) {
+export default function OtpInput({ length, onChange, disabled, accentColor = BrandColors.planning }: OtpInputProps) {
   const [digits, setDigits] = useState<string[]>(Array(length).fill(''));
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -102,18 +104,18 @@ export default function OtpInput({ length, onChange, disabled }: OtpInputProps) 
             fontWeight: 600,
             color: BrandColors.text1,
             background: BrandColors.bg2,
-            border: `1.5px solid ${digit ? BrandColors.planning : BrandColors.border}`,
+            border: `1.5px solid ${digit ? accentColor : BrandColors.border}`,
             borderRadius: '10px',
             outline: 'none',
-            caretColor: BrandColors.planning,
+            caretColor: accentColor,
             transition: 'border-color 0.2s',
           }}
           onFocus={(e) => {
-            e.target.style.borderColor = BrandColors.planning;
+            e.target.style.borderColor = accentColor;
             e.target.select();
           }}
           onBlur={(e) => {
-            e.target.style.borderColor = digit ? BrandColors.planning : BrandColors.border;
+            e.target.style.borderColor = digit ? accentColor : BrandColors.border;
           }}
         />
       ))}

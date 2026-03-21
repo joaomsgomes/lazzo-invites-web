@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import { createBrowserSupabase } from '../../../lib/supabase';
+import { inviteAuthCopy } from '../../../lib/inviteAuthCopy';
 import OtpInput from './OtpInput';
 import { trackGuestAuthCompleted, trackAuthStarted, identifyUser } from '../../../lib/analytics';
 
@@ -19,6 +20,7 @@ import { trackGuestAuthCompleted, trackAuthStarted, identifyUser } from '../../.
 
 const RECAP_AUTH_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 const STORAGE_KEY_PREFIX = 'lazzo_recap_auth_';
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface RecapAuthSession {
   email: string;
@@ -66,6 +68,9 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
   const [resendCooldown, setResendCooldown] = useState(0);
   const mountedRef = useRef(true);
 
+  const normalizedEmail = email.trim().toLowerCase();
+  const isEmailValid = EMAIL_REGEX.test(normalizedEmail);
+
   useEffect(() => {
     return () => { mountedRef.current = false; };
   }, []);
@@ -92,11 +97,11 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
   const handleSendOtp = useCallback(async () => {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setError('Please enter your email');
+      setError(inviteAuthCopy.emailRequired);
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setError('Please enter a valid email address');
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      setError(inviteAuthCopy.emailInvalid);
       return;
     }
 
@@ -105,13 +110,28 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
 
     try {
       const supabase = createBrowserSupabase();
+
+      const { data: isParticipant, error: rpcError } = await supabase.rpc(
+        'verify_event_access_by_email',
+        { p_token: token, p_email: trimmedEmail },
+      );
+
+      if (rpcError) {
+        if (mountedRef.current) setError(inviteAuthCopy.verifyUnavailable);
+        return;
+      }
+      if (!isParticipant) {
+        if (mountedRef.current) setError(inviteAuthCopy.notParticipant);
+        return;
+      }
+
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,
         options: { shouldCreateUser: true },
       });
 
       if (otpError) {
-        if (mountedRef.current) setError(otpError.message);
+        if (mountedRef.current) setError(inviteAuthCopy.sendCodeFailed);
         return;
       }
 
@@ -122,17 +142,17 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
         setResendCooldown(60);
       }
     } catch (e: unknown) {
-      if (mountedRef.current) setError(e instanceof Error ? e.message : 'Failed to send code');
+      if (mountedRef.current) setError(inviteAuthCopy.sendCodeFailed);
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [email]);
+  }, [email, token, eventId]);
 
   // ── Verify OTP + Check Participant ──
 
   const handleVerify = useCallback(async () => {
     if (otpCode.length < 6) {
-      setError('Please enter the complete 6-digit code');
+      setError(inviteAuthCopy.otpIncomplete);
       return;
     }
 
@@ -150,7 +170,7 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
       });
 
       if (verifyError) {
-        if (mountedRef.current) setError(verifyError.message);
+        if (mountedRef.current) setError(inviteAuthCopy.otpWrong);
         return;
       }
 
@@ -162,7 +182,7 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
         });
 
       if (checkError) {
-        if (mountedRef.current) setError('Failed to verify access. Please try again.');
+        if (mountedRef.current) setError(inviteAuthCopy.verifyUnavailable);
         return;
       }
 
@@ -186,11 +206,11 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
         if (mountedRef.current) setPhase('denied');
       }
     } catch (e: unknown) {
-      if (mountedRef.current) setError(e instanceof Error ? e.message : 'Something went wrong');
+      if (mountedRef.current) setError(inviteAuthCopy.generic);
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [otpCode, email, token]);
+  }, [otpCode, email, token, eventId]);
 
   // ── Reset to email phase ──
 
@@ -330,23 +350,32 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
                 placeholder="Your email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(null); }}
-                className="input-field"
+                className="input-field input-field-accent-recap"
                 disabled={loading}
                 autoComplete="email"
+                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                onBlur={() => {
+                  if (email.trim() && !isEmailValid) {
+                    setError(inviteAuthCopy.emailInvalid);
+                  }
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && email.trim()) handleSendOtp();
+                  if (e.key === 'Enter' && normalizedEmail && isEmailValid) handleSendOtp();
                 }}
               />
 
               <button
                 onClick={handleSendOtp}
-                disabled={loading || !email.trim()}
+                disabled={loading || !normalizedEmail || !isEmailValid}
                 className="btn-primary"
                 style={{
                   width: '100%',
                   marginTop: Spacing.md,
                   justifyContent: 'center',
-                  opacity: loading || !email.trim() ? 0.5 : 1,
+                  opacity: loading || !normalizedEmail || !isEmailValid ? 0.5 : 1,
+                  background: BrandColors.recap,
                 }}
               >
                 {loading ? 'Sending...' : 'Send verification code'}
@@ -358,19 +387,29 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
           {phase === 'otp' && (
             <>
               <button
+                type="button"
                 onClick={() => { setPhase('email'); setError(null); }}
                 disabled={loading}
                 style={{
-                  background: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: Spacing.xxs,
+                  background: BrandColors.bg3,
                   border: 'none',
+                  borderRadius: Spacing.radiusPill,
                   color: BrandColors.text2,
-                  fontSize: '13px',
+                  fontSize: '12px',
+                  fontWeight: 500,
                   cursor: 'pointer',
-                  padding: '4px 0',
+                  padding: `${Spacing.xxs} ${Spacing.sm}`,
                   marginBottom: Spacing.sm,
+                  opacity: loading ? 0.6 : 1,
                 }}
               >
-                ← Back
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+                Back
               </button>
 
               <p style={{
@@ -392,6 +431,7 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
                 length={6}
                 onChange={setOtpCode}
                 disabled={loading}
+                accentColor={BrandColors.recap}
               />
 
               <button
@@ -403,6 +443,7 @@ export default function RecapAuthGate({ token, eventId, eventName, eventEmoji, c
                   marginTop: Spacing.md,
                   justifyContent: 'center',
                   opacity: loading || otpCode.length < 6 ? 0.5 : 1,
+                  background: BrandColors.recap,
                 }}
               >
                 {loading ? 'Verifying...' : 'Verify & Access'}

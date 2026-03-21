@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useEffect, useCallback } from 'react';
+import { ReactNode, useMemo, useState, useCallback } from 'react';
 import AppRedirect from './AppRedirect';
 import { getValidSession, ReAuthPopup } from './SessionManager';
 
@@ -21,35 +21,22 @@ interface ClientWrapperProps {
 }
 
 export default function ClientWrapper({ token, children }: ClientWrapperProps) {
-  const [showReAuth, setShowReAuth] = useState(false);
-  const [expiredEmail, setExpiredEmail] = useState('');
-
-  useEffect(() => {
-    // Check for expired session on mount
+  const expiredEmail = useMemo(() => {
     try {
       const sessionKey = `lazzo_session_${token}`;
       const raw = localStorage.getItem(sessionKey);
-      if (!raw) return; // No session — first visit
+      if (!raw) return '';
 
       const session = JSON.parse(raw);
-
-      // Check if valid session exists (handled by SessionManager)
       const validSession = getValidSession(token);
-      if (validSession) {
-        // Session is still valid — user will see their vote automatically
-        // (RsvpSection reads from lazzo_rsvp_{token} localStorage)
-        return;
-      }
+      if (validSession) return '';
 
-      // Session expired — show re-auth popup
-      if (session.email) {
-        setExpiredEmail(session.email);
-        setShowReAuth(true);
-      }
+      return session.email || '';
     } catch {
-      // Silent — don't block page render
+      return '';
     }
   }, [token]);
+  const [showReAuth, setShowReAuth] = useState(Boolean(expiredEmail));
 
   const handleReAuthDone = useCallback(() => {
     setShowReAuth(false);

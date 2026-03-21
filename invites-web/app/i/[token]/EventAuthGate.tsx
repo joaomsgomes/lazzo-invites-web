@@ -3,22 +3,20 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import { createBrowserSupabase } from '../../../lib/supabase';
-import OtpInput from './OtpInput';
+import { inviteAuthCopy } from '../../../lib/inviteAuthCopy';
 
 // ═══════════════════════════════════════════════════════════════════
-// EventAuthGate — OTP verification gate for living, recap & ended pages
+// EventAuthGate — Email-only verification for living, recap & ended pages
 //
 // Flow:
-// 1. Check localStorage for existing RSVP/auth session
-// 2. If valid session exists → auto-grant access
-// 3. If no session → show email prompt → send OTP
-// 4. After OTP verification → check if email is a participant
-// 5. If participant → save session, grant access
-// 6. If not → deny access
+// 1. Check localStorage for existing RSVP / event auth session
+// 2. If no session → user enters email → RPC verify_event_access_by_email
+// 3. If participant → save session, grant access (no email OTP)
 // ═══════════════════════════════════════════════════════════════════
 
 const AUTH_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const AUTH_STORAGE_PREFIX = 'lazzo_event_auth_';
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface AuthSession {
   email: string;
@@ -44,57 +42,47 @@ function saveAuthSession(token: string, email: string): void {
   } catch { /* silent */ }
 }
 
-// ── Props ────────────────────────────────────────────────────────
-
 interface EventAuthGateProps {
   token: string;
-  eventId: string;
   eventName: string;
   eventEmoji: string;
-  /** 'living', 'recap', or 'ended' — affects copy and accent color */
   eventPhase: 'living' | 'recap' | 'ended';
   children: React.ReactNode;
 }
 
-// ── Component ────────────────────────────────────────────────────
-
 export default function EventAuthGate({
   token,
-  eventId,
   eventName,
   eventEmoji,
   eventPhase,
   children,
 }: EventAuthGateProps) {
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null); // null = loading
-  const [phase, setPhase] = useState<'email' | 'otp' | 'denied'>('email');
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [phase, setPhase] = useState<'email' | 'denied'>('email');
   const [email, setEmail] = useState('');
-  const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState(0);
   const mountedRef = useRef(true);
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const isEmailValid = EMAIL_REGEX.test(normalizedEmail);
 
   useEffect(() => {
     return () => { mountedRef.current = false; };
   }, []);
 
-  // Check for existing sessions on mount
   useEffect(() => {
-    // 1. Check dedicated auth session
     const authSession = getAuthSession(token);
     if (authSession) {
       setIsAuthorized(true);
       return;
     }
 
-    // 2. Check RSVP session (set during planning vote)
     try {
       const rsvpRaw = localStorage.getItem(`lazzo_rsvp_${token}`);
       if (rsvpRaw) {
         const rsvp = JSON.parse(rsvpRaw);
         if (rsvp.email && rsvp.vote) {
-          // User voted during planning — grant access and save auth session
           saveAuthSession(token, rsvp.email);
           setIsAuthorized(true);
           return;
@@ -102,7 +90,6 @@ export default function EventAuthGate({
       }
     } catch { /* ignore */ }
 
-    // 3. Check recap auth session (legacy, if RecapAuthGate was used before)
     try {
       const recapRaw = localStorage.getItem(`lazzo_recap_auth_${token}`);
       if (recapRaw) {
@@ -115,10 +102,8 @@ export default function EventAuthGate({
       }
     } catch { /* ignore */ }
 
-    // No valid session found — need verification
     setIsAuthorized(false);
 
-    // Pre-fill email from expired sessions
     try {
       const sessionRaw = localStorage.getItem(`lazzo_session_${token}`);
       if (sessionRaw) {
@@ -128,58 +113,14 @@ export default function EventAuthGate({
     } catch { /* ignore */ }
   }, [token]);
 
-  // Resend cooldown timer
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setTimeout(() => setResendCooldown(c => c - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [resendCooldown]);
-
-  // ── Send OTP ──
-
-  const handleSendOtp = useCallback(async () => {
+  const handleContinue = useCallback(async () => {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setError('Please enter your email');
+      setError(inviteAuthCopy.emailRequired);
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const supabase = createBrowserSupabase();
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: trimmedEmail,
-        options: { shouldCreateUser: true },
-      });
-
-      if (otpError) {
-        if (mountedRef.current) setError(otpError.message);
-        return;
-      }
-
-      if (mountedRef.current) {
-        setPhase('otp');
-        setOtpCode('');
-        setResendCooldown(60);
-      }
-    } catch (e: unknown) {
-      if (mountedRef.current) setError(e instanceof Error ? e.message : 'Failed to send code');
-    } finally {
-      if (mountedRef.current) setLoading(false);
-    }
-  }, [email]);
-
-  // ── Verify OTP + Check Participant ──
-
-  const handleVerify = useCallback(async () => {
-    if (otpCode.length < 6) {
-      setError('Please enter the complete 6-digit code');
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      setError(inviteAuthCopy.emailInvalid);
       return;
     }
 
@@ -188,74 +129,58 @@ export default function EventAuthGate({
 
     try {
       const supabase = createBrowserSupabase();
+      const { data: isParticipant, error: rpcError } = await supabase.rpc(
+        'verify_event_access_by_email',
+        { p_token: token, p_email: trimmedEmail },
+      );
 
-      // 1. Verify OTP
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: otpCode,
-        type: 'email',
-      });
-
-      if (verifyError) {
-        if (mountedRef.current) setError(verifyError.message);
+      if (rpcError) {
+        if (mountedRef.current) setError(inviteAuthCopy.verifyUnavailable);
         return;
       }
-
-      // 2. Check if email belongs to an event participant
-      const { data: isParticipant, error: checkError } = await supabase
-        .rpc('verify_event_access_by_email', {
-          p_token: token,
-          p_email: email.trim(),
-        });
-
-      if (checkError) {
-        if (mountedRef.current) setError('Failed to verify access. Please try again.');
-        return;
-      }
-
-      if (isParticipant) {
-        // Access granted — save session
-        saveAuthSession(token, email.trim());
-        if (mountedRef.current) setIsAuthorized(true);
-      } else {
-        // Not a participant
+      if (!isParticipant) {
         if (mountedRef.current) setPhase('denied');
+        return;
       }
-    } catch (e: unknown) {
-      if (mountedRef.current) setError(e instanceof Error ? e.message : 'Something went wrong');
+
+      saveAuthSession(token, trimmedEmail);
+      if (mountedRef.current) setIsAuthorized(true);
+    } catch {
+      if (mountedRef.current) setError(inviteAuthCopy.generic);
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [otpCode, email, token]);
-
-  // ── Reset ──
+  }, [email, token]);
 
   const handleRetry = useCallback(() => {
     setPhase('email');
     setEmail('');
-    setOtpCode('');
     setError(null);
   }, []);
 
-  // Still loading
   if (isAuthorized === null) return null;
-
-  // Authorized → show content
   if (isAuthorized) return <>{children}</>;
 
-  // Color based on phase
-  const accentColor = eventPhase === 'living' ? BrandColors.living : eventPhase === 'recap' ? BrandColors.recap : BrandColors.text2;
+  const accentColor =
+    eventPhase === 'living'
+      ? BrandColors.living
+      : eventPhase === 'recap'
+        ? BrandColors.recap
+        : BrandColors.text2;
   const phaseLabel = eventPhase === 'living' ? 'live event' : 'memories';
+  const inputAccentClass =
+    eventPhase === 'living'
+      ? 'input-field-accent-living'
+      : eventPhase === 'recap'
+        ? 'input-field-accent-recap'
+        : 'input-field-accent-ended';
 
-  // Not authorized → show overlay
   return (
     <>
-      {/* Blurred background content */}
       <div style={{ filter: 'blur(12px)', pointerEvents: 'none', opacity: 0.4 }}>
         {children}
       </div>
 
-      {/* Auth overlay */}
       <div
         style={{
           position: 'fixed',
@@ -278,7 +203,6 @@ export default function EventAuthGate({
             border: `1px solid ${BrandColors.border}`,
           }}
         >
-          {/* ── Denied State ── */}
           {phase === 'denied' && (
             <>
               <div style={{
@@ -313,6 +237,7 @@ export default function EventAuthGate({
               </p>
 
               <button
+                type="button"
                 onClick={handleRetry}
                 className="btn-primary"
                 style={{
@@ -326,7 +251,6 @@ export default function EventAuthGate({
             </>
           )}
 
-          {/* ── Email Phase ── */}
           {phase === 'email' && (
             <>
               <div style={{
@@ -365,109 +289,40 @@ export default function EventAuthGate({
                 placeholder="Your email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(null); }}
-                className="input-field"
+                className={`input-field ${inputAccentClass}`}
                 disabled={loading}
                 autoComplete="email"
+                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                onBlur={() => {
+                  if (email.trim() && !isEmailValid) {
+                    setError(inviteAuthCopy.emailInvalid);
+                  }
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && email.trim()) handleSendOtp();
+                  if (e.key === 'Enter' && normalizedEmail && isEmailValid) handleContinue();
                 }}
               />
 
               <button
-                onClick={handleSendOtp}
-                disabled={loading || !email.trim()}
+                type="button"
+                onClick={handleContinue}
+                disabled={loading || !normalizedEmail || !isEmailValid}
                 className="btn-primary"
                 style={{
                   width: '100%',
                   marginTop: Spacing.md,
                   justifyContent: 'center',
-                  opacity: loading || !email.trim() ? 0.5 : 1,
+                  opacity: loading || !normalizedEmail || !isEmailValid ? 0.5 : 1,
                   background: accentColor,
                 }}
               >
-                {loading ? 'Sending...' : 'Send verification code'}
+                {loading ? 'Checking…' : 'Continue'}
               </button>
             </>
           )}
 
-          {/* ── OTP Phase ── */}
-          {phase === 'otp' && (
-            <>
-              <button
-                onClick={() => { setPhase('email'); setError(null); }}
-                disabled={loading}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: BrandColors.text2,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  padding: '4px 0',
-                  marginBottom: Spacing.sm,
-                }}
-              >
-                ← Back
-              </button>
-
-              <p style={{
-                ...Typography.bodyMedium,
-                color: BrandColors.text2,
-                marginBottom: '4px',
-              }}>
-                Enter the 6-digit code sent to
-              </p>
-              <p style={{
-                ...Typography.bodyMediumEmph,
-                color: BrandColors.text1,
-                marginBottom: Spacing.md,
-              }}>
-                {email}
-              </p>
-
-              <OtpInput
-                length={6}
-                onChange={setOtpCode}
-                disabled={loading}
-              />
-
-              <button
-                onClick={handleVerify}
-                disabled={loading || otpCode.length < 6}
-                className="btn-primary"
-                style={{
-                  width: '100%',
-                  marginTop: Spacing.md,
-                  justifyContent: 'center',
-                  opacity: loading || otpCode.length < 6 ? 0.5 : 1,
-                  background: accentColor,
-                }}
-              >
-                {loading ? 'Verifying...' : 'Verify & Access'}
-              </button>
-
-              <button
-                onClick={handleSendOtp}
-                disabled={loading || resendCooldown > 0}
-                style={{
-                  width: '100%',
-                  marginTop: Spacing.sm,
-                  padding: `${Spacing.sm} ${Spacing.md}`,
-                  background: 'transparent',
-                  color: BrandColors.text2,
-                  border: 'none',
-                  cursor: resendCooldown > 0 ? 'default' : 'pointer',
-                  fontSize: '13px',
-                  opacity: resendCooldown > 0 ? 0.5 : 1,
-                }}
-              >
-                {resendCooldown > 0
-                  ? `Resend code in ${resendCooldown}s`
-                  : "Didn't receive the code? Resend"}
-              </button>
-            </>
-          )}
-
-          {/* ── Error Message ── */}
           {error && (
             <p style={{
               fontSize: '13px',

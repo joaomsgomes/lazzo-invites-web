@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import type { EventPhoto } from '../../../lib/supabase';
+import { AddPhotoCard } from './PhotoGrid';
 
 // ═══════════════════════════════════════════════════════════════════
 // ManagePhotosSheet — Full-screen overlay for managing event photos
@@ -150,13 +151,18 @@ export default function ManagePhotosSheet({
         <div style={{ width: '40px' }} />
       </div>
 
-      {/* ── Scrollable content ── */}
+      {/* ── Scrollable content (same max width as EventPage column) ── */}
       <div style={{
         flex: 1,
         overflow: 'auto',
         padding: `0 ${Spacing.md}`,
         paddingBottom: Spacing.lg,
       }}>
+        <div style={{
+          maxWidth: '520px',
+          width: '100%',
+          margin: '0 auto',
+        }}>
 
         {/* ── Cover Selection Card (matching Flutter CoverSelectionCard) ── */}
         {photos.length > 0 && (
@@ -213,13 +219,14 @@ export default function ManagePhotosSheet({
             </p>
             {onAddPhoto && (
               <button
+                type="button"
                 onClick={onAddPhoto}
                 style={{
                   marginTop: Spacing.md,
                   padding: `${Spacing.sm} ${Spacing.lg}`,
-                  background: accentColor,
-                  color: '#FFFFFF',
-                  border: 'none',
+                  background: BrandColors.bg3,
+                  color: BrandColors.text1,
+                  border: `2px dashed ${BrandColors.text2}`,
                   borderRadius: Spacing.radiusSmAlt,
                   fontSize: '14px',
                   fontWeight: 600,
@@ -265,43 +272,12 @@ export default function ManagePhotosSheet({
               );
             })}
 
-            {/* Add Photo card */}
             {onAddPhoto && (
-              <button
-                onClick={onAddPhoto}
-                style={{
-                  aspectRatio: '4/5',
-                  borderRadius: Spacing.radiusSm,
-                  border: `2px dashed ${accentColor}40`,
-                  background: `${accentColor}10`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '4px',
-                  cursor: 'pointer',
-                  transition: 'background 0.15s, border-color 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = `${accentColor}20`;
-                  e.currentTarget.style.borderColor = `${accentColor}80`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = `${accentColor}10`;
-                  e.currentTarget.style.borderColor = `${accentColor}40`;
-                }}
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                <span style={{ fontSize: '11px', fontWeight: 500, color: accentColor }}>
-                  Add
-                </span>
-              </button>
+              <AddPhotoCard onClick={onAddPhoto} />
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* ── Lightbox ── */}
@@ -337,7 +313,7 @@ export default function ManagePhotosSheet({
 
 function CoverSelectionCard({
   coverPhoto,
-  accentColor,
+  accentColor: _accentColor,
   settingCover,
   onRemove,
 }: {

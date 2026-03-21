@@ -18,6 +18,7 @@ import {
 // ---- Types ----
 
 type RsvpPhase = 'vote' | 'credentials' | 'otp' | 'done';
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface RsvpSectionProps {
   token: string;
@@ -54,6 +55,8 @@ export default function RsvpSection({
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showAlreadyVotedPopup, setShowAlreadyVotedPopup] = useState(false);
   const [isAppUser, setIsAppUser] = useState(false);
+  const normalizedEmail = email.trim().toLowerCase();
+  const isEmailValid = EMAIL_REGEX.test(normalizedEmail);
 
   // Check localStorage for existing vote AND restore stored credentials
   useEffect(() => {
@@ -164,7 +167,7 @@ export default function RsvpSection({
       setError('Please enter your name and email');
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
       setError('Please enter a valid email address');
       return;
     }
@@ -602,7 +605,7 @@ export default function RsvpSection({
 
   return (
     <div style={{
-      background: BrandColors.bg3,
+      background: BrandColors.bg2,
       borderRadius: Spacing.radiusSmAlt,
       padding: Spacing.md,
       overflow: 'hidden',
@@ -628,15 +631,24 @@ export default function RsvpSection({
             onClick={handleBack}
             disabled={loading}
             style={{
-              background: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: Spacing.xxs,
+              background: BrandColors.bg3,
               border: 'none',
+              borderRadius: Spacing.radiusPill,
               color: BrandColors.text2,
-              fontSize: '13px',
+              fontSize: '12px',
+              fontWeight: 500,
               cursor: 'pointer',
-              padding: '4px 8px',
+              padding: `${Spacing.xxs} ${Spacing.sm}`,
+              opacity: loading ? 0.6 : 1,
             }}
           >
-            ← Back
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            Back
           </button>
         )}
       </div>
@@ -652,7 +664,7 @@ export default function RsvpSection({
           count={0}
           isSelected={selectedVote === 'going'}
           color={BrandColors.planning}
-          icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+          icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8.5 12.5l2.5 2.5 4.5-5" /></svg>}
           onClick={() => handleVoteClick('going')}
           onCountPress={onGuestsPress}
           disabled={loading}
@@ -689,8 +701,12 @@ export default function RsvpSection({
       >
         <div style={{ overflow: 'hidden' }}>
           <div style={{
-            borderTop: `1px solid ${BrandColors.border}`,
+            background: BrandColors.bg3,
+            borderRadius: '10px',
             paddingTop: Spacing.md,
+            paddingLeft: Spacing.sm,
+            paddingRight: Spacing.sm,
+            paddingBottom: Spacing.sm,
           }}>
             <p style={{
               fontSize: '14px',
@@ -719,17 +735,25 @@ export default function RsvpSection({
               style={{ marginTop: Spacing.sm }}
               disabled={loading}
               autoComplete="email"
+              inputMode="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              onBlur={() => {
+                if (email.trim() && !isEmailValid) {
+                  setError('Please enter a valid email address');
+                }
+              }}
             />
 
             <button
               onClick={handleSendOtp}
-              disabled={loading || !name.trim() || !email.trim()}
+              disabled={loading || !name.trim() || !normalizedEmail || !isEmailValid}
               className="btn-primary"
               style={{
                 width: '100%',
                 marginTop: Spacing.md,
                 justifyContent: 'center',
-                opacity: loading || !name.trim() || !email.trim() ? 0.5 : 1,
+                opacity: loading || !name.trim() || !normalizedEmail || !isEmailValid ? 0.5 : 1,
               }}
             >
               {loading ? 'Sending...' : 'Send verification code'}
@@ -748,8 +772,12 @@ export default function RsvpSection({
       >
         <div style={{ overflow: 'hidden' }}>
           <div style={{
-            borderTop: `1px solid ${BrandColors.border}`,
+            background: BrandColors.bg3,
+            borderRadius: '10px',
             paddingTop: Spacing.md,
+            paddingLeft: Spacing.sm,
+            paddingRight: Spacing.sm,
+            paddingBottom: Spacing.sm,
           }}>
             <p style={{
               fontSize: '14px',
@@ -858,8 +886,8 @@ function VoteButton({
         justifyContent: 'center',
         gap: '4px',
         padding: '16px 8px',
-        background: isSelected ? color : BrandColors.bg2,
-        border: `1.5px solid ${isSelected ? color : BrandColors.border}`,
+        background: isSelected ? color : BrandColors.bg3,
+        border: 'none',
         borderRadius: '10px',
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.2s ease',

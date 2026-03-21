@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import PhotoGrid from './PhotoGrid';
 import PhotoUploadSheet from './PhotoUploadSheet';
 import ManagePhotosSheet from './ManagePhotosSheet';
 import MemorySheet from './MemorySheet';
 import type { EventData, EventPhoto } from '../../../lib/supabase';
+import { AddPhotoAlternateIcon, IosShareIcon, PhotoLibraryOutlinedIcon } from './eventActionIcons';
 
 // ═══════════════════════════════════════════════════════════════════
 // RecapSection — Matches Flutter's MemoryPage for recap state
@@ -32,6 +33,12 @@ export default function RecapSection({ event, token, photos, coverPhotoId, onCov
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [showManagePhotos, setShowManagePhotos] = useState(false);
   const [showMemory, setShowMemory] = useState(false);
+  const uploadEntryRef = useRef<'grid' | 'manage' | null>(null);
+
+  const handleCloseUpload = useCallback(() => {
+    uploadEntryRef.current = null;
+    setShowUpload(false);
+  }, []);
 
   // Calculate recap close time (end_datetime + 24h)
   const recapCloseTime = event.end_datetime
@@ -51,7 +58,7 @@ export default function RecapSection({ event, token, photos, coverPhotoId, onCov
       {/* ── Action Row ── */}
       <RecapActionRow
         onSharePress={onSharePress}
-        onUploadPress={() => setShowUpload(true)}
+        onUploadPress={() => setShowManagePhotos(true)}
         onMemoryPress={() => setShowMemory(true)}
       />
 
@@ -99,7 +106,10 @@ export default function RecapSection({ event, token, photos, coverPhotoId, onCov
         <PhotoGrid
           photos={photos}
           accentColor={BrandColors.recap}
-          onAddPhoto={() => setShowUpload(true)}
+          onAddPhoto={() => {
+            uploadEntryRef.current = 'grid';
+            setShowUpload(true);
+          }}
           showAddCard={true}
           showAllPhotos={showAllPhotos}
           onShowAllPhotosChange={setShowAllPhotos}
@@ -116,7 +126,13 @@ export default function RecapSection({ event, token, photos, coverPhotoId, onCov
           accentColor={BrandColors.recap}
           eventStatus="recap"
           onPhotoUploaded={onPhotoUploaded}
-          onClose={() => setShowUpload(false)}
+          onUploadSuccess={() => {
+            if (uploadEntryRef.current === 'grid' || uploadEntryRef.current === 'manage') {
+              setShowManagePhotos(true);
+            }
+            uploadEntryRef.current = null;
+          }}
+          onClose={handleCloseUpload}
         />
       )}
 
@@ -130,6 +146,7 @@ export default function RecapSection({ event, token, photos, coverPhotoId, onCov
           accentColor={BrandColors.recap}
           onCoverChanged={onCoverChanged}
           onAddPhoto={() => {
+            uploadEntryRef.current = 'manage';
             setShowManagePhotos(false);
             setShowUpload(true);
           }}
@@ -255,11 +272,7 @@ function RecapActionRow({
         onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-          <polyline points="16 6 12 2 8 6" />
-          <line x1="12" y1="2" x2="12" y2="15" />
-        </svg>
+        <IosShareIcon size={32} color={BrandColors.text1} />
         <span style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>Share</span>
       </button>
 
@@ -284,11 +297,7 @@ function RecapActionRow({
         onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-          <line x1="12" y1="8" x2="12" y2="16" />
-          <line x1="8" y1="12" x2="16" y2="12" />
-        </svg>
+        <AddPhotoAlternateIcon size={32} color="#FFFFFF" />
         <span style={{ ...Typography.labelLarge, color: '#FFFFFF' }}>Upload</span>
       </button>
 
@@ -313,11 +322,7 @@ function RecapActionRow({
         onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <polyline points="21 15 16 10 5 21" />
-        </svg>
+        <PhotoLibraryOutlinedIcon size={32} color={BrandColors.text1} />
         <span style={{ ...Typography.labelLarge, color: BrandColors.text1 }}>Memory</span>
       </button>
     </div>

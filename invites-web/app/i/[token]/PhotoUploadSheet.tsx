@@ -5,27 +5,28 @@ import { BrandColors, Spacing, Typography } from '../../design/constants';
 import { createBrowserSupabase } from '../../../lib/supabase';
 import { compressImage, ensureEventParticipant } from '../../../lib/photoUtils';
 import type { EventPhoto } from '../../../lib/supabase';
-import OtpInput from './OtpInput';
 import { saveSession, getValidSession } from './SessionManager';
 import {
   trackPhotoUploadStarted,
   trackPhotoUploaded,
   trackPhotoUploadFailed,
-  trackGuestAuthCompleted,
-  trackAuthStarted,
-  identifyUser,
 } from '../../../lib/analytics';
 
 // ═══════════════════════════════════════════════════════════════════
-// PhotoUploadSheet — Bottom sheet modal for photo capture + upload
+// PhotoUploadSheet — Camera / gallery upload (no email OTP)
 //
-// Flow:
-// 1. Check auth → if no session, show name+email+OTP auth
-// 2. After auth → accept invite → become event participant
-// 3. Show camera/gallery file picker
-// 4. Compress image → upload to Supabase
-// 5. Report success → parent adds photo to grid
+// Identity is established on the invite page via EventAuthGate (email + RPC).
+// This sheet reads `lazzo_event_auth_${token}` / session storage and opens
+// the picker — it does not run a second OTP flow.
 // ═══════════════════════════════════════════════════════════════════
+
+const EVENT_AUTH_PREFIX = 'lazzo_event_auth_';
+const EVENT_AUTH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+function nameFromEmail(email: string): string {
+  const local = email.split('@')[0] ?? '';
+  return local.replace(/[._-]/g, ' ').trim() || 'Guest';
+}
 
 interface PhotoUploadSheetProps {
   token: string;
@@ -33,10 +34,12 @@ interface PhotoUploadSheetProps {
   accentColor: string;
   eventStatus: 'living' | 'recap';
   onPhotoUploaded: (photo: EventPhoto) => void;
+  /** Fires once when at least one file in the batch uploaded successfully (before success screen). */
+  onUploadSuccess?: () => void;
   onClose: () => void;
 }
 
-type Phase = 'checking' | 'auth-name' | 'auth-otp' | 'picker' | 'uploading' | 'success' | 'error';
+type Phase = 'checking' | 'picker' | 'uploading' | 'success' | 'error';
 
 export default function PhotoUploadSheet({
   token,
@@ -44,13 +47,12 @@ export default function PhotoUploadSheet({
   accentColor,
   eventStatus,
   onPhotoUploaded,
+  onUploadSuccess,
   onClose,
 }: PhotoUploadSheetProps) {
   const [phase, setPhase] = useState<Phase>('checking');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState('');
   const [uploadCurrent, setUploadCurrent] = useState(0);
@@ -62,171 +64,78 @@ export default function PhotoUploadSheet({
     return () => { mountedRef.current = false; };
   }, []);
 
-  // ── Check auth on mount ──
-  // If localStorage session is valid (within 48h), skip OTP entirely.
-  // The server-side API can resolve the user by email as fallback.
   useEffect(() => {
-    const checkAuth = async () => {
+    const finish = () => {
+      if (mountedRef.current) setPhase('picker');
+    };
+
+    const safety = window.setTimeout(finish, 2500);
+
+    const run = async () => {
       try {
-        // 1. Check localStorage session first — if valid, skip OTP
         const saved = getValidSession(token);
         if (saved) {
           setName(saved.name);
           setEmail(saved.email);
-
-          // Try to also get the Supabase session (best effort)
-          const supabase = createBrowserSupabase();
-          const sess = (await supabase.auth.getSession()).data.session;
-          if (sess) {
-            const { data: { session: refreshed } } = await supabase.auth.refreshSession();
-            // Use refreshed or original — either is fine
-            void refreshed;
-          }
-
-          // Go straight to picker — server API will use email fallback if JWT is dead
-          setPhase('picker');
           return;
         }
 
-        // 2. No localStorage session — check Supabase auth session
-        const supabase = createBrowserSupabase();
-        let session = (await supabase.auth.getSession()).data.session;
-
-        if (session) {
-          const { data: { session: refreshed } } = await supabase.auth.refreshSession();
-          if (refreshed) session = refreshed;
-        }
-
-        if (session?.user) {
-          // Authenticated via Supabase — ensure participant
-          setUploadProgress('Preparing...');
-          const result = await ensureEventParticipant(supabase, token);
-          if (result) {
-            // Save session so next time we skip OTP
-            const userEmail = session.user.email || '';
-            saveSession(token, userEmail, session.user.user_metadata?.name || userEmail.split('@')[0]);
-            setEmail(userEmail);
-            setPhase('picker');
-            return;
+        try {
+          const raw = localStorage.getItem(`${EVENT_AUTH_PREFIX}${token}`);
+          if (raw) {
+            const ev = JSON.parse(raw) as { email: string; authenticatedAt: number };
+            if (ev.email && Date.now() - ev.authenticatedAt < EVENT_AUTH_TTL_MS) {
+              setEmail(ev.email);
+              setName(nameFromEmail(ev.email));
+              saveSession(token, ev.email, nameFromEmail(ev.email));
+              return;
+            }
           }
+        } catch { /* ignore */ }
+
+        const supabase = createBrowserSupabase();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const userEmail = session.user.email || '';
+          const displayName =
+            (session.user.user_metadata?.name as string | undefined)?.trim()
+            || nameFromEmail(userEmail);
+          setEmail(userEmail);
+          setName(displayName);
+          saveSession(token, userEmail, displayName);
+          void ensureEventParticipant(supabase, token);
+          return;
         }
 
-        // 3. No valid session at all — need OTP
-        setPhase('auth-name');
+        setError('Verify your email on the invite page first, then try again.');
       } catch {
-        setPhase('auth-name');
+        setError('Could not load your session. Try closing and reopening.');
+      } finally {
+        clearTimeout(safety);
+        finish();
       }
     };
 
-    checkAuth();
+    void run();
+
+    return () => {
+      clearTimeout(safety);
+    };
   }, [token]);
 
-  // ── Auth: Send OTP ──
-  const handleSendOtp = useCallback(async () => {
-    const trimmedName = name.trim();
-    const trimmedEmail = email.trim();
-
-    if (!trimmedName || !trimmedEmail) {
-      setError('Please enter your name and email');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setError('Please enter a valid email');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const supabase = createBrowserSupabase();
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: trimmedEmail,
-        options: { shouldCreateUser: true },
-      });
-      if (otpError) throw otpError;
-      if (mountedRef.current) {
-        trackAuthStarted(eventId);
-        setPhase('auth-otp');
-      }
-    } catch (e: unknown) {
-      if (mountedRef.current) {
-        setError(e instanceof Error ? e.message : 'Failed to send code');
-      }
-    } finally {
-      if (mountedRef.current) setLoading(false);
-    }
-  }, [name, email]);
-
-  // ── Auth: Verify OTP ──
-  const handleVerifyOtp = useCallback(async () => {
-    if (otpCode.length < 6) return;
-    setLoading(true);
-    setError(null);
-
-    try {
-      const supabase = createBrowserSupabase();
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: otpCode,
-        type: 'email',
-      });
-      if (verifyError) throw verifyError;
-
-      // Save session
-      const displayName = name.trim() || email.split('@')[0];
-      saveSession(token, email.trim(), displayName);
-
-      // Update user name (best effort)
-      const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user?.id) {
-          await supabase
-            .from('users')
-            .update({ name: name.trim() })
-            .eq('id', session.user.id)
-            .then(() => {});
-        }
-
-      // Ensure event participant
-      setUploadProgress('Joining event...');
-      const result = await ensureEventParticipant(supabase, token);
-      if (result) {
-        if (mountedRef.current) setPhase('picker');
-
-        // Analytics: identify user + track auth
-        const { data: { session: authSession } } = await supabase.auth.getSession();
-        if (authSession?.user?.id) {
-          identifyUser(authSession.user.id, {
-            role: 'guest',
-            email: email.trim(),
-            $name: displayName,
-          });
-          trackGuestAuthCompleted(eventId, authSession.user.id);
-        }
-      } else {
-        if (mountedRef.current) {
-          setError('Could not join event. The invite may have expired.');
-          setPhase('error');
-        }
-      }
-    } catch (e: unknown) {
-      if (mountedRef.current) {
-        setError(e instanceof Error ? e.message : 'Invalid code');
-      }
-    } finally {
-      if (mountedRef.current) setLoading(false);
-    }
-  }, [otpCode, email, name, token]);
-
-  // ── File selection (supports multiple files) ──
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files;
     if (!fileList || fileList.length === 0) return;
 
-    // Filter to images only
     const imageFiles = Array.from(fileList).filter(f => f.type.startsWith('image/'));
     if (imageFiles.length === 0) {
       setError('Please select image files');
+      return;
+    }
+
+    if (!email.trim()) {
+      setError('Missing email for upload. Go back to the invite and verify your email.');
+      setPhase('error');
       return;
     }
 
@@ -235,20 +144,18 @@ export default function PhotoUploadSheet({
     setUploadCurrent(0);
     setUploadTotal(imageFiles.length);
 
-    // Analytics: track upload started
     trackPhotoUploadStarted(eventId, imageFiles.length > 1 ? 'gallery' : 'gallery', imageFiles.length);
 
     try {
       const supabase = createBrowserSupabase();
 
-      // Try to get a valid access token (best effort — API has email fallback)
       let accessToken: string | null = null;
       try {
         const { data: { session: refreshed } } = await supabase.auth.refreshSession();
         const session = refreshed ?? (await supabase.auth.getSession()).data.session;
         accessToken = session?.access_token ?? null;
       } catch {
-        // No JWT available — server will use email fallback
+        /* server may use email fallback */
       }
 
       const uploadedPhotos: EventPhoto[] = [];
@@ -261,32 +168,29 @@ export default function PhotoUploadSheet({
         setUploadProgress(
           imageFiles.length === 1
             ? 'Compressing...'
-            : `Compressing ${i + 1}/${imageFiles.length}...`
+            : `Compressing ${i + 1}/${imageFiles.length}...`,
         );
 
-        // Compress
         const compressed = await compressImage(imageFiles[i]);
         if (!mountedRef.current) return;
 
         setUploadProgress(
           imageFiles.length === 1
             ? 'Uploading...'
-            : `Uploading ${i + 1}/${imageFiles.length}...`
+            : `Uploading ${i + 1}/${imageFiles.length}...`,
         );
 
         const uploadStartTime = Date.now();
 
-        // Upload via server-side API
         const body = new FormData();
         body.append('file', compressed.blob, `photo.${compressed.blob.type === 'image/webp' ? 'webp' : 'jpg'}`);
         body.append('token', token);
         body.append('isPortrait', String(compressed.isPortrait));
-        // Send email + name as fallback auth (when JWT is expired/unavailable)
         if (email) body.append('email', email);
         if (name) body.append('userName', name);
 
         const headers: Record<string, string> = {};
-        if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+        if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
         const res = await fetch('/api/upload-photo', {
           method: 'POST',
@@ -309,7 +213,6 @@ export default function PhotoUploadSheet({
           uploadedPhotos.push(newPhoto);
           onPhotoUploaded(newPhoto);
 
-          // Analytics: track individual photo success
           const uploadDuration = Date.now() - uploadStartTime;
           trackPhotoUploaded(eventId, uploadDuration, Math.round(imageFiles[i].size / 1024));
         } else {
@@ -321,13 +224,12 @@ export default function PhotoUploadSheet({
       if (!mountedRef.current) return;
 
       if (uploadedPhotos.length > 0) {
+        onUploadSuccess?.();
         setPhase('success');
-        // Auto-close after 1.5s
         setTimeout(() => {
           if (mountedRef.current) onClose();
         }, 1500);
 
-        // If partial failures, show in success message
         if (errors.length > 0) {
           setUploadProgress(`${uploadedPhotos.length} uploaded, ${errors.length} failed`);
         }
@@ -341,13 +243,11 @@ export default function PhotoUploadSheet({
         setPhase('error');
       }
     }
-  }, [token, email, name, onPhotoUploaded, onClose]);
+  }, [token, email, name, onPhotoUploaded, onUploadSuccess, onClose, eventId]);
 
   const openFilePicker = useCallback((capture: boolean) => {
     if (fileInputRef.current) {
-      // Store source for analytics
       fileInputRef.current.dataset.source = capture ? 'camera' : 'gallery';
-      // On mobile, capture="environment" opens camera (single photo only)
       if (capture) {
         fileInputRef.current.setAttribute('capture', 'environment');
         fileInputRef.current.removeAttribute('multiple');
@@ -386,7 +286,6 @@ export default function PhotoUploadSheet({
           animation: 'slideUp 0.3s ease-out',
         }}
       >
-        {/* Handle bar */}
         <div style={{
           width: '40px',
           height: '4px',
@@ -396,7 +295,6 @@ export default function PhotoUploadSheet({
           marginBottom: Spacing.lg,
         }} />
 
-        {/* Hidden file input */}
         <input
           ref={fileInputRef}
           type="file"
@@ -405,124 +303,13 @@ export default function PhotoUploadSheet({
           style={{ display: 'none' }}
         />
 
-        {/* ── CHECKING ── */}
         {phase === 'checking' && (
           <div style={{ textAlign: 'center', padding: Spacing.lg }}>
             <div className="spinner" style={{ margin: '0 auto 12px', borderTopColor: accentColor }} />
-            <p style={{ color: BrandColors.text2, fontSize: '14px' }}>Checking session...</p>
+            <p style={{ color: BrandColors.text2, fontSize: '14px' }}>Preparing…</p>
           </div>
         )}
 
-        {/* ── AUTH: NAME + EMAIL ── */}
-        {phase === 'auth-name' && (
-          <>
-            <h3 style={{
-              ...Typography.titleMediumEmph,
-              color: BrandColors.text1,
-              marginBottom: Spacing.xs,
-            }}>
-              {eventStatus === 'living' ? ' Add a Photo' : ' Upload Photos'}
-            </h3>
-            <p style={{
-              ...Typography.bodyMedium,
-              color: BrandColors.text2,
-              marginBottom: Spacing.lg,
-            }}>
-              Verify your identity to upload photos
-            </p>
-
-            <input
-              type="text"
-              placeholder="Your name"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setError(null); }}
-              className="input-field"
-              disabled={loading}
-              autoComplete="name"
-            />
-            <input
-              type="email"
-              placeholder="Your email"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setError(null); }}
-              className="input-field"
-              style={{ marginTop: Spacing.sm }}
-              disabled={loading}
-              autoComplete="email"
-            />
-
-            <button
-              onClick={handleSendOtp}
-              disabled={loading || !name.trim() || !email.trim()}
-              style={{
-                width: '100%',
-                marginTop: Spacing.md,
-                padding: `${Spacing.md} ${Spacing.lg}`,
-                background: accentColor,
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: Spacing.radiusSmAlt,
-                fontSize: '16px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                opacity: loading || !name.trim() || !email.trim() ? 0.5 : 1,
-              }}
-            >
-              {loading ? 'Sending...' : 'Send verification code'}
-            </button>
-          </>
-        )}
-
-        {/* ── AUTH: OTP ── */}
-        {phase === 'auth-otp' && (
-          <>
-            <h3 style={{
-              ...Typography.titleMediumEmph,
-              color: BrandColors.text1,
-              marginBottom: Spacing.xs,
-            }}>
-              Enter code
-            </h3>
-            <p style={{
-              ...Typography.bodyMedium,
-              color: BrandColors.text2,
-              marginBottom: Spacing.xs,
-            }}>
-              6-digit code sent to
-            </p>
-            <p style={{
-              ...Typography.bodyMediumEmph,
-              color: BrandColors.text1,
-              marginBottom: Spacing.lg,
-            }}>
-              {email}
-            </p>
-
-            <OtpInput length={6} onChange={setOtpCode} disabled={loading} />
-
-            <button
-              onClick={handleVerifyOtp}
-              disabled={loading || otpCode.length < 6}
-              style={{
-                width: '100%',
-                marginTop: Spacing.md,
-                padding: `${Spacing.md} ${Spacing.lg}`,
-                background: accentColor,
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: Spacing.radiusSmAlt,
-                fontSize: '16px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                opacity: loading || otpCode.length < 6 ? 0.5 : 1,
-              }}
-            >
-              {loading ? 'Verifying...' : 'Verify & Continue'}
-            </button>
-          </>
-        )}
-
-        {/* ── PICKER: Camera & Gallery ── */}
         {phase === 'picker' && (
           <>
             <h3 style={{
@@ -542,9 +329,20 @@ export default function PhotoUploadSheet({
                 : 'Share your photos from the event'}
             </p>
 
+            {error && (
+              <p style={{
+                fontSize: '13px',
+                color: BrandColors.cantVote,
+                marginBottom: Spacing.md,
+                textAlign: 'center',
+              }}>
+                {error}
+              </p>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
-              {/* Take Photo (Camera) */}
               <button
+                type="button"
                 onClick={() => openFilePicker(true)}
                 style={{
                   width: '100%',
@@ -561,15 +359,15 @@ export default function PhotoUploadSheet({
                   cursor: 'pointer',
                 }}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                   <circle cx="12" cy="13" r="4" />
                 </svg>
                 Take Photo
               </button>
 
-              {/* Choose from Gallery */}
               <button
+                type="button"
                 onClick={() => openFilePicker(false)}
                 style={{
                   width: '100%',
@@ -586,7 +384,7 @@ export default function PhotoUploadSheet({
                   cursor: 'pointer',
                 }}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                   <circle cx="8.5" cy="8.5" r="1.5" />
                   <polyline points="21 15 16 10 5 21" />
@@ -597,7 +395,6 @@ export default function PhotoUploadSheet({
           </>
         )}
 
-        {/* ── UPLOADING ── */}
         {phase === 'uploading' && (
           <div style={{ textAlign: 'center', padding: Spacing.lg }}>
             <div className="spinner" style={{ margin: '0 auto 16px', borderTopColor: accentColor }} />
@@ -626,7 +423,6 @@ export default function PhotoUploadSheet({
           </div>
         )}
 
-        {/* ── SUCCESS ── */}
         {phase === 'success' && (
           <div style={{ textAlign: 'center', padding: Spacing.lg }}>
             <div style={{
@@ -639,7 +435,7 @@ export default function PhotoUploadSheet({
               justifyContent: 'center',
               margin: '0 auto 16px',
             }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -654,7 +450,6 @@ export default function PhotoUploadSheet({
           </div>
         )}
 
-        {/* ── ERROR ── */}
         {phase === 'error' && (
           <div style={{ textAlign: 'center', padding: Spacing.lg }}>
             <div style={{
@@ -685,7 +480,8 @@ export default function PhotoUploadSheet({
               {error || 'Something went wrong. Please try again.'}
             </p>
             <button
-              onClick={() => setPhase('picker')}
+              type="button"
+              onClick={() => { setError(null); setPhase('picker'); }}
               style={{
                 padding: `${Spacing.sm} ${Spacing.lg}`,
                 background: accentColor,
@@ -702,21 +498,9 @@ export default function PhotoUploadSheet({
           </div>
         )}
 
-        {/* ── Error message (for auth phases) ── */}
-        {error && (phase === 'auth-name' || phase === 'auth-otp') && (
-          <p style={{
-            fontSize: '13px',
-            color: BrandColors.cantVote,
-            marginTop: Spacing.sm,
-            textAlign: 'center',
-          }}>
-            {error}
-          </p>
-        )}
-
-        {/* ── Cancel button (for non-terminal phases) ── */}
         {!['uploading', 'success'].includes(phase) && (
           <button
+            type="button"
             onClick={onClose}
             style={{
               width: '100%',

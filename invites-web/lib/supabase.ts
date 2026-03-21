@@ -105,7 +105,7 @@ export async function fetchEventGuests(eventId: string): Promise<GuestRecord[]> 
       .eq('pevent_id', eventId);
 
     // 2. Fetch user details separately (avoids FK join issues)
-    let userMap = new Map<string, { name: string; avatar_url: string | null }>();
+    const userMap = new Map<string, { name: string; avatar_url: string | null }>();
     if (appParticipants && appParticipants.length > 0) {
       const userIds = appParticipants.map((p: { user_id: string }) => p.user_id);
       const { data: users } = await serviceClient
