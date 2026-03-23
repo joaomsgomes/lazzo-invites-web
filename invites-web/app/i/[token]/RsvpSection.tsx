@@ -14,6 +14,8 @@ import {
   identifyUser,
   getSecondsSincePageLoad,
 } from '../../../lib/analytics';
+import type { GuestRecord } from '../../../lib/supabase';
+import UserAvatar from '../../components/UserAvatar';
 
 // ---- Types ----
 
@@ -39,6 +41,7 @@ export default function RsvpSection({
   initialGoingCount,
   initialMaybeCount,
   initialCantCount,
+  guests,
   eventStatus,
   onVoteSubmitted,
   onGuestsPress,
@@ -513,7 +516,9 @@ export default function RsvpSection({
           }}>
             {/* Stacked avatars */}
             <StackedAvatars
+              guests={guests}
               goingCount={initialGoingCount}
+              maybeCount={initialMaybeCount}
               cantCount={initialCantCount}
               confirmedVote={confirmedVote}
               confirmedName={confirmedName}
@@ -941,34 +946,99 @@ function VoteButton({
 
 
 // ---- Stacked Avatars (matches Flutter _buildStackedAvatars) ----
-// Shows overlapping initial circles for voters
+// Real photos when available from guest list; otherwise initials / placeholders.
+
+type StackSlot =
+  | { kind: 'user'; name: string; avatarUrl: string | null }
+  | { kind: 'placeholder'; letter: string };
+
+function buildStackSlots(
+  guests: GuestRecord[],
+  confirmedVote: string | null,
+  confirmedName: string,
+  goingCount: number,
+  maybeCount: number,
+  cantCount: number
+): StackSlot[] {
+  const rsvpFilter: GuestRecord['rsvp'] | null =
+    confirmedVote === 'going'
+      ? 'going'
+      : confirmedVote === 'maybe'
+        ? 'maybe'
+        : confirmedVote === 'not_going'
+          ? 'not_going'
+          : null;
+
+  const totalRelevant =
+    confirmedVote === 'going'
+      ? goingCount
+      : confirmedVote === 'maybe'
+        ? maybeCount
+        : confirmedVote === 'not_going'
+          ? cantCount
+          : 0;
+
+  const count = Math.min(Math.max(totalRelevant, confirmedName ? 1 : 0), 5);
+  if (count === 0 || !rsvpFilter) return [];
+
+  const norm = (s: string) => s.trim().toLowerCase();
+  const cn = norm(confirmedName);
+  const pool = guests.filter((g) => g.rsvp === rsvpFilter);
+
+  const slots: StackSlot[] = [];
+  const firstGuest = pool.find((g) => norm(g.name) === cn);
+  if (firstGuest) {
+    slots.push({ kind: 'user', name: firstGuest.name, avatarUrl: firstGuest.avatar_url });
+  } else {
+    slots.push({ kind: 'user', name: confirmedName, avatarUrl: null });
+  }
+
+  for (const g of pool) {
+    if (slots.length >= count) break;
+    if (norm(g.name) === cn) continue;
+    slots.push({ kind: 'user', name: g.name, avatarUrl: g.avatar_url });
+  }
+
+  let pad = 0;
+  while (slots.length < count) {
+    slots.push({
+      kind: 'placeholder',
+      letter: String.fromCharCode(65 + ((pad++ + 3) % 26)),
+    });
+  }
+
+  return slots.slice(0, count);
+}
 
 function StackedAvatars({
+  guests,
   goingCount,
+  maybeCount,
   cantCount,
   confirmedVote,
   confirmedName,
 }: {
+  guests: GuestRecord[];
   goingCount: number;
+  maybeCount: number;
   cantCount: number;
   confirmedVote: string | null;
   confirmedName: string;
 }) {
-  // Show up to 5 avatars based on total relevant count
-  const totalRelevant = confirmedVote === 'going' ? goingCount : cantCount;
-  const count = Math.min(totalRelevant, 5);
-  if (count === 0) return null;
+  const slots = buildStackSlots(
+    guests,
+    confirmedVote,
+    confirmedName,
+    goingCount,
+    maybeCount,
+    cantCount
+  );
+  if (slots.length === 0) return null;
 
   const avatarSize = 24;
   const overlap = 6;
+  const count = slots.length;
   const totalWidth = avatarSize + (count - 1) * (avatarSize - overlap);
-
-  // Generate initials — first is always the confirmed user, rest are placeholders
-  const initials: string[] = [];
-  initials.push(confirmedName?.[0]?.toUpperCase() || '?');
-  for (let i = 1; i < count; i++) {
-    initials.push(String.fromCharCode(65 + ((i + 3) % 26))); // A, B, C...
-  }
 
   return (
     <div style={{
@@ -977,9 +1047,9 @@ function StackedAvatars({
       height: `${avatarSize}px`,
       flexShrink: 0,
     }}>
-      {initials.map((initial, i) => (
+      {slots.map((slot, i) => (
         <div
-          key={i}
+          key={`${slot.kind}-${i}-${slot.kind === 'user' ? slot.name : slot.letter}`}
           style={{
             position: 'absolute',
             left: `${i * (avatarSize - overlap)}px`,
@@ -987,18 +1057,34 @@ function StackedAvatars({
             width: `${avatarSize}px`,
             height: `${avatarSize}px`,
             borderRadius: '50%',
-            background: BrandColors.bg3,
-            border: `1.5px solid ${BrandColors.bg2}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '10px',
-            fontWeight: 500,
-            color: BrandColors.text2,
+            overflow: 'hidden',
             zIndex: count - i,
+            boxShadow: `0 0 0 1.5px ${BrandColors.bg2}`,
           }}
         >
-          {initial}
+          {slot.kind === 'user' ? (
+            <UserAvatar
+              name={slot.name}
+              avatarUrl={slot.avatarUrl}
+              size={avatarSize}
+              fontSize="10px"
+              fontWeight={500}
+            />
+          ) : (
+            <div style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '10px',
+              fontWeight: 500,
+              color: BrandColors.text2,
+              background: BrandColors.bg3,
+            }}>
+              {slot.letter}
+            </div>
+          )}
         </div>
       ))}
     </div>

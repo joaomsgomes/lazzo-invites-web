@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { BrandColors, Spacing, Typography } from '../../design/constants';
 import type { GuestRecord } from '../../../lib/supabase';
-import { resolveAvatarUrl } from '../../../lib/avatar';
+import UserAvatar from '../../components/UserAvatar';
 
 // ── Types ──
 
@@ -345,9 +345,7 @@ function GuestListTile({
   guest: GuestRecord;
   isLivingOrRecap: boolean;
 }) {
-  const initial = (guest.name || '?').charAt(0).toUpperCase();
   const displayName = guest.name;
-  const resolvedAvatarUrl = resolveAvatarUrl(guest.avatar_url);
 
   return (
     <div style={{
@@ -356,52 +354,7 @@ function GuestListTile({
       padding: `${Spacing.xs} ${Spacing.md}`,
       gap: Spacing.sm,
     }}>
-      {/* Avatar */}
-      <div style={{
-        width: '48px',
-        height: '48px',
-        borderRadius: '50%',
-        background: BrandColors.bg3,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-        overflow: 'hidden',
-      }}>
-        {resolvedAvatarUrl ? (
-          <img
-            src={resolvedAvatarUrl}
-            alt={guest.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => {
-              const img = e.target as HTMLImageElement;
-              if (img.dataset.fallbackTried === '1') {
-                img.style.display = 'none';
-                return;
-              }
-
-              img.dataset.fallbackTried = '1';
-              if (guest.avatar_url && !guest.avatar_url.startsWith('http')) {
-                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-                if (supabaseUrl) {
-                  img.src = `${supabaseUrl}/storage/v1/object/public/avatars/${guest.avatar_url}`;
-                  return;
-                }
-              }
-
-              img.style.display = 'none';
-            }}
-          />
-        ) : (
-          <span style={{
-            fontSize: '18px',
-            fontWeight: 500,
-            color: BrandColors.text2,
-          }}>
-            {initial}
-          </span>
-        )}
-      </div>
+      <UserAvatar name={guest.name} avatarUrl={guest.avatar_url} size={48} fontSize="18px" fontWeight={500} />
 
       {/* Name + date */}
       <div style={{ flex: 1, minWidth: 0 }}>

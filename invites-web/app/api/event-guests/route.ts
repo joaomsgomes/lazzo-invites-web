@@ -21,6 +21,46 @@ interface GuestRecord {
   voted_at: string | null;
 }
 
+function isAbsoluteUrl(value: string): boolean {
+  return value.startsWith('http://') || value.startsWith('https://');
+}
+
+async function buildSignedAvatarMap(
+  serviceClient: ReturnType<typeof createClient>,
+  avatars: string[]
+): Promise<Map<string, string>> {
+  const avatarMap = new Map<string, string>();
+  const relativePaths = avatars.filter((p) => p && !isAbsoluteUrl(p));
+  if (relativePaths.length === 0) return avatarMap;
+
+  const uniquePaths = Array.from(new Set(relativePaths));
+
+  const { data: primarySigned } = await serviceClient
+    .storage
+    .from('users-profile-pic')
+    .createSignedUrls(uniquePaths, 60 * 60 * 12);
+
+  for (let i = 0; i < uniquePaths.length; i++) {
+    const signed = primarySigned?.[i]?.signedUrl;
+    if (signed) avatarMap.set(uniquePaths[i], signed);
+  }
+
+  const missing = uniquePaths.filter((p) => !avatarMap.has(p));
+  if (missing.length > 0) {
+    const { data: legacySigned } = await serviceClient
+      .storage
+      .from('avatars')
+      .createSignedUrls(missing, 60 * 60 * 12);
+
+    for (let i = 0; i < missing.length; i++) {
+      const signed = legacySigned?.[i]?.signedUrl;
+      if (signed) avatarMap.set(missing[i], signed);
+    }
+  }
+
+  return avatarMap;
+}
+
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token');
   if (!token) {
@@ -66,9 +106,18 @@ export async function GET(req: NextRequest) {
         .from('users')
         .select('id, name, avatar_url')
         .in('id', userIds);
+
+      const signedAvatars = await buildSignedAvatarMap(
+        serviceClient,
+        (users || []).map((u) => u.avatar_url).filter(Boolean) as string[]
+      );
+
       if (users) {
         for (const u of users) {
-          userMap.set(u.id, { name: u.name, avatar_url: u.avatar_url });
+          const avatarUrl = u.avatar_url
+            ? (isAbsoluteUrl(u.avatar_url) ? u.avatar_url : (signedAvatars.get(u.avatar_url) || null))
+            : null;
+          userMap.set(u.id, { name: u.name, avatar_url: avatarUrl });
         }
       }
     }

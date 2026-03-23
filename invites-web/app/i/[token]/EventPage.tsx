@@ -12,7 +12,7 @@ import LazzoHeader from './LazzoHeader';
 import ShareSheet from './ShareSheet';
 import { createBrowserSupabase } from '../../../lib/supabase';
 import type { EventData, EventPhoto, GuestRecord } from '../../../lib/supabase';
-import { resolveAvatarUrl } from '../../../lib/avatar';
+import UserAvatar from '../../components/UserAvatar';
 import Link from 'next/link';
 import {
   trackInviteLinkOpened,
@@ -622,30 +622,6 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
                   </svg>
                 </>
               )}
-
-              <div
-                style={{
-                  position: 'relative',
-                  zIndex: 1,
-                  width: '100%',
-                  padding: Spacing.sm,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: mapPreviewSrc ? 'linear-gradient(to top, rgba(0,0,0,0.5), rgba(0,0,0,0.1))' : 'transparent',
-                  pointerEvents: 'none',
-                }}
-              >
-                <span style={{
-                  fontSize: '14px',
-                  color: mapPreviewSrc ? '#FFFFFF' : BrandColors.text2,
-                  marginTop: mapPreviewSrc ? 0 : Spacing.xs,
-                  fontWeight: mapPreviewSrc ? 600 : 400,
-                }}>
-                  {mapPreviewSrc ? 'Open in Maps' : 'Tap to open in Maps'}
-                </span>
-              </div>
             </a>
           </SectionCard>
         )}
@@ -715,9 +691,11 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
                   alignItems: 'center',
                   gap: Spacing.sm,
                 }}>
-                  <OrganizerAvatar
+                  <UserAvatar
                     name={event.organizer_name}
                     avatarUrl={event.organizer_avatar}
+                    size={36}
+                    fontSize="14px"
                   />
                   <div>
                     <p style={{
@@ -1012,58 +990,3 @@ function CalendarIconSquare({
   );
 }
 
-/** Organizer avatar circle */
-function OrganizerAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
-  const fullUrl = resolveAvatarUrl(avatarUrl);
-
-  return (
-    <div style={{
-      width: '36px',
-      height: '36px',
-      borderRadius: '50%',
-      background: BrandColors.bg3,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '14px',
-      fontWeight: 600,
-      color: BrandColors.text2,
-      overflow: 'hidden',
-      flexShrink: 0,
-    }}>
-      {fullUrl ? (
-        <img
-          src={fullUrl}
-          alt={name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          onError={(e) => {
-            const img = e.target as HTMLImageElement;
-            if (img.dataset.fallbackTried === '1') {
-              img.style.display = 'none';
-              if (img.parentElement) {
-                img.parentElement.textContent = name?.[0]?.toUpperCase() || '?';
-              }
-              return;
-            }
-
-            img.dataset.fallbackTried = '1';
-            if (avatarUrl && !avatarUrl.startsWith('http')) {
-              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-              if (supabaseUrl) {
-                img.src = `${supabaseUrl}/storage/v1/object/public/avatars/${avatarUrl}`;
-                return;
-              }
-            }
-
-            img.style.display = 'none';
-            if (img.parentElement) {
-              img.parentElement.textContent = name?.[0]?.toUpperCase() || '?';
-            }
-          }}
-        />
-      ) : (
-        name?.[0]?.toUpperCase() || '?'
-      )}
-    </div>
-  );
-}

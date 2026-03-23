@@ -8,7 +8,15 @@
 //
 
 import { cache } from 'react';
-import { createServerSupabase, fetchEventPhotos, fetchEventGuests, type EventData, type EventPhoto, type GuestRecord } from '../../../lib/supabase';
+import {
+  createServerSupabase,
+  fetchEventPhotos,
+  fetchEventGuests,
+  signAvatarUrlIfRelative,
+  type EventData,
+  type EventPhoto,
+  type GuestRecord,
+} from '../../../lib/supabase';
 import { BrandColors, Spacing } from '../../design/constants';
 import EventPage from './EventPage';
 import ClientWrapper from './ClientWrapper';
@@ -37,7 +45,13 @@ const getEventData = cache(
       }
 
       if (!data) return { event: null, error: 'not_found' };
-      return { event: data as EventData, error: null };
+
+      let event = data as EventData;
+      const signedOrganizer = await signAvatarUrlIfRelative(event.organizer_avatar);
+      if (signedOrganizer) {
+        event = { ...event, organizer_avatar: signedOrganizer };
+      }
+      return { event, error: null };
     } catch {
       return { event: null, error: 'unknown' };
     }
@@ -57,8 +71,7 @@ export async function generateMetadata({
   if (!event) return { title: 'Lazzo - Invite' };
 
   const title = `${event.event_emoji || '📩'} ${event.event_name} | Lazzo`;
-  const description =
-    event.event_description || `You're invited to ${event.event_name}!`;
+  const description = '';
 
   return {
     title,

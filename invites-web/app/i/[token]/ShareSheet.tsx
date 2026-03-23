@@ -75,7 +75,6 @@ export default function ShareSheet({ inviteUrl, eventId, eventName, eventEmoji, 
       try {
         await navigator.share({
           title: eventName,
-          text: `Join ${eventName} on Lazzo! 🎉`,
           url: inviteUrl,
         });
         trackInviteLinkShared(eventId, 'share');
