@@ -554,6 +554,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
             <RsvpSection
               token={token}
               eventId={event.event_id}
+              guests={localGuests}
               initialGoingCount={goingCount}
               initialMaybeCount={maybeCount}
               initialCantCount={cantCount}

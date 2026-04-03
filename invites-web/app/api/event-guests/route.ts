@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 // ═══════════════════════════════════════════════════════════════════
 // GET /api/event-guests?token=xxx — Client-side guest list fetch
@@ -26,7 +26,7 @@ function isAbsoluteUrl(value: string): boolean {
 }
 
 async function buildSignedAvatarMap(
-  serviceClient: ReturnType<typeof createClient>,
+  serviceClient: SupabaseClient<any, any, any>,
   avatars: string[]
 ): Promise<Map<string, string>> {
   const avatarMap = new Map<string, string>();

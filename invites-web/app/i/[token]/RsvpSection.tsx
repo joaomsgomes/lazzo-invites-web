@@ -25,6 +25,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 interface RsvpSectionProps {
   token: string;
   eventId: string;
+  guests: GuestRecord[];
   initialGoingCount: number;
   initialMaybeCount: number;
   initialCantCount: number;
