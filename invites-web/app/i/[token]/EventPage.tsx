@@ -91,9 +91,29 @@ function getStatusConfig(status: string): { label: string; color: string } {
   }
 }
 
-function getGoogleMapsUrl(lat: number | null, lng: number | null, name: string | null): string {
-  https://getlazzo.com/i/InsX6ZhG9YTaXPlXI1jvjE8F  if (lat != null && lng != null) return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-  if (name) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`;
+/** DB often stores (0,0) when only a venue name was set — never open Maps at the ocean. */
+function hasUsableMapCoords(lat: number | null, lng: number | null): boolean {
+  if (lat == null || lng == null) return false;
+  const la = Number(lat);
+  const ln = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) return false;
+  const isZeroPlaceholder = Math.abs(la) < 1e-6 && Math.abs(ln) < 1e-6;
+  return !isZeroPlaceholder;
+}
+
+function getGoogleMapsUrl(
+  lat: number | null,
+  lng: number | null,
+  name: string | null,
+  address: string | null,
+): string {
+  if (hasUsableMapCoords(lat, lng)) {
+    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  }
+  const textQuery = [name, address].filter(Boolean).join(', ').trim();
+  if (textQuery) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(textQuery)}`;
+  }
   return '#';
 }
 
@@ -315,28 +335,32 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
   const isEnded = liveStatus === 'ended';
   const canVote = liveStatus === 'pending' || liveStatus === 'confirmed';
   const hasLocation = Boolean(event.location_name);
-  const hasCoords = event.location_lat != null && event.location_lng != null;
+  const hasUsableCoords = hasUsableMapCoords(event.location_lat, event.location_lng);
   const hasDate = Boolean(event.start_datetime);
 
   const mapsUrl = useMemo(
-    () => getGoogleMapsUrl(event.location_lat, event.location_lng, event.location_name),
-    [event.location_lat, event.location_lng, event.location_name]
+    () =>
+      getGoogleMapsUrl(
+        event.location_lat,
+        event.location_lng,
+        event.location_name,
+        event.location_address,
+      ),
+    [
+      event.location_lat,
+      event.location_lng,
+      event.location_name,
+      event.location_address,
+    ],
   );
 
-  // Map preview using Google Maps embed (no API key).
-  // Clicking the widget still opens the destination in Google Maps.
+  // Map iframe preview only when we have real coordinates (not 0,0 placeholders).
+  // Name-only / undetermined places: show static map icon; link still opens Maps text search.
   const mapPreviewSrc = useMemo(() => {
-    const hasNumericCoords = hasCoords
-      && Number.isFinite(Number(event.location_lat))
-      && Number.isFinite(Number(event.location_lng));
-
-    const query = hasNumericCoords
-      ? `${event.location_lat},${event.location_lng}`
-      : [event.location_name, event.location_address].filter(Boolean).join(', ');
-
-    if (!query) return null;
+    if (!hasUsableCoords) return null;
+    const query = `${event.location_lat},${event.location_lng}`;
     return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`;
-  }, [hasCoords, event.location_lat, event.location_lng, event.location_name, event.location_address]);
+  }, [hasUsableCoords, event.location_lat, event.location_lng]);
 
   const handleVoteSubmitted = (vote: 'going' | 'not_going' | 'maybe', guestName: string) => {
     setHasVoted(true);
@@ -405,7 +429,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
           {/* Location Info Row — clickable → Google Maps (hidden when ended) */}
           {hasLocation && !isEnded && (
             <a
-              href={hasCoords || event.location_name ? mapsUrl : undefined}
+              href={mapsUrl !== '#' ? mapsUrl : undefined}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -415,7 +439,7 @@ export default function EventPage({ event, token, photos: initialPhotos, guests 
                 marginTop: Spacing.xs,
                 color: BrandColors.text2,
                 textDecoration: 'none',
-                cursor: hasCoords || event.location_name ? 'pointer' : 'default',
+                cursor: mapsUrl !== '#' ? 'pointer' : 'default',
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

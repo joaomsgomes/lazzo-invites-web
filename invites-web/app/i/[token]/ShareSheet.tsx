@@ -69,14 +69,19 @@ export default function ShareSheet({ inviteUrl, eventId, eventName, eventEmoji, 
     trackInviteLinkShared(eventId, 'copy_link');
   }, [inviteUrl, eventId]);
 
-  // Native share
+  // Native share — Card tab: URL only so messengers show the rich preview image without extra caption text.
   const handleShare = useCallback(async () => {
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: eventName,
-          url: inviteUrl,
-        });
+        if (tab === 'card') {
+          await navigator.share({ url: inviteUrl });
+        } else {
+          await navigator.share({
+            title: eventName,
+            text: inviteUrl,
+            url: inviteUrl,
+          });
+        }
         trackInviteLinkShared(eventId, 'share');
       } catch {
         // User cancelled
@@ -84,7 +89,7 @@ export default function ShareSheet({ inviteUrl, eventId, eventName, eventEmoji, 
     } else {
       handleCopy();
     }
-  }, [eventName, inviteUrl, handleCopy, eventId]);
+  }, [tab, eventName, inviteUrl, handleCopy, eventId]);
 
   return (
     <div

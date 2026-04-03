@@ -71,20 +71,34 @@ export async function generateMetadata({
   if (!event) return { title: 'Lazzo - Invite' };
 
   const title = `${event.event_emoji || '📩'} ${event.event_name} | Lazzo`;
-  const description = '';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://getlazzo.com';
+  const inviteUrl = `${siteUrl}/i/${token}`;
+  const imageUrl = `${siteUrl}/i/${token}/opengraph-image`;
 
   return {
     title,
-    description,
+    metadataBase: new URL(siteUrl),
+    alternates: { canonical: inviteUrl },
+    // Leave social description empty so link previews show mostly the OG image (event name is on the image).
     openGraph: {
-      title,
-      description,
+      title: 'Lazzo',
+      description: '',
       type: 'website',
+      url: inviteUrl,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: `${event.event_name} invite`,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
-      title,
-      description,
+      title: 'Lazzo',
+      description: '',
+      images: [imageUrl],
     },
   };
 }
