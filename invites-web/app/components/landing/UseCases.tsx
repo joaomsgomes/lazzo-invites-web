@@ -1,13 +1,29 @@
 import RevealOnScroll from './RevealOnScroll';
 import SectionHeading from './SectionHeading';
 
-const USE_CASES = [
-  { label: 'Birthdays', emoji: '🎂' },
-  { label: 'House parties', emoji: '🎉' },
-  { label: 'Weekend trips', emoji: '🧳' },
-  { label: 'Dinner nights', emoji: '🍝' },
-  { label: 'Festival crews', emoji: '🎪' },
-  { label: 'Game nights', emoji: '🎮' },
+type Case = {
+  label: string;
+  tag: string;
+  accent: string;
+  image: string;
+};
+
+const PHASE = {
+  planning: '#169C3E',
+  living: '#8A38F5',
+  recap: '#FF751A',
+};
+
+const UNSPLASH = (id: string) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=700&q=80`;
+
+const USE_CASES: Case[] = [
+  { label: 'Birthdays',     tag: 'Turning one year louder.',         accent: PHASE.planning, image: UNSPLASH('photo-1530103862676-de8c9debad1d') },
+  { label: 'House parties', tag: "The night you'll want to relive.", accent: PHASE.living,   image: UNSPLASH('photo-1414235077428-338989a2e8c0') },
+  { label: 'Weekend trips', tag: 'Pack light, remember everything.', accent: PHASE.recap,    image: UNSPLASH('photo-1501785888041-af3ef285b470') },
+  { label: 'Dinner nights', tag: 'Slow meals, loud memories.',       accent: PHASE.planning, image: UNSPLASH('photo-1555939594-58d7cb561ad1') },
+  { label: 'Festival crews',tag: 'Find your people. Keep them.',     accent: PHASE.living,   image: UNSPLASH('photo-1533174072545-7a4b6ad7a6c3') },
+  { label: 'Game nights',   tag: 'Rivalries that deserve replays.',  accent: PHASE.recap,    image: UNSPLASH('photo-1610890716171-6b1bb98ffd09') },
 ];
 
 export default function UseCases() {
@@ -20,16 +36,41 @@ export default function UseCases() {
           title="Any time your people are in the same place."
         />
 
-        <div className="mt-16 md:mt-20 w-full max-w-4xl grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="mt-20 md:mt-24 w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
           {USE_CASES.map((u, i) => (
-            <RevealOnScroll key={u.label} delay={i * 50}>
+            <RevealOnScroll key={u.label} delay={i * 60}>
               <div
-                className="bg-bg2 border border-divider/60 rounded-md p-5 md:p-6 flex items-center gap-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-transparent hover:shadow-[0_8px_30px_rgba(138,56,245,0.12),0_0_0_1px_rgba(138,56,245,0.35)]"
+                className="group relative overflow-hidden rounded-2xl aspect-[4/5] transition-all duration-200 hover:-translate-y-1"
+                style={{ border: `1.5px solid ${u.accent}` }}
               >
-                <span className="text-2xl md:text-3xl" aria-hidden="true">
-                  {u.emoji}
-                </span>
-                <span className="text-text1 font-medium">{u.label}</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={u.image}
+                  alt={u.label}
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      'linear-gradient(to top, rgba(18,18,18,0.92) 0%, rgba(18,18,18,0.45) 45%, rgba(18,18,18,0.15) 100%)',
+                  }}
+                />
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  style={{ boxShadow: `inset 0 0 0 1.5px ${u.accent}, 0 12px 40px ${u.accent}33` }}
+                />
+                <div className="absolute left-0 right-0 bottom-0 p-5 md:p-6">
+                  <div className="text-xl md:text-2xl font-semibold text-text1 tracking-tight leading-tight">
+                    {u.label}
+                  </div>
+                  <div className="mt-1.5 text-sm text-text1/80 leading-relaxed">
+                    {u.tag}
+                  </div>
+                </div>
               </div>
             </RevealOnScroll>
           ))}

@@ -1,4 +1,3 @@
-import { ReactNode } from 'react';
 import RevealOnScroll from './RevealOnScroll';
 
 type Phase = 'planning' | 'living' | 'recap';
@@ -10,8 +9,10 @@ type Props = {
   title: string;
   description: string;
   bullets: string[];
-  mockup: ReactNode;
+  imageSrc: string;
+  imageAlt: string;
   reverse?: boolean;
+  edgeBleed?: 'right';
 };
 
 const PHASE_COLOR: Record<Phase, string> = {
@@ -27,62 +28,95 @@ export default function PhaseShowcase({
   title,
   description,
   bullets,
-  mockup,
+  imageSrc,
+  imageAlt,
+  reverse = false,
+  edgeBleed,
 }: Props) {
   const color = PHASE_COLOR[phase];
+  const bleedRight = edgeBleed === 'right';
+
   return (
     <section
       aria-labelledby={`phase-${phase}-heading`}
-      className="relative px-6 py-32 md:py-44 overflow-hidden"
+      className={`relative pl-6 ${bleedRight ? 'pr-0 md:pr-0' : 'pr-6'} py-24 md:py-32 overflow-hidden`}
     >
-      {/* Subtle ambient background tint in the phase color */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
-          backgroundImage: `radial-gradient(circle at 50% 40%, ${color}14 0%, transparent 60%)`,
+          backgroundImage: `radial-gradient(circle at ${reverse ? '25%' : '75%'} 50%, ${color}1A 0%, transparent 55%)`,
         }}
       />
 
-      <div className="flex flex-col items-center text-center">
-        <RevealOnScroll className="flex items-center justify-center">
-          {mockup}
+      <div
+        className={`${bleedRight ? 'ml-auto mr-0' : 'mx-auto'} max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-14 md:gap-20 items-center ${
+          reverse ? 'md:[&>*:first-child]:order-2' : ''
+        }`}
+      >
+        {/* Text block */}
+        <RevealOnScroll
+          delay={reverse ? 120 : 0}
+          className={`flex justify-center ${reverse ? 'md:justify-start' : 'md:justify-end'}`}
+        >
+          <div className="flex flex-col items-start gap-5 max-w-md w-full text-left">
+            <div
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-pill text-[11px] font-bold tracking-[0.18em] uppercase"
+              style={{ backgroundColor: `${color}1F`, color }}
+            >
+              <span>{number}</span>
+              <span style={{ opacity: 0.55 }}>•</span>
+              <span>{eyebrow}</span>
+            </div>
+
+            <h2
+              id={`phase-${phase}-heading`}
+              className="text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.02] mb-4"
+              style={{ color, fontFamily: 'var(--font-serif)', fontWeight: 400 }}
+            >
+              {title}
+            </h2>
+
+            <p className="text-lg text-text2 leading-relaxed">
+              {description}
+            </p>
+
+            <ul className="mt-2 space-y-2.5">
+              {bullets.map((b, i) => (
+                <li key={i} className="flex items-center gap-3 text-base text-text1">
+                  <span
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </RevealOnScroll>
 
-        <RevealOnScroll delay={120} className="mt-16 md:mt-20 flex flex-col items-center">
-          <div
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-pill text-[11px] font-bold tracking-[0.18em] uppercase mb-6"
-            style={{ backgroundColor: `${color}1F`, color }}
-          >
-            <span>{number}</span>
-            <span style={{ opacity: 0.55 }}>•</span>
-            <span>{eyebrow}</span>
+        {/* Photo */}
+        <RevealOnScroll
+          delay={reverse ? 0 : 120}
+          className={`flex justify-center ${
+            bleedRight ? 'md:justify-end' : reverse ? 'md:justify-end' : 'md:justify-start'
+          }`}
+        >
+          <div className="relative w-full max-w-md">
+            <div
+              aria-hidden="true"
+              className="absolute -inset-4 rounded-[32px] blur-2xl opacity-40"
+              style={{ backgroundColor: color }}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageSrc}
+              alt={imageAlt}
+              className="relative w-full aspect-[4/5] object-cover rounded-[24px] border border-white/10 shadow-2xl"
+              loading="lazy"
+            />
           </div>
-
-          <h2
-            id={`phase-${phase}-heading`}
-            className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.02]"
-            style={{ color }}
-          >
-            {title}
-          </h2>
-
-          <p className="mt-6 text-lg text-text2 leading-relaxed max-w-xl">
-            {description}
-          </p>
-
-          <ul className="mt-8 space-y-3.5 flex flex-col items-center">
-            {bullets.map((b, i) => (
-              <li key={i} className="flex items-center gap-3 text-base text-text1">
-                <span
-                  aria-hidden="true"
-                  className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: color }}
-                />
-                <span className="leading-relaxed">{b}</span>
-              </li>
-            ))}
-          </ul>
         </RevealOnScroll>
       </div>
     </section>

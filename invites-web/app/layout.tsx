@@ -1,12 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Roboto } from "next/font/google";
+import { Bricolage_Grotesque, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import PostHogProvider from "./providers/PostHogProvider";
 
-const roboto = Roboto({
-  weight: ['400', '500', '700'],
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
   display: 'swap',
+  variable: '--font-bricolage',
+});
+
+const instrumentSerif = Instrument_Serif({
+  weight: '400',
+  subsets: ["latin"],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  variable: '--font-instrument-serif',
 });
 
 const SITE_URL = "https://getlazzo.com";
@@ -81,7 +89,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={roboto.className}>
+      <body className={`${bricolage.variable} ${instrumentSerif.variable}`}>
         <PostHogProvider>
           {children}
         </PostHogProvider>

@@ -6,10 +6,9 @@ import UseCases from './components/landing/UseCases';
 import DownloadCTA from './components/landing/DownloadCTA';
 import Footer from './components/landing/Footer';
 import CookieBanner from './components/landing/CookieBanner';
-import PhoneFrame from './components/landing/mockups/PhoneFrame';
-import PlanningMockup from './components/landing/mockups/PlanningMockup';
-import LivingMockup from './components/landing/mockups/LivingMockup';
-import RecapMockup from './components/landing/mockups/RecapMockup';
+
+const UNSPLASH = (id: string) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=80`;
 
 export default function Home() {
   return (
@@ -26,15 +25,13 @@ export default function Home() {
           title="Agree on a plan without the chaos."
           description="Spin up an event in 20 seconds. Let the group vote on dates and places. Get RSVPs that actually mean something."
           bullets={[
-            'Create an event in 20 seconds',
-            'Poll dates and places — let the group vote',
-            'RSVPs that actually work',
+            'Create in 20 seconds',
+            'Group votes on dates',
+            'RSVPs that stick',
           ]}
-          mockup={
-            <PhoneFrame glowColor="#169C3E">
-              <PlanningMockup />
-            </PhoneFrame>
-          }
+          imageSrc={UNSPLASH('photo-1529156069898-49953e39b3ac')}
+          imageAlt="Friends planning together around a table"
+          reverse
         />
 
         <PhaseShowcase
@@ -44,16 +41,13 @@ export default function Home() {
           title="The app you open at the party."
           description="Everyone uploads to one shared photo feed. Chat with the crew in the moment. See who just arrived."
           bullets={[
-            'Shared photo feed — everyone uploads, everyone sees',
-            'Group chat with the crew',
+            'One shared photo feed',
+            'Live group chat',
             'See who just arrived',
           ]}
-          mockup={
-            <PhoneFrame glowColor="#8A38F5">
-              <LivingMockup />
-            </PhoneFrame>
-          }
-          reverse
+          imageSrc={UNSPLASH('photo-1492684223066-81342ee5ff30')}
+          imageAlt="People celebrating at a party"
+          edgeBleed="right"
         />
 
         <PhaseShowcase
@@ -63,15 +57,13 @@ export default function Home() {
           title="The memory makes itself."
           description="An auto-generated photo mosaic of everything that happened. One link to share with the whole group. Relive it a year later."
           bullets={[
-            'Auto-generated photo mosaic',
-            'One link to share with the group',
-            'Relive it a year later',
+            'Auto-built photo mosaic',
+            'One link, whole group',
+            'Relive it anytime',
           ]}
-          mockup={
-            <PhoneFrame glowColor="#FF751A">
-              <RecapMockup />
-            </PhoneFrame>
-          }
+          imageSrc={UNSPLASH('photo-1543007630-9710e4a00a20')}
+          imageAlt="Friends looking back at memories together"
+          reverse
         />
 
         <HowItWorks />
@@ -79,9 +71,7 @@ export default function Home() {
         <DownloadCTA />
       </main>
 
-      <div className="mt-12 md:mt-16">
-        <Footer />
-      </div>
+      <Footer />
       <CookieBanner />
     </>
   );

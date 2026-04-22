@@ -1,4 +1,3 @@
-import GradientText from './GradientText';
 import RevealOnScroll from './RevealOnScroll';
 import SectionHeading from './SectionHeading';
 
@@ -38,8 +37,8 @@ export default function HowItWorks() {
           {STEPS.map((s, i) => (
             <RevealOnScroll key={s.n} delay={i * 110}>
               <div className="text-center flex flex-col items-center">
-                <div className="text-7xl md:text-8xl font-bold leading-none mb-5 tracking-tight">
-                  <GradientText variant="brand">{s.n}</GradientText>
+                <div className="text-7xl md:text-8xl font-bold leading-none mb-5 tracking-tight text-text1">
+                  {s.n}
                 </div>
                 <h3 className="text-xl font-semibold text-text1 mb-2">{s.title}</h3>
                 <p className="text-text2 leading-relaxed">{s.description}</p>
