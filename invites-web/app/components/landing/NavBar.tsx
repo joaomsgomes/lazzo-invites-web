@@ -71,20 +71,9 @@ export default function NavBar() {
             href={APPSTORE_URL}
             onClick={handleDownloadClick}
             aria-label="Download Lazzo on the App Store"
-            className="group relative inline-flex items-center gap-2.5 px-4 py-2.5 sm:px-5 text-sm sm:text-base font-semibold text-text1 rounded-pill border border-divider/45 backdrop-blur-sm transition-all duration-200 whitespace-nowrap hover:-translate-y-0.5 hover:border-transparent hover:shadow-[0_12px_34px_rgba(138,56,245,0.34)]"
-            style={{
-              backgroundImage:
-                'linear-gradient(135deg, rgba(22,156,62,0.18) 0%, rgba(138,56,245,0.22) 50%, rgba(255,117,26,0.18) 100%)',
-            }}
+            className="group relative inline-flex items-center px-4 py-2.5 sm:px-5 text-sm sm:text-base font-semibold rounded-pill transition-all duration-200 whitespace-nowrap hover:-translate-y-0.5 hover:shadow-[0_12px_34px_rgba(255,255,255,0.22)]"
+            style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
           >
-            <span
-              aria-hidden="true"
-              className="h-2 w-2 rounded-full"
-              style={{
-                backgroundImage:
-                  'linear-gradient(135deg, #169C3E 0%, #8A38F5 50%, #FF751A 100%)',
-              }}
-            />
             <span className="hidden sm:inline">Get the App</span>
             <span className="sm:hidden">Get App</span>
           </a>

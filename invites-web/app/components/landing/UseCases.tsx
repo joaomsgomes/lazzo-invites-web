@@ -36,11 +36,11 @@ export default function UseCases() {
           title="Any time your people are in the same place."
         />
 
-        <div className="mt-20 md:mt-24 w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+        <div className="mt-20 md:mt-24 w-full max-w-3xl grid grid-cols-2 md:grid-cols-3 gap-4">
           {USE_CASES.map((u, i) => (
             <RevealOnScroll key={u.label} delay={i * 60}>
               <div
-                className="group relative overflow-hidden rounded-2xl aspect-[4/5] transition-all duration-200 hover:-translate-y-1"
+                className="group relative overflow-hidden rounded-xl aspect-square transition-all duration-200 hover:-translate-y-1"
                 style={{ border: `1.5px solid ${u.accent}` }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -63,11 +63,11 @@ export default function UseCases() {
                   className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                   style={{ boxShadow: `inset 0 0 0 1.5px ${u.accent}, 0 12px 40px ${u.accent}33` }}
                 />
-                <div className="absolute left-0 right-0 bottom-0 p-5 md:p-6">
-                  <div className="text-xl md:text-2xl font-semibold text-text1 tracking-tight leading-tight">
+                <div className="absolute left-0 right-0 bottom-0 p-4">
+                  <div className="text-base md:text-lg font-semibold text-text1 tracking-tight leading-tight">
                     {u.label}
                   </div>
-                  <div className="mt-1.5 text-sm text-text1/80 leading-relaxed">
+                  <div className="mt-1 text-xs text-text1/80 leading-snug">
                     {u.tag}
                   </div>
                 </div>

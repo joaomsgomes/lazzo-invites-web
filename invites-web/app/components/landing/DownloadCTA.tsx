@@ -1,5 +1,4 @@
 import RevealOnScroll from './RevealOnScroll';
-import StoreButtons from './StoreButtons';
 
 export default function DownloadCTA() {
   return (
@@ -35,9 +34,6 @@ export default function DownloadCTA() {
           Start your next event.
         </h2>
         <p className="mt-6 text-lg text-text2">Free. No ads, ever.</p>
-        <div className="mt-10 flex justify-center">
-          <StoreButtons location="final" size="md" />
-        </div>
       </RevealOnScroll>
     </section>
   );

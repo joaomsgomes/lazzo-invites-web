@@ -50,9 +50,14 @@ export default function PhaseShowcase({
       />
 
       <div
-        className={`${bleedRight ? 'ml-auto mr-0' : 'mx-auto'} max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-14 md:gap-20 items-center ${
+        className={`grid grid-cols-1 md:grid-cols-2 gap-14 items-center ${
           reverse ? 'md:[&>*:first-child]:order-2' : ''
         }`}
+        style={
+          bleedRight
+            ? { marginLeft: 'auto', marginRight: 0, maxWidth: '48rem' }
+            : { marginLeft: 'auto', marginRight: 'auto', maxWidth: '72rem' }
+        }
       >
         {/* Text block */}
         <RevealOnScroll
