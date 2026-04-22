@@ -1,5 +1,9 @@
 // Design tokens from Lazzo Flutter app
 // Source: lib/shared/themes/colors.dart + lib/shared/constants/
+//
+// IMPORTANT: these tokens are mirrored in app/globals.css under the Tailwind v4 @theme block
+// (as --color-bg1, --color-planning, --radius-md, etc.) to power utilities like `bg-bg1`,
+// `text-planning`, `rounded-md`. When editing a token here, update globals.css too.
 
 export const BrandColors = {
   // Background colors
