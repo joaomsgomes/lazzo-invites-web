@@ -17,7 +17,7 @@ export default function Footer() {
           <span className="text-text1 font-semibold text-lg">Lazzo</span>
         </div>
         <p className="mt-4 text-sm text-text2 leading-relaxed max-w-md">
-          The app for planning events with your people — from the first poll to the last photo.
+          The app for planning events with your people from the first poll to the last photo.
         </p>
 
         <div className="mt-12 flex flex-col items-center gap-10 sm:flex-row sm:items-start sm:gap-16">

@@ -36,7 +36,7 @@ export default function UseCases() {
           title="Any time your people are in the same place."
         />
 
-        <div className="mt-28 md:mt-32 w-full max-w-3xl grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+        <div className="mt-72 md:mt-80 w-full max-w-3xl grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
           {USE_CASES.map((u, i) => (
             <RevealOnScroll key={u.label} delay={i * 60}>
               <div
@@ -63,7 +63,7 @@ export default function UseCases() {
                   className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                   style={{ boxShadow: `inset 0 0 0 1.5px ${u.accent}, 0 12px 40px ${u.accent}33` }}
                 />
-                <div className="absolute left-0 right-0 bottom-0 p-6">
+                <div className="absolute left-0 right-0 bottom-0 p-6 pl-8 md:pl-9">
                   <div className="text-base md:text-lg font-semibold text-text1 tracking-tight leading-tight">
                     {u.label}
                   </div>

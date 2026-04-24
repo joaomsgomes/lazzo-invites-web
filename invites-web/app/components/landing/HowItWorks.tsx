@@ -33,7 +33,7 @@ export default function HowItWorks() {
           title="Three steps. One weekend to remember."
         />
 
-        <div className="mt-24 md:mt-28 w-full max-w-5xl grid gap-20 md:gap-16 md:grid-cols-3">
+        <div className="mt-36 md:mt-44 w-full max-w-5xl grid gap-20 md:gap-16 md:grid-cols-3">
           {STEPS.map((s, i) => (
             <RevealOnScroll key={s.n} delay={i * 110}>
               <div className="text-center flex flex-col items-center">

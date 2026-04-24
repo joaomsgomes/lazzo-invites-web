@@ -71,7 +71,7 @@ export default function NavBar() {
             href={APPSTORE_URL}
             onClick={handleDownloadClick}
             aria-label="Download Lazzo on the App Store"
-            className="group relative inline-flex items-center px-6 py-3 sm:px-7 sm:py-3.5 text-sm sm:text-base font-semibold rounded-pill transition-all duration-200 whitespace-nowrap hover:-translate-y-0.5 hover:shadow-[0_12px_34px_rgba(255,255,255,0.25)]"
+            className="group relative inline-flex items-center justify-center px-10 py-3 sm:px-14 sm:py-3.5 text-sm sm:text-base font-semibold rounded-pill transition-all duration-200 whitespace-nowrap hover:-translate-y-0.5 hover:shadow-[0_12px_34px_rgba(255,255,255,0.25)]"
             style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
           >
             <span className="hidden sm:inline">Get the App</span>

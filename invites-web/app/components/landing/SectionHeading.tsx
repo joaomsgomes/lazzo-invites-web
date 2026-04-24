@@ -14,7 +14,7 @@ export default function SectionHeading({ eyebrow, title, id, align = 'center' }:
       </p>
       <h2
         id={id}
-        className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.04] text-text1"
+        className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight leading-[1.05] text-text1"
       >
         {title}
       </h2>
