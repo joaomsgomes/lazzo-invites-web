@@ -12,7 +12,7 @@ type Props = {
   imageSrc: string;
   imageAlt: string;
   reverse?: boolean;
-  edgeBleed?: 'right';
+  edgeBleed?: 'right' | 'left';
 };
 
 const PHASE_COLOR: Record<Phase, string> = {
@@ -35,11 +35,12 @@ export default function PhaseShowcase({
 }: Props) {
   const color = PHASE_COLOR[phase];
   const bleedRight = edgeBleed === 'right';
+  const bleedLeft = edgeBleed === 'left';
 
   return (
     <section
       aria-labelledby={`phase-${phase}-heading`}
-      className={`relative pl-6 ${bleedRight ? 'pr-0 md:pr-0' : 'pr-6'} py-24 md:py-32 overflow-hidden`}
+      className={`relative ${bleedLeft ? 'pl-0 md:pl-0' : 'pl-6'} ${bleedRight ? 'pr-0 md:pr-0' : 'pr-6'} py-24 md:py-32 overflow-hidden`}
     >
       <div
         aria-hidden="true"
@@ -56,7 +57,9 @@ export default function PhaseShowcase({
         style={
           bleedRight
             ? { marginLeft: 'auto', marginRight: 0, maxWidth: '48rem' }
-            : { marginLeft: 'auto', marginRight: 'auto', maxWidth: '72rem' }
+            : bleedLeft
+              ? { marginLeft: 0, marginRight: 'auto', maxWidth: '48rem' }
+              : { marginLeft: 'auto', marginRight: 'auto', maxWidth: '72rem' }
         }
       >
         {/* Text block */}
@@ -105,7 +108,7 @@ export default function PhaseShowcase({
         <RevealOnScroll
           delay={reverse ? 0 : 120}
           className={`flex justify-center ${
-            bleedRight ? 'md:justify-end' : reverse ? 'md:justify-end' : 'md:justify-start'
+            bleedRight ? 'md:justify-end' : bleedLeft ? 'md:justify-start' : reverse ? 'md:justify-end' : 'md:justify-start'
           }`}
         >
           <div className="relative w-full max-w-md">

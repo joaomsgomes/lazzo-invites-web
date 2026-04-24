@@ -1,20 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Instrument_Serif } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 import PostHogProvider from "./providers/PostHogProvider";
 
-const bricolage = Bricolage_Grotesque({
+const montserrat = Montserrat({
+  weight: ['300', '400', '500', '600', '700', '800'],
   subsets: ["latin"],
   display: 'swap',
-  variable: '--font-bricolage',
-});
-
-const instrumentSerif = Instrument_Serif({
-  weight: '400',
-  subsets: ["latin"],
-  style: ['normal', 'italic'],
-  display: 'swap',
-  variable: '--font-instrument-serif',
+  variable: '--font-montserrat',
 });
 
 const SITE_URL = "https://getlazzo.com";
@@ -89,7 +82,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${bricolage.variable} ${instrumentSerif.variable}`}>
+      <body className={montserrat.variable}>
         <PostHogProvider>
           {children}
         </PostHogProvider>

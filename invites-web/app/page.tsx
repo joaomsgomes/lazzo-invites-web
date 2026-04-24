@@ -47,7 +47,6 @@ export default function Home() {
           ]}
           imageSrc={UNSPLASH('photo-1492684223066-81342ee5ff30')}
           imageAlt="People celebrating at a party"
-          edgeBleed="right"
         />
 
         <PhaseShowcase

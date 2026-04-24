@@ -1,7 +1,15 @@
+'use client';
+
 import Image from 'next/image';
-import GradientText from './GradientText';
+import { trackEvent } from '@/lib/analytics';
+
+const APPSTORE_URL = process.env.NEXT_PUBLIC_APPSTORE_URL || '#';
 
 export default function Hero() {
+  const handleDownloadClick = () => {
+    trackEvent('landing_cta_clicked', { location: 'hero', store: 'app_store' });
+  };
+
   return (
     <section
       aria-labelledby="hero-heading"
@@ -31,17 +39,11 @@ export default function Hero() {
 
         <h1
           id="hero-heading"
-          className="font-bold tracking-[-0.03em] leading-[0.98] text-5xl sm:text-6xl md:text-7xl"
+          className="font-bold tracking-[-0.03em] leading-[0.98] text-5xl sm:text-6xl md:text-7xl text-white"
         >
-          <span className="block">
-            <GradientText variant="planning">Plan fast.</GradientText>
-          </span>
-          <span className="block mt-1">
-            <GradientText variant="living">Live loud.</GradientText>
-          </span>
-          <span className="block mt-1">
-            <GradientText variant="recap">Remember forever.</GradientText>
-          </span>
+          <span className="block">Plan fast.</span>
+          <span className="block mt-1">Live loud.</span>
+          <span className="block mt-1">Remember forever.</span>
         </h1>
 
         <p className="mt-8 max-w-xl text-lg text-text2 leading-snug">
@@ -49,7 +51,7 @@ export default function Hero() {
         </p>
 
         {/* Social proof — replace the X placeholders with real numbers */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-text2">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-text2">
           <span className="inline-flex items-center gap-1.5">
             <span className="text-text1 font-semibold tabular-nums">X+</span>
             hosts
@@ -65,6 +67,16 @@ export default function Hero() {
             memories shared
           </span>
         </div>
+
+        <a
+          href={APPSTORE_URL}
+          onClick={handleDownloadClick}
+          aria-label="Download Lazzo on the App Store"
+          className="group relative mt-12 inline-flex items-center justify-center px-16 py-7 sm:px-20 sm:py-8 text-xl sm:text-2xl font-bold rounded-pill transition-all duration-200 whitespace-nowrap hover:-translate-y-1 hover:scale-[1.03] shadow-[0_12px_40px_rgba(255,255,255,0.25)] hover:shadow-[0_20px_60px_rgba(255,255,255,0.4)] ring-2 ring-white/40 hover:ring-white/70"
+          style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
+        >
+          Get the App
+        </a>
       </div>
 
       {/* Scroll indicator */}

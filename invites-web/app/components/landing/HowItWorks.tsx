@@ -23,7 +23,7 @@ export default function HowItWorks() {
   return (
     <section
       aria-labelledby="how-heading"
-      className="relative px-6 py-32 md:py-48"
+      className="relative px-6 py-40 md:py-56"
       style={{ backgroundColor: 'rgba(31, 31, 31, 0.35)' }}
     >
       <div className="flex flex-col items-center">
@@ -33,14 +33,14 @@ export default function HowItWorks() {
           title="Three steps. One weekend to remember."
         />
 
-        <div className="mt-16 md:mt-20 w-full max-w-5xl grid gap-12 md:gap-10 md:grid-cols-3">
+        <div className="mt-24 md:mt-28 w-full max-w-5xl grid gap-20 md:gap-16 md:grid-cols-3">
           {STEPS.map((s, i) => (
             <RevealOnScroll key={s.n} delay={i * 110}>
               <div className="text-center flex flex-col items-center">
-                <div className="text-7xl md:text-8xl font-bold leading-none mb-5 tracking-tight text-text1">
+                <div className="text-7xl md:text-8xl font-bold leading-none mb-8 tracking-tight text-text1">
                   {s.n}
                 </div>
-                <h3 className="text-xl font-semibold text-text1 mb-2">{s.title}</h3>
+                <h3 className="text-xl font-semibold text-text1 mb-4">{s.title}</h3>
                 <p className="text-text2 leading-relaxed">{s.description}</p>
               </div>
             </RevealOnScroll>
