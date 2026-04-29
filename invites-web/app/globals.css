@@ -308,3 +308,13 @@ a {
 /* ── Landing page spacing ──
    Sections touch each other so the radial glows in each section can bleed
    into their neighbours. Internal padding on each section provides spacing. */
+
+.landing-main > section + section {
+  margin-top: 64px;
+}
+
+@media (min-width: 768px) {
+  .landing-main > section + section {
+    margin-top: 96px;
+  }
+}
