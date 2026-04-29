@@ -54,7 +54,7 @@ export default function PhaseShowcase({
       />
 
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 gap-14 items-center ${
+        className={`grid grid-cols-1 md:grid-cols-2 gap-14 md:gap-32 items-center ${
           reverse ? 'md:[&>*:first-child]:order-2' : ''
         }`}
         style={

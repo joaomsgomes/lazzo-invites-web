@@ -79,8 +79,9 @@ export default function Hero() {
         }}
       />
 
-      {/* Cluster lives in the upper half of the section. */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center">
+      {/* Cluster lives in the upper half of the section, anchored at the
+          bottom of its half so the CTA below sits a little closer. */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-end">
         <h1
           id="hero-heading"
           className="font-bold tracking-[-0.03em] leading-[0.98] text-4xl sm:text-6xl md:text-7xl text-white"
