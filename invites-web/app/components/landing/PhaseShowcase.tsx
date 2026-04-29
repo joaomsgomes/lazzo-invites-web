@@ -43,13 +43,13 @@ export default function PhaseShowcase({
   return (
     <section
       aria-labelledby={`phase-${phase}-heading`}
-      className={`relative ${bleedLeft ? 'pl-0 md:pl-0' : 'pl-6'} ${bleedRight ? 'pr-0 md:pr-0' : 'pr-6'} py-24 md:py-32 overflow-hidden`}
+      className={`relative ${bleedLeft ? 'pl-0 md:pl-0' : 'pl-6'} ${bleedRight ? 'pr-0 md:pr-0' : 'pr-6'} py-24 md:py-32`}
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10"
+        className="pointer-events-none absolute -inset-y-[30%] inset-x-0 -z-10"
         style={{
-          backgroundImage: `radial-gradient(circle at ${reverse ? '25%' : '75%'} 50%, ${color}1A 0%, transparent 55%)`,
+          backgroundImage: `radial-gradient(ellipse 60% 50% at ${reverse ? '25%' : '75%'} 50%, ${color}24 0%, ${color}10 35%, transparent 70%)`,
         }}
       />
 
@@ -70,7 +70,7 @@ export default function PhaseShowcase({
           delay={reverse ? 120 : 0}
           className={`flex justify-center ${reverse ? 'md:justify-start' : 'md:justify-end'}`}
         >
-          <div className="flex flex-col items-start gap-5 max-w-md w-full text-left">
+          <div className="flex flex-col items-start gap-5 max-w-[280px] w-full text-left">
             <div
               className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-pill text-[11px] font-bold tracking-[0.18em] uppercase"
               style={{ backgroundColor: `${color}1F`, color }}

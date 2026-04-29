@@ -5,13 +5,8 @@ export default function DownloadCTA() {
     <section
       id="download"
       aria-labelledby="download-heading"
-      className="relative px-6 pt-40 pb-56 md:pt-56 md:pb-80 overflow-hidden"
+      className="relative px-6 pt-56 pb-72 md:pt-80 md:pb-[28rem] overflow-hidden"
     >
-      <div
-        aria-hidden="true"
-        className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent 0%, #169C3E 25%, #8A38F5 50%, #FF751A 75%, transparent 100%)' }}
-      />
       <div
         aria-hidden="true"
         className="absolute bottom-0 left-0 right-0 h-px"
@@ -33,7 +28,7 @@ export default function DownloadCTA() {
         >
           Start your next event.
         </h2>
-        <p className="mt-6 text-lg text-text2">Free. No ads, ever.</p>
+        <p className="mt-16 md:mt-24 text-lg text-text2">Free. No ads, ever.</p>
       </RevealOnScroll>
     </section>
   );

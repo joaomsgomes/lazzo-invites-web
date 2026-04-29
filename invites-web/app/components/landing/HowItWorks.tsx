@@ -24,8 +24,16 @@ export default function HowItWorks() {
     <section
       aria-labelledby="how-heading"
       className="relative px-6 py-40 md:py-56"
-      style={{ backgroundColor: 'rgba(31, 31, 31, 0.35)' }}
     >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-y-[25%] inset-x-0 -z-10"
+        style={{
+          backgroundImage:
+            'radial-gradient(ellipse 70% 55% at 50% 50%, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 40%, transparent 75%)',
+        }}
+      />
+
       <div className="flex flex-col items-center">
         <SectionHeading
           id="how-heading"

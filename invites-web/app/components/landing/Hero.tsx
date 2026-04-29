@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { trackEvent } from '@/lib/analytics';
 
 const APPSTORE_URL = process.env.NEXT_PUBLIC_APPSTORE_URL || '#';
@@ -66,7 +65,7 @@ export default function Hero() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'linear-gradient(to bottom, rgba(18,18,18,0.18) 0%, rgba(18,18,18,0.50) 55%, rgba(18,18,18,0.95) 100%)',
+            'linear-gradient(to bottom, rgba(18,18,18,0.18) 0%, rgba(18,18,18,0.45) 55%, rgba(18,18,18,0.75) 100%)',
         }}
       />
 
@@ -80,20 +79,8 @@ export default function Hero() {
         }}
       />
 
-      {/* Main content block — grows to fill the section vertically and
-          centers logo / headline / stats / CTA together. */}
+      {/* Cluster lives in the upper half of the section. */}
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center">
-        <div className="animate-logo-pulse mb-10">
-          <Image
-            src="/app-icon.png"
-            alt="Lazzo"
-            width={112}
-            height={112}
-            priority
-            className="rounded-[22%]"
-          />
-        </div>
-
         <h1
           id="hero-heading"
           className="font-bold tracking-[-0.03em] leading-[0.98] text-4xl sm:text-6xl md:text-7xl text-white"
@@ -124,23 +111,27 @@ export default function Hero() {
             memories shared
           </span>
         </div>
+      </div>
 
+      {/* CTA lives in the lower half of the section, centered vertically
+          between the cluster and the scroll indicator. */}
+      <div className="relative z-10 flex flex-1 items-center justify-center">
         <a
           href={APPSTORE_URL}
           onClick={handleDownloadClick}
           aria-label="Download Lazzo on the App Store"
-          className="group mt-12 md:mt-16 inline-flex items-center justify-center font-bold whitespace-nowrap rounded-pill transition-all duration-200 hover:-translate-y-1 hover:scale-[1.03] shadow-[0_12px_40px_rgba(255,255,255,0.25)] hover:shadow-[0_20px_60px_rgba(255,255,255,0.4)] ring-[5px] ring-white/55 hover:ring-white/80 px-[clamp(2.5rem,13vw,22rem)] py-[clamp(1.35rem,4.2vw,5.5rem)] text-[clamp(1rem,2.1vw,1.875rem)]"
+          className="group inline-flex items-center justify-center font-bold whitespace-nowrap rounded-pill transition-all duration-200 hover:-translate-y-1 hover:scale-[1.03] shadow-[0_12px_40px_rgba(255,255,255,0.25)] hover:shadow-[0_20px_60px_rgba(255,255,255,0.4)] ring-[5px] ring-white hover:ring-white px-[clamp(2.5rem,13vw,22rem)] py-[clamp(1.35rem,4.2vw,5.5rem)] text-[clamp(1rem,2.1vw,1.875rem)]"
           style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
         >
           Get the App
         </a>
       </div>
 
-      {/* Scroll indicator — pinned at the bottom of the hero, well below the CTA */}
+      {/* Scroll indicator — pinned at the bottom of the hero */}
       <a
         href="#phase-planning-heading"
         aria-label="Scroll to features"
-        className="relative z-10 mt-10 md:mt-14 flex flex-col items-center gap-2 text-text2 hover:text-text1 transition-colors"
+        className="relative z-10 mt-0 flex flex-col items-center gap-2 text-text2 hover:text-text1 transition-colors"
       >
         <span className="text-[10px] font-semibold tracking-[0.25em] uppercase">Scroll</span>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

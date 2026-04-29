@@ -11,7 +11,7 @@ const montserrat = Montserrat({
 });
 
 const SITE_URL = "https://getlazzo.com";
-const SITE_TITLE = "Lazzo — Plan fast. Live loud. Remember forever.";
+const SITE_TITLE = "Lazzo";
 const SITE_DESCRIPTION = "One app for the whole life of your event. Plan with polls and RSVPs, share live photos during, and get an auto-generated recap after.";
 
 export const metadata: Metadata = {

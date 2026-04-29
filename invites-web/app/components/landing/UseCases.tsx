@@ -28,7 +28,16 @@ const USE_CASES: Case[] = [
 
 export default function UseCases() {
   return (
-    <section aria-labelledby="usecases-heading" className="px-6 py-40 md:py-56">
+    <section aria-labelledby="usecases-heading" className="relative px-6 py-40 md:py-56">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-y-[20%] inset-x-0 -z-10"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 20% 30%, rgba(22,156,62,0.08) 0%, transparent 55%), radial-gradient(circle at 80% 70%, rgba(255,117,26,0.08) 0%, transparent 55%)',
+        }}
+      />
+
       <div className="flex flex-col items-center">
         <SectionHeading
           id="usecases-heading"
@@ -36,7 +45,7 @@ export default function UseCases() {
           title="Any time your people are in the same place."
         />
 
-        <div className="mt-32 md:mt-80 w-full max-w-3xl grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+        <div className="mt-48 md:mt-[28rem] w-full max-w-3xl grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
           {USE_CASES.map((u, i) => (
             <RevealOnScroll key={u.label} delay={i * 60}>
               <div
