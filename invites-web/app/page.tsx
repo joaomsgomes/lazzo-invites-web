@@ -7,8 +7,13 @@ import DownloadCTA from './components/landing/DownloadCTA';
 import Footer from './components/landing/Footer';
 import CookieBanner from './components/landing/CookieBanner';
 
-const UNSPLASH = (id: string) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=80`;
+// App screenshots rendered inside phone frames in the phase sections.
+// Drop the actual PNGs at these paths — see public/screenshots/README.md.
+const SCREENSHOT = {
+  planning: '/screenshots/planning.png',
+  living: '/screenshots/living.png',
+  recap: '/screenshots/recap.png',
+};
 
 export default function Home() {
   return (
@@ -29,8 +34,8 @@ export default function Home() {
             'Group votes on dates',
             'RSVPs that stick',
           ]}
-          imageSrc={UNSPLASH('photo-1529156069898-49953e39b3ac')}
-          imageAlt="Friends planning together around a table"
+          imageSrc={SCREENSHOT.planning}
+          imageAlt="Lazzo planning screen — group voting on event dates"
           reverse
         />
 
@@ -45,8 +50,8 @@ export default function Home() {
             'Live group chat',
             'See who just arrived',
           ]}
-          imageSrc={UNSPLASH('photo-1492684223066-81342ee5ff30')}
-          imageAlt="People celebrating at a party"
+          imageSrc={SCREENSHOT.living}
+          imageAlt="Lazzo living screen — shared photo feed during the event"
         />
 
         <PhaseShowcase
@@ -60,8 +65,8 @@ export default function Home() {
             'One link, whole group',
             'Relive it anytime',
           ]}
-          imageSrc={UNSPLASH('photo-1543007630-9710e4a00a20')}
-          imageAlt="Friends looking back at memories together"
+          imageSrc={SCREENSHOT.recap}
+          imageAlt="Lazzo recap screen — auto-generated photo mosaic"
           reverse
         />
 

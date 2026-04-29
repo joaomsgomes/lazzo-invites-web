@@ -36,7 +36,7 @@ export default function UseCases() {
           title="Any time your people are in the same place."
         />
 
-        <div className="mt-72 md:mt-80 w-full max-w-3xl grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+        <div className="mt-32 md:mt-80 w-full max-w-3xl grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
           {USE_CASES.map((u, i) => (
             <RevealOnScroll key={u.label} delay={i * 60}>
               <div

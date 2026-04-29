@@ -1,4 +1,5 @@
 import RevealOnScroll from './RevealOnScroll';
+import PhoneFrame from './mockups/PhoneFrame';
 
 type Phase = 'planning' | 'living' | 'recap';
 
@@ -9,6 +10,8 @@ type Props = {
   title: string;
   description: string;
   bullets: string[];
+  // Path to an app screenshot (e.g. "/screenshots/planning.png").
+  // Rendered inside a PhoneFrame — iPhone-ish 280×580 viewport, object-cover.
   imageSrc: string;
   imageAlt: string;
   reverse?: boolean;
@@ -104,27 +107,22 @@ export default function PhaseShowcase({
           </div>
         </RevealOnScroll>
 
-        {/* Photo */}
+        {/* App screenshot — rendered inside a phone frame with a phase-tinted glow */}
         <RevealOnScroll
           delay={reverse ? 0 : 120}
           className={`flex justify-center ${
             bleedRight ? 'md:justify-end' : bleedLeft ? 'md:justify-start' : reverse ? 'md:justify-end' : 'md:justify-start'
           }`}
         >
-          <div className="relative w-full max-w-md">
-            <div
-              aria-hidden="true"
-              className="absolute -inset-4 rounded-[32px] blur-2xl opacity-40"
-              style={{ backgroundColor: color }}
-            />
+          <PhoneFrame glowColor={color}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageSrc}
               alt={imageAlt}
-              className="relative w-full aspect-[4/5] object-cover rounded-[24px] border border-white/10 shadow-2xl"
               loading="lazy"
+              className="h-full w-full object-cover"
             />
-          </div>
+          </PhoneFrame>
         </RevealOnScroll>
       </div>
     </section>
