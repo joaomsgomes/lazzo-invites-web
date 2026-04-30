@@ -25,8 +25,30 @@ export default function NavBar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const handleNavClick = (target: NavTarget) => {
-    trackEvent('landing_nav_clicked', { target });
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    link: { href: string; target: NavTarget },
+  ) => {
+    trackEvent('landing_nav_clicked', { target: link.target });
+
+    if (link.href.startsWith('#')) {
+      const el = document.querySelector(link.href);
+      if (el) {
+        e.preventDefault();
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (typeof history !== 'undefined') {
+          history.replaceState(null, '', link.href);
+        }
+      }
+    }
+  };
+
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof history !== 'undefined') {
+      history.replaceState(null, '', '#top');
+    }
   };
 
   const handleDownloadClick = () => {
@@ -41,7 +63,12 @@ export default function NavBar() {
       }`}
     >
       <div className="h-20 w-full px-4 sm:px-6 md:px-10 flex items-center justify-between gap-4 sm:gap-6">
-        <a href="#top" className="flex items-center gap-3" aria-label="Lazzo home">
+        <a
+          href="#top"
+          onClick={handleLogoClick}
+          className="flex items-center gap-3"
+          aria-label="Lazzo home"
+        >
           <Image
             src="/app-icon.png"
             alt=""
@@ -52,13 +79,13 @@ export default function NavBar() {
           <span className="text-text1 font-semibold text-xl sm:text-2xl tracking-tight">Lazzo</span>
         </a>
 
-        <div className="flex items-center gap-3 sm:gap-5 md:gap-8">
-          <ul className="hidden md:flex items-center gap-8">
+        <div className="flex items-center gap-6 sm:gap-10 md:gap-14">
+          <ul className="hidden md:flex items-center gap-12 lg:gap-16">
             {NAV_LINKS.map((link) => (
               <li key={link.target}>
                 <a
                   href={link.href}
-                  onClick={() => handleNavClick(link.target)}
+                  onClick={(e) => handleNavClick(e, link)}
                   className="text-base text-text2 hover:text-text1 transition-colors"
                 >
                   {link.label}
@@ -71,8 +98,7 @@ export default function NavBar() {
             href={APPSTORE_URL}
             onClick={handleDownloadClick}
             aria-label="Download Lazzo on the App Store"
-            className="group relative inline-flex items-center justify-center px-10 py-3 sm:px-14 sm:py-3.5 text-sm sm:text-base font-semibold rounded-pill transition-all duration-200 whitespace-nowrap hover:-translate-y-0.5 ring-2 ring-white shadow-[0_8px_24px_rgba(255,255,255,0.18)] hover:shadow-[0_12px_34px_rgba(255,255,255,0.30)]"
-            style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
+            className="cta-gradient-hover group relative inline-flex items-center justify-center px-10 py-3 sm:px-14 sm:py-3.5 text-sm sm:text-base font-semibold rounded-pill transition-all duration-200 whitespace-nowrap hover:-translate-y-0.5 ring-2 ring-white shadow-[0_8px_24px_rgba(255,255,255,0.18)] hover:shadow-[0_12px_34px_rgba(255,255,255,0.30)]"
           >
             <span className="hidden sm:inline">Get the App</span>
             <span className="sm:hidden">Get App</span>
@@ -82,7 +108,9 @@ export default function NavBar() {
 
       <div
         aria-hidden="true"
-        className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
+        className={`absolute bottom-0 left-0 right-0 h-px pointer-events-none transition-opacity duration-300 ${
+          scrolled ? 'opacity-100' : 'opacity-0'
+        }`}
         style={{
           background:
             'linear-gradient(90deg, transparent 0%, #169C3E 25%, #8A38F5 50%, #FF751A 75%, transparent 100%)',

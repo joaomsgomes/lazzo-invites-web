@@ -34,7 +34,7 @@ export default function Hero() {
     // behind <main>'s background.
     <section
       aria-labelledby="hero-heading"
-      className="relative isolate flex min-h-[90svh] flex-col items-center overflow-hidden px-6 pt-24 pb-10 text-center"
+      className="relative isolate flex min-h-[100svh] flex-col items-center overflow-hidden px-6 pt-24 pb-10 text-center"
     >
       {/* Moodboard — low-opacity party photos behind everything */}
       <div
@@ -121,8 +121,7 @@ export default function Hero() {
           href={APPSTORE_URL}
           onClick={handleDownloadClick}
           aria-label="Download Lazzo on the App Store"
-          className="group inline-flex items-center justify-center font-bold whitespace-nowrap rounded-pill transition-all duration-200 hover:-translate-y-1 hover:scale-[1.03] shadow-[0_12px_40px_rgba(255,255,255,0.25)] hover:shadow-[0_20px_60px_rgba(255,255,255,0.4)] ring-[5px] ring-white hover:ring-white px-[clamp(2.5rem,13vw,22rem)] py-[clamp(1.35rem,4.2vw,5.5rem)] text-[clamp(1rem,2.1vw,1.875rem)]"
-          style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
+          className="cta-gradient-hover group inline-flex items-center justify-center font-bold whitespace-nowrap rounded-pill transition-all duration-200 hover:-translate-y-1 hover:scale-[1.03] shadow-[0_12px_40px_rgba(255,255,255,0.25)] hover:shadow-[0_20px_60px_rgba(255,255,255,0.4)] ring-[5px] ring-white hover:ring-white px-[clamp(2.5rem,13vw,22rem)] py-[clamp(1.35rem,4.2vw,5.5rem)] text-[clamp(1rem,2.1vw,1.875rem)]"
         >
           Get the App
         </a>

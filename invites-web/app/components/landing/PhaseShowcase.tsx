@@ -70,7 +70,7 @@ export default function PhaseShowcase({
           delay={reverse ? 120 : 0}
           className={`flex justify-center ${reverse ? 'md:justify-start' : 'md:justify-end'}`}
         >
-          <div className="flex flex-col items-start gap-5 max-w-[280px] w-full text-left">
+          <div className="flex flex-col items-start gap-5 w-full max-w-[520px] text-left">
             <div
               className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-pill text-[11px] font-bold tracking-[0.18em] uppercase"
               style={{ backgroundColor: `${color}1F`, color }}
@@ -82,8 +82,8 @@ export default function PhaseShowcase({
 
             <h2
               id={`phase-${phase}-heading`}
-              className="text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.02] mb-4"
-              style={{ color, fontFamily: 'var(--font-serif)', fontWeight: 400 }}
+              className="text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.02] mb-2 text-text1"
+              style={{ fontFamily: 'var(--font-serif)', fontWeight: 400 }}
             >
               {title}
             </h2>
@@ -92,9 +92,9 @@ export default function PhaseShowcase({
               {description}
             </p>
 
-            <ul className="mt-2 space-y-2.5">
+            <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2.5">
               {bullets.map((b, i) => (
-                <li key={i} className="flex items-center gap-3 text-base text-text1">
+                <li key={i} className="flex items-center gap-2.5 text-base text-text1">
                   <span
                     aria-hidden="true"
                     className="h-1.5 w-1.5 rounded-full flex-shrink-0"
