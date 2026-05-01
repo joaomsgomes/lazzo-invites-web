@@ -111,7 +111,7 @@ export default function PhaseShowcase({
         <RevealOnScroll
           delay={reverse ? 0 : 120}
           className={`flex justify-center ${
-            bleedRight ? 'md:justify-end' : bleedLeft ? 'md:justify-start' : reverse ? 'md:justify-end' : 'md:justify-start'
+            bleedRight ? 'md:justify-end' : bleedLeft ? 'md:justify-start' : reverse ? 'md:justify-start' : 'md:justify-end'
           }`}
         >
           <PhoneFrame glowColor={color}>

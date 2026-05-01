@@ -98,18 +98,10 @@ export default function Hero() {
         {/* Social proof — replace the X placeholders with real numbers */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-text2">
           <span className="inline-flex items-center gap-1.5">
-            <span className="text-text1 font-semibold tabular-nums">X+</span>
-            hosts
           </span>
-          <span aria-hidden="true" className="opacity-40">•</span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="text-text1 font-semibold tabular-nums">X+</span>
-            events planned
           </span>
-          <span aria-hidden="true" className="opacity-40">•</span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="text-text1 font-semibold tabular-nums">X+</span>
-            memories shared
           </span>
         </div>
       </div>

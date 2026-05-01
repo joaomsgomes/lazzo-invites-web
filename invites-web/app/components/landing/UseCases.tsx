@@ -19,9 +19,9 @@ const UNSPLASH = (id: string) =>
 
 const USE_CASES: Case[] = [
   { label: 'Birthdays',     tag: 'Turning one year louder.',         accent: PHASE.planning, image: UNSPLASH('photo-1496024840928-4c417adf211d') },
-  { label: 'House parties', tag: "The night you'll want to relive.", accent: PHASE.living,   image: UNSPLASH('photo-1543007630-9710e4a00a20') },
+  { label: 'House parties', tag: "The night you'll want to relive.", accent: PHASE.living,   image: UNSPLASH('photo-1414235077428-338989a2e8c0') },
   { label: 'Weekend trips', tag: 'Pack light, remember everything.', accent: PHASE.recap,    image: UNSPLASH('photo-1529156069898-49953e39b3ac') },
-  { label: 'Dinner nights', tag: 'Slow meals, loud memories.',       accent: PHASE.planning, image: UNSPLASH('photo-1529070538774-1843cb3265df') },
+  { label: 'Dinner nights', tag: 'Slow meals, loud memories.',       accent: PHASE.planning, image: UNSPLASH('photo-1555939594-58d7cb561ad1') },
   { label: 'Festival crews',tag: 'Find your people. Keep them.',     accent: PHASE.living,   image: UNSPLASH('photo-1492684223066-81342ee5ff30') },
   { label: 'Game nights',   tag: 'Rivalries that deserve replays.',  accent: PHASE.recap,    image: UNSPLASH('photo-1543269865-cbf427effbad') },
 ];

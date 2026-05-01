@@ -62,7 +62,7 @@ export default function NavBar() {
         scrolled ? 'bg-bg1/75 backdrop-blur-md' : 'bg-transparent'
       }`}
     >
-      <div className="h-20 w-full px-4 sm:px-6 md:px-10 flex items-center justify-between gap-4 sm:gap-6">
+      <div className="h-20 w-full px-4 sm:px-6 md:px-12 lg:px-20 flex items-center justify-between gap-4 sm:gap-6">
         <a
           href="#top"
           onClick={handleLogoClick}
