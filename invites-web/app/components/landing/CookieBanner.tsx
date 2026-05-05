@@ -63,14 +63,14 @@ export default function CookieBanner() {
         <button
           type="button"
           onClick={() => handleChoice('declined')}
-          className="px-4 py-2 text-sm font-medium text-text2 hover:text-text1 transition-colors"
+          className="btn-landing-secondary text-text2 hover:text-text1 hover:bg-bg3/65 transition-colors"
         >
           Decline
         </button>
         <button
           type="button"
           onClick={() => handleChoice('accepted')}
-          className="px-5 py-2 text-sm font-semibold bg-text1 text-bg1 rounded-pill transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg1 focus-visible:ring-[#8A38F5]"
+          className="btn-landing-secondary !font-semibold bg-text1 text-bg1 transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg1 focus-visible:ring-[#8A38F5]"
         >
           Accept
         </button>

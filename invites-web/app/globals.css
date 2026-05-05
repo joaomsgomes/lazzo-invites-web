@@ -71,7 +71,7 @@
 
 html {
   overscroll-behavior: none;
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: stable;
   scroll-behavior: smooth;
 }
 
@@ -357,5 +357,86 @@ a {
 @media (min-width: 768px) {
   .landing-main > section + section {
     margin-top: 96px;
+  }
+}
+
+/* ── Landing Button System ──
+   Three tiers aligned to landing page conversion hierarchy.
+   Sizing follows a 4px grid, WCAG 2.5.5 (44px min touch target),
+   and web landing best-practices (primary CTA must stand out).
+
+   Tier 1 — btn-landing-primary  → hero, highest intent
+   Tier 2 — btn-landing-nav      → nav CTA, medium presence
+   Tier 3 — btn-landing-secondary → cookie/utility, compact
+
+   Visual styles (color, ring, shadow) are handled separately by
+   .cta-gradient-hover or per-component classes. */
+
+.btn-landing-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 32px;
+  min-height: 48px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-landing-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 24px;
+  min-height: 40px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-landing-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  min-height: 36px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+/* Shared horizontal gutter for landing page sections and nav content.
+   Keeps side spacing consistent across breakpoints. */
+.landing-shell {
+  padding-inline: 16px;
+}
+
+@media (min-width: 640px) {
+  .landing-shell {
+    padding-inline: 24px;
+  }
+}
+
+@media (min-width: 768px) {
+  .landing-shell {
+    padding-inline: 48px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-shell {
+    padding-inline: 80px;
   }
 }

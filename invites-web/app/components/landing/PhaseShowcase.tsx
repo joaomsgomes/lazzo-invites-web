@@ -43,7 +43,7 @@ export default function PhaseShowcase({
   return (
     <section
       aria-labelledby={`phase-${phase}-heading`}
-      className={`relative ${bleedLeft ? 'pl-0 md:pl-0' : 'pl-6'} ${bleedRight ? 'pr-0 md:pr-0' : 'pr-6'} py-24 md:py-32`}
+      className={`relative ${bleedLeft ? 'pl-0 md:pl-0' : 'pl-4 sm:pl-6 md:pl-12 lg:pl-20'} ${bleedRight ? 'pr-0 md:pr-0' : 'pr-4 sm:pr-6 md:pr-12 lg:pr-20'} py-24 md:py-32`}
     >
       <div
         aria-hidden="true"
@@ -54,7 +54,7 @@ export default function PhaseShowcase({
       />
 
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 gap-14 md:gap-32 items-center ${
+        className={`grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-24 items-center w-full ${
           reverse ? 'md:[&>*:first-child]:order-2' : ''
         }`}
         style={
@@ -110,7 +110,7 @@ export default function PhaseShowcase({
         {/* App screenshot — rendered inside a phone frame with a phase-tinted glow */}
         <RevealOnScroll
           delay={reverse ? 0 : 120}
-          className={`flex justify-center ${
+          className={`w-fit mx-auto md:mx-0 flex justify-center ${
             bleedRight ? 'md:justify-end' : bleedLeft ? 'md:justify-start' : reverse ? 'md:justify-start' : 'md:justify-end'
           }`}
         >

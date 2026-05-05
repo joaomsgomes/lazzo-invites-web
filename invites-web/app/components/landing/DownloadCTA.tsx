@@ -5,7 +5,7 @@ export default function DownloadCTA() {
     <section
       id="download"
       aria-labelledby="download-heading"
-      className="relative px-6 pt-56 pb-72 md:pt-80 md:pb-[28rem] overflow-hidden"
+      className="landing-shell relative pt-56 pb-72 md:pt-80 md:pb-[28rem] overflow-hidden"
     >
       <div
         aria-hidden="true"

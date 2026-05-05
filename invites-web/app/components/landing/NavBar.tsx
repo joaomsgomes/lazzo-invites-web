@@ -62,7 +62,7 @@ export default function NavBar() {
         scrolled ? 'bg-bg1/75 backdrop-blur-md' : 'bg-transparent'
       }`}
     >
-      <div className="h-20 w-full px-4 sm:px-6 md:px-12 lg:px-20 flex items-center justify-between gap-4 sm:gap-6">
+      <div className="landing-shell h-20 w-full flex items-center justify-between gap-4 sm:gap-6">
         <a
           href="#top"
           onClick={handleLogoClick}
@@ -80,13 +80,13 @@ export default function NavBar() {
         </a>
 
         <div className="flex items-center gap-6 sm:gap-10 md:gap-14">
-          <ul className="hidden md:flex items-center gap-12 lg:gap-16">
+          <ul className="hidden md:flex items-center gap-12">
             {NAV_LINKS.map((link) => (
-              <li key={link.target}>
+              <li key={link.target} className="flex items-center justify-center">
                 <a
                   href={link.href}
                   onClick={(e) => handleNavClick(e, link)}
-                  className="text-base text-text2 hover:text-text1 transition-colors"
+                  className="inline-flex h-12 items-center justify-center text-center text-base leading-none text-text2 hover:text-text1 transition-colors"
                 >
                   {link.label}
                 </a>
@@ -98,7 +98,7 @@ export default function NavBar() {
             href={APPSTORE_URL}
             onClick={handleDownloadClick}
             aria-label="Download Lazzo on the App Store"
-            className="cta-gradient-hover group relative inline-flex items-center justify-center px-10 py-3 sm:px-14 sm:py-3.5 text-sm sm:text-base font-semibold rounded-pill transition-all duration-200 whitespace-nowrap hover:-translate-y-0.5 ring-2 ring-white shadow-[0_8px_24px_rgba(255,255,255,0.18)] hover:shadow-[0_12px_34px_rgba(255,255,255,0.30)]"
+            className="cta-gradient-hover btn-landing-nav group relative transition-all duration-200 hover:-translate-y-0.5 ring-2 ring-white shadow-[0_8px_24px_rgba(255,255,255,0.18)] hover:shadow-[0_12px_34px_rgba(255,255,255,0.30)]"
           >
             <span className="hidden sm:inline">Get the App</span>
             <span className="sm:hidden">Get App</span>

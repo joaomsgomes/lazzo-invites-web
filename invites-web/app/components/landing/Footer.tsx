@@ -4,7 +4,7 @@ import { ReactNode } from 'react';
 
 export default function Footer() {
   return (
-    <footer className="bg-bg1 border-t border-divider/40 px-6 pt-20 pb-10 text-center">
+    <footer className="landing-shell bg-bg1 border-t border-divider/40 pt-20 pb-10 text-center">
       <div className="flex flex-col items-center">
         <div className="flex items-center gap-2.5">
           <Image

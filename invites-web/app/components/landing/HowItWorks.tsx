@@ -23,7 +23,7 @@ export default function HowItWorks() {
   return (
     <section
       aria-labelledby="how-heading"
-      className="relative px-6 py-40 md:py-56"
+      className="landing-shell relative py-40 md:py-56"
     >
       <div
         aria-hidden="true"

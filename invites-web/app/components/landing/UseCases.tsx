@@ -28,7 +28,7 @@ const USE_CASES: Case[] = [
 
 export default function UseCases() {
   return (
-    <section aria-labelledby="usecases-heading" className="relative px-6 py-40 md:py-56">
+    <section aria-labelledby="usecases-heading" className="landing-shell relative py-40 md:py-56">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -inset-y-[20%] inset-x-0 -z-10"
