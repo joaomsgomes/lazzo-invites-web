@@ -61,12 +61,34 @@
   --radius-md: 16px;
   --radius-pill: 24px;
   --radius-nav: 36px;
+
+  /* Landing — shared vertical rhythm (+0.5× vs base: 4→6, 5→7.5, 6→9 rem). */
+  --landing-section-pt: 6rem;
+  --landing-section-pb: 6rem;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@media (min-width: 768px) {
+  :root {
+    --landing-section-pt: 7.5rem;
+    --landing-section-pb: 7.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --landing-section-pt: 9rem;
+    --landing-section-pb: 9rem;
+  }
+}
+
+/* Must live in @layer base so Tailwind padding/margin utilities are not overridden
+   (unlayered rules win over @layer utilities in the cascade). */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 html {
@@ -442,3 +464,30 @@ a {
     padding-inline: 80px;
   }
 }
+
+/* Landing sections — unlayered so padding always applies (see * reset + Tailwind layers). */
+.landing-section-y {
+  padding-top: var(--landing-section-pt);
+  padding-bottom: var(--landing-section-pb);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Footer: same top as sections; bottom padding halved. */
+.landing-section-y-footer {
+  padding-top: var(--landing-section-pt);
+  padding-bottom: calc(var(--landing-section-pb) * 0.5);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* How it works band: same vertical padding as other sections, full-width bg2. */
+.landing-band-how-it-works {
+  width: 100%;
+  background-color: var(--bg2);
+  padding-top: var(--landing-section-pt);
+  padding-bottom: var(--landing-section-pb);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+

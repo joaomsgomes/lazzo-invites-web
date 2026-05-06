@@ -24,7 +24,7 @@ export default function DownloadCTA() {
       />
 
 
-      <div className="landing-shell mx-auto grid grid-cols-1 items-center gap-10 py-24 md:grid-cols-2 md:gap-0 md:py-32">
+      <div className="landing-shell mx-auto grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-0">
         {/* Left — text + TestFlight badge */}
         <RevealOnScroll className="flex flex-col items-start gap-10 text-left">
           {/* Eyebrow + heading + subtitle grouped tightly */}

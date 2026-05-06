@@ -43,7 +43,7 @@ export default function PhaseShowcase({
   return (
     <section
       aria-labelledby={`phase-${phase}-heading`}
-      className="landing-shell relative py-24 md:py-32"
+      className="landing-shell relative landing-section-y"
     >
       <div
         aria-hidden="true"

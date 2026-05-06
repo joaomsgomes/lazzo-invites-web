@@ -99,7 +99,7 @@ export default function Hero() {
         <div className="flex h-fit flex-col items-center gap-7 md:gap-8">
           <h1
             id="hero-heading"
-            className="font-bold tracking-[-0.015em] leading-[1.05] text-4xl sm:text-6xl md:text-6xl lg:text-7xl text-white"
+            className="text-4xl font-semibold leading-[1.05] tracking-tight text-text1 sm:text-5xl md:text-6xl lg:text-7xl"
           >
             <span className="block">Plan fast</span>
             <span className="block mt-1">Live loud</span>
@@ -128,7 +128,7 @@ export default function Hero() {
             href={APPSTORE_URL}
             onClick={handleDownloadClick}
             aria-label="Download Lazzo on the App Store"
-            className="cta-gradient-hover btn-landing-primary group transition-all duration-200 hover:-translate-y-1 hover:scale-[1.03] shadow-[0_12px_40px_rgba(255,255,255,0.25)] hover:shadow-[0_20px_60px_rgba(255,255,255,0.4)] ring-[5px] ring-white hover:ring-white"
+            className="btn-landing-primary group border-[0.5px] border-white/55 bg-bg1 text-text1 transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:scale-[1.03] hover:bg-bg2 shadow-[0_10px_32px_rgba(0,0,0,0.55)] hover:shadow-[0_16px_44px_rgba(0,0,0,0.65)]"
           >
             Get Started
           </a>
