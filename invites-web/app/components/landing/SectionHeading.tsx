@@ -9,7 +9,7 @@ export default function SectionHeading({ eyebrow, title, id, align = 'center' }:
   const alignment = align === 'center' ? 'text-center mx-auto' : 'text-left';
   return (
     <div className={`max-w-3xl ${alignment}`}>
-      <p className="text-xs font-bold tracking-[0.22em] text-text2 uppercase mb-5">
+      <p className="text-xs font-bold tracking-[0.22em] text-text2 uppercase mb-2">
         {eyebrow}
       </p>
       <h2

@@ -14,15 +14,24 @@ const SITE_URL = "https://getlazzo.com";
 const SITE_TITLE = "Lazzo";
 const SITE_DESCRIPTION = "One app for the whole life of your event. Plan with polls and RSVPs, share live photos during, and get an auto-generated recap after.";
 
+/** In dev, production metadataBase makes icon/OG URLs point at getlazzo.com and breaks the favicon on localhost. */
+const metadataBase =
+  process.env.NODE_ENV === "development"
+    ? new URL("http://localhost:3000")
+    : new URL(SITE_URL);
+
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase,
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   keywords: ["lazzo", "events", "party planner", "rsvp", "group chat", "shared photos", "event recap", "birthday", "house party"],
   authors: [{ name: "Lazzo" }],
   icons: {
-    icon: "/icon.png",
-    apple: "/icon.png",
+    icon: [
+      { url: "/app-icon.png", type: "image/png" },
+    ],
+    shortcut: "/app-icon.png",
+    apple: "/app-icon.png",
   },
   openGraph: {
     title: SITE_TITLE,
@@ -75,6 +84,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="icon" href="/app-icon.png" type="image/png" />
+        <link rel="shortcut icon" href="/app-icon.png" type="image/png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <script

@@ -27,7 +27,7 @@ export default function Home() {
           number="01"
           phase="planning"
           eyebrow="PLANNING"
-          title="Agree on a plan without the chaos."
+          title="Agree on a plan without the chaos"
           description="Spin up an event in 20 seconds. Let the group vote on dates and places. Get RSVPs that actually mean something."
           bullets={[
             'Create in 20 seconds',
@@ -43,7 +43,7 @@ export default function Home() {
           number="02"
           phase="living"
           eyebrow="LIVING"
-          title="The app you open at the party."
+          title="The app you open at the party"
           description="Everyone uploads to one shared photo feed. Chat with the crew in the moment. See who just arrived."
           bullets={[
             'One shared photo feed',
@@ -58,7 +58,7 @@ export default function Home() {
           number="03"
           phase="recap"
           eyebrow="RECAP"
-          title="The memory makes itself."
+          title="The memory makes itself"
           description="An auto-generated photo mosaic of everything that happened. One link to share with the whole group. Relive it a year later."
           bullets={[
             'Auto-built photo mosaic',
@@ -73,10 +73,9 @@ export default function Home() {
         <HowItWorks />
         <UseCases />
         <DownloadCTA />
+        <Footer />
+        <CookieBanner />
       </main>
-
-      <Footer />
-      <CookieBanner />
     </>
   );
 }

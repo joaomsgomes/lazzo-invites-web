@@ -42,8 +42,9 @@ export default function PhaseShowcase({
 
   return (
     <section
+      id={`phase-${phase}`}
       aria-labelledby={`phase-${phase}-heading`}
-      className={`relative ${bleedLeft ? 'pl-0 md:pl-0' : 'pl-6'} ${bleedRight ? 'pr-0 md:pr-0' : 'pr-6'} py-24 md:py-32`}
+      className="landing-shell relative landing-section-y"
     >
       <div
         aria-hidden="true"
@@ -54,25 +55,25 @@ export default function PhaseShowcase({
       />
 
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 gap-14 md:gap-32 items-center ${
+        className={`mx-auto grid w-full max-w-6xl grid-cols-1 justify-items-center gap-12 md:grid-cols-2 md:gap-20 md:justify-items-stretch ${
           reverse ? 'md:[&>*:first-child]:order-2' : ''
         }`}
         style={
           bleedRight
-            ? { marginLeft: 'auto', marginRight: 0, maxWidth: '48rem' }
+            ? { maxWidth: '72rem' }
             : bleedLeft
-              ? { marginLeft: 0, marginRight: 'auto', maxWidth: '48rem' }
-              : { marginLeft: 'auto', marginRight: 'auto', maxWidth: '72rem' }
+              ? { maxWidth: '72rem' }
+              : undefined
         }
       >
         {/* Text block */}
         <RevealOnScroll
           delay={reverse ? 120 : 0}
-          className={`flex justify-center ${reverse ? 'md:justify-start' : 'md:justify-end'}`}
+          className={`w-full flex justify-center ${reverse ? 'md:justify-start' : 'md:justify-end'}`}
         >
-          <div className="flex flex-col items-start gap-5 max-w-[280px] w-full text-left">
+          <div className="flex w-full max-w-[520px] flex-col items-start gap-5 text-left">
             <div
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-pill text-[11px] font-bold tracking-[0.18em] uppercase"
+              className="chip-landing-phase"
               style={{ backgroundColor: `${color}1F`, color }}
             >
               <span>{number}</span>
@@ -82,8 +83,8 @@ export default function PhaseShowcase({
 
             <h2
               id={`phase-${phase}-heading`}
-              className="text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.02] mb-4"
-              style={{ color, fontFamily: 'var(--font-serif)', fontWeight: 400 }}
+              className="text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.02] mb-2 text-text1"
+              style={{ fontFamily: 'var(--font-serif)', fontWeight: 400 }}
             >
               {title}
             </h2>
@@ -92,9 +93,9 @@ export default function PhaseShowcase({
               {description}
             </p>
 
-            <ul className="mt-2 space-y-2.5">
+            <ul className="mt-3 flex flex-col gap-y-2.5">
               {bullets.map((b, i) => (
-                <li key={i} className="flex items-center gap-3 text-base text-text1">
+                <li key={i} className="flex items-center gap-2.5 text-base text-text1">
                   <span
                     aria-hidden="true"
                     className="h-1.5 w-1.5 rounded-full flex-shrink-0"
@@ -110,11 +111,12 @@ export default function PhaseShowcase({
         {/* App screenshot — rendered inside a phone frame with a phase-tinted glow */}
         <RevealOnScroll
           delay={reverse ? 0 : 120}
-          className={`flex justify-center ${
-            bleedRight ? 'md:justify-end' : bleedLeft ? 'md:justify-start' : reverse ? 'md:justify-end' : 'md:justify-start'
+          className={`w-full flex justify-center ${
+            bleedRight ? 'md:justify-end' : bleedLeft ? 'md:justify-start' : reverse ? 'md:justify-start' : 'md:justify-end'
           }`}
         >
-          <PhoneFrame glowColor={color}>
+          <div className="mx-auto w-fit">
+            <PhoneFrame glowColor={color}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageSrc}
@@ -122,7 +124,8 @@ export default function PhaseShowcase({
               loading="lazy"
               className="h-full w-full object-cover"
             />
-          </PhoneFrame>
+            </PhoneFrame>
+          </div>
         </RevealOnScroll>
       </div>
     </section>

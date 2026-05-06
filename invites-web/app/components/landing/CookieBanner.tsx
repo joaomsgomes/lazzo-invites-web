@@ -12,6 +12,8 @@ export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    let showTimer: number | null = null;
+
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === 'declined') {
@@ -22,10 +24,16 @@ export default function CookieBanner() {
         posthog.opt_in_capturing();
         return;
       }
-      setVisible(true);
+      showTimer = window.setTimeout(() => setVisible(true), 0);
     } catch {
-      setVisible(true);
+      showTimer = window.setTimeout(() => setVisible(true), 0);
     }
+
+    return () => {
+      if (showTimer !== null) {
+        window.clearTimeout(showTimer);
+      }
+    };
   }, []);
 
   const handleChoice = (choice: Choice) => {
@@ -50,7 +58,8 @@ export default function CookieBanner() {
       role="dialog"
       aria-live="polite"
       aria-label="Cookie consent"
-      className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 md:max-w-md z-[60] rounded-md border border-divider/70 bg-bg2/95 backdrop-blur-md p-5 shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
+      className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:bottom-6 sm:w-full sm:max-w-sm md:right-12 md:max-w-md lg:right-20 z-[60] rounded-2xl border border-divider/70 bg-bg2/95 backdrop-blur-md px-2 pt-[9px] pb-[9px] shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
+      style={{ padding: '9px 8px' }}
     >
       <p className="text-sm text-text1 leading-relaxed">
         We use cookies for analytics to improve Lazzo. See our{' '}
@@ -63,14 +72,14 @@ export default function CookieBanner() {
         <button
           type="button"
           onClick={() => handleChoice('declined')}
-          className="px-4 py-2 text-sm font-medium text-text2 hover:text-text1 transition-colors"
+          className="btn-landing-secondary text-text2 hover:text-text1 hover:bg-bg3/65 transition-colors"
         >
           Decline
         </button>
         <button
           type="button"
           onClick={() => handleChoice('accepted')}
-          className="px-5 py-2 text-sm font-semibold bg-text1 text-bg1 rounded-pill transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg1 focus-visible:ring-[#8A38F5]"
+          className="btn-landing-secondary !font-semibold bg-text1 text-bg1 transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg1 focus-visible:ring-[#8A38F5]"
         >
           Accept
         </button>

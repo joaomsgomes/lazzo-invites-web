@@ -61,17 +61,80 @@
   --radius-md: 16px;
   --radius-pill: 24px;
   --radius-nav: 36px;
+
+  /* Landing — shared vertical rhythm (+0.5× vs base: 4→6, 5→7.5, 6→9 rem). */
+  --landing-section-pt: 6rem;
+  --landing-section-pb: 6rem;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@media (min-width: 768px) {
+  :root {
+    --landing-section-pt: 7.5rem;
+    --landing-section-pb: 7.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --landing-section-pt: 9rem;
+    --landing-section-pb: 9rem;
+  }
+}
+
+/* Must live in @layer base so Tailwind padding/margin utilities are not overridden
+   (unlayered rules win over @layer utilities in the cascade). */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 html {
   overscroll-behavior: none;
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: stable;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* CTA "Get the App" — solid white pill. On hover, a brand-gradient ring
+   appears around the button (offset from its edge). Color stays the same. */
+.cta-gradient-hover {
+  position: relative;
+  isolation: isolate;
+  background: #FFFFFF;
+  color: #000000;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Gradient border layer — sits just outside the button edge.
+   Mask trick: only the 2px ring is visible, not the inner fill. */
+.cta-gradient-hover::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(90deg, #169C3E 0%, #8A38F5 50%, #FF751A 100%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.cta-gradient-hover:hover::after,
+.cta-gradient-hover:focus-visible::after {
+  opacity: 1;
 }
 
 body {
@@ -306,15 +369,125 @@ a {
 }
 
 /* ── Landing page spacing ──
-   Sections touch each other so the radial glows in each section can bleed
-   into their neighbours. Internal padding on each section provides spacing. */
+   Vertical rhythm between sections is handled by Tailwind space-y on <main>. */
 
-.landing-main > section + section {
-  margin-top: 64px;
+/* ── Landing Button System ──
+   Three tiers aligned to landing page conversion hierarchy.
+   Sizing follows a 4px grid, WCAG 2.5.5 (44px min touch target),
+   and web landing best-practices (primary CTA must stand out).
+
+   Tier 1 — btn-landing-primary  → hero, highest intent
+   Tier 2 — btn-landing-nav      → nav CTA, medium presence
+   Tier 3 — btn-landing-secondary → cookie/utility, compact
+
+   Visual styles (color, ring, shadow) are handled separately by
+   .cta-gradient-hover or per-component classes. */
+
+.btn-landing-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 32px;
+  min-height: 48px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-landing-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 24px;
+  min-height: 40px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-landing-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  min-height: 36px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.chip-landing-phase {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Shared horizontal gutter for landing page sections and nav content.
+   Keeps side spacing consistent across breakpoints. */
+.landing-shell {
+  padding-inline: 16px;
+}
+
+@media (min-width: 640px) {
+  .landing-shell {
+    padding-inline: 24px;
+  }
 }
 
 @media (min-width: 768px) {
-  .landing-main > section + section {
-    margin-top: 96px;
+  .landing-shell {
+    padding-inline: 48px;
   }
 }
+
+@media (min-width: 1024px) {
+  .landing-shell {
+    padding-inline: 80px;
+  }
+}
+
+/* Landing sections — unlayered so padding always applies (see * reset + Tailwind layers). */
+.landing-section-y {
+  padding-top: var(--landing-section-pt);
+  padding-bottom: var(--landing-section-pb);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Footer: same top as sections; bottom padding halved. */
+.landing-section-y-footer {
+  padding-top: var(--landing-section-pt);
+  padding-bottom: calc(var(--landing-section-pb) * 0.5);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* How it works band: same vertical padding as other sections, full-width bg2. */
+.landing-band-how-it-works {
+  width: 100%;
+  background-color: var(--bg2);
+  padding-top: var(--landing-section-pt);
+  padding-bottom: var(--landing-section-pb);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
