@@ -4,23 +4,25 @@ import { ReactNode } from 'react';
 
 export default function Footer() {
   return (
-    <footer className="landing-shell bg-bg1 border-t border-divider/40 pt-20 pb-10 text-center">
-      <div className="flex flex-col items-center">
-        <div className="flex items-center gap-2.5">
-          <Image
-            src="/app-icon.png"
-            alt=""
-            width={28}
-            height={28}
-            className="rounded-[7px]"
-          />
-          <span className="text-text1 font-semibold text-lg">Lazzo</span>
+    <footer className="landing-shell bg-bg1 pt-24 pb-16 text-center md:pt-32 md:pb-20">
+      <div className="flex flex-col items-center gap-10">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-2.5">
+            <Image
+              src="/app-icon.png"
+              alt=""
+              width={28}
+              height={28}
+              className="rounded-[7px]"
+            />
+            <span className="text-text1 font-semibold text-lg">Lazzo</span>
+          </div>
+          <p className="text-sm text-text2 leading-relaxed max-w-md">
+            The app for planning events with your people from the first poll to the last photo.
+          </p>
         </div>
-        <p className="mt-4 text-sm text-text2 leading-relaxed max-w-md">
-          The app for planning events with your people from the first poll to the last photo.
-        </p>
 
-        <div className="mt-12 flex flex-col items-center gap-10 sm:flex-row sm:items-start sm:gap-16">
+        <div className="flex flex-col items-center gap-10 sm:flex-row sm:items-start sm:gap-16">
           <FooterCol title="Product">
             <FooterLink href="#download">Download</FooterLink>
             <FooterLink href="#how-heading">How it works</FooterLink>
@@ -35,7 +37,7 @@ export default function Footer() {
           </FooterCol>
         </div>
 
-        <div className="mt-16 pt-8 w-full max-w-3xl border-t border-divider/40 flex flex-col items-center gap-2">
+        <div className="pt-8 w-full max-w-3xl border-t border-divider/40 flex flex-col items-center gap-2">
           <p className="text-sm text-text2">© 2026 Lazzo</p>
           <p className="text-xs text-text2">Made for people who actually show up.</p>
         </div>

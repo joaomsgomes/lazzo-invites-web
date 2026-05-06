@@ -8,7 +8,7 @@ export default function DownloadCTA() {
     <section
       id="download"
       aria-labelledby="download-heading"
-      className="relative overflow-visible bg-bg2"
+      className="relative overflow-hidden bg-bg2"
     >
       {/* 3-colour brand glow — green left, purple centre, orange right */}
       <div
@@ -24,11 +24,11 @@ export default function DownloadCTA() {
       />
 
 
-      <div className="landing-shell mx-auto grid grid-cols-1 items-center gap-10 py-28 md:grid-cols-2 md:gap-0 md:py-0">
+      <div className="landing-shell mx-auto grid grid-cols-1 items-center gap-10 py-24 md:grid-cols-2 md:gap-0 md:py-32">
         {/* Left — text + TestFlight badge */}
-        <RevealOnScroll className="flex flex-col items-start gap-10 text-left py-32 md:py-40 lg:py-48">
+        <RevealOnScroll className="flex flex-col items-start gap-10 text-left">
           {/* Eyebrow + heading + subtitle grouped tightly */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
             <p
               className="text-xs font-bold uppercase tracking-[0.22em]"
               style={{
@@ -45,7 +45,7 @@ export default function DownloadCTA() {
               id="download-heading"
               className="text-3xl font-semibold leading-[1.05] tracking-tight text-text1 sm:text-4xl md:text-5xl"
             >
-              Start your next event.
+              Start your next event
             </h2>
 
             <p className="text-lg leading-relaxed text-text2">
@@ -71,7 +71,7 @@ export default function DownloadCTA() {
         </RevealOnScroll>
 
         {/* Right — phones pushed down, slightly overflowing section bottom */}
-        <RevealOnScroll delay={100} className="relative flex items-end justify-center md:justify-end md:overflow-visible">
+        <RevealOnScroll delay={100} className="relative flex items-end justify-center md:justify-end">
           {/* Glow behind phones */}
           <div
             aria-hidden="true"
@@ -84,7 +84,7 @@ export default function DownloadCTA() {
           <img
             src="/screenshots/cta_image.png"
             alt="Lazzo app — calendar and create event screens"
-            className="relative w-full max-w-[660px] translate-y-8 drop-shadow-[0_40px_80px_rgba(0,0,0,0.8)] md:max-w-none md:w-[120%] md:translate-y-12 lg:w-[125%] lg:translate-y-16"
+            className="relative w-full max-w-[600px] translate-y-8 drop-shadow-[0_40px_80px_rgba(0,0,0,0.8)] md:max-w-[600px] md:translate-y-12 lg:translate-y-16"
           />
         </RevealOnScroll>
       </div>

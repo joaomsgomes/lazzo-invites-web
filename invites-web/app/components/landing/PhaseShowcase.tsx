@@ -92,7 +92,7 @@ export default function PhaseShowcase({
               {description}
             </p>
 
-            <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2.5">
+            <ul className="mt-3 flex flex-col gap-y-2.5">
               {bullets.map((b, i) => (
                 <li key={i} className="flex items-center gap-2.5 text-base text-text1">
                   <span

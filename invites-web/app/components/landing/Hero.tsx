@@ -107,7 +107,7 @@ export default function Hero() {
           </h1>
 
           <p className="max-w-xl text-lg text-text2 leading-relaxed tracking-[0.005em]">
-            One app for the whole life of your event.
+            One app for the whole life of your event
           </p>
 
           {/* Social proof — replace the X placeholders with real numbers */}

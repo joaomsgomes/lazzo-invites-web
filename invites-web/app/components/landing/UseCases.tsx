@@ -28,7 +28,7 @@ const USE_CASES: Case[] = [
 
 export default function UseCases() {
   return (
-    <section aria-labelledby="usecases-heading" className="landing-shell relative py-40 md:py-56">
+    <section aria-labelledby="usecases-heading" className="landing-shell relative py-64 md:py-80">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -inset-y-[20%] inset-x-0 -z-10"
@@ -38,14 +38,14 @@ export default function UseCases() {
         }}
       />
 
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center justify-start">
         <SectionHeading
           id="usecases-heading"
           eyebrow="PERFECT FOR"
-          title="Any time your people are in the same place."
+          title="Any time your people are in the same place"
         />
 
-        <div className="mt-48 md:mt-[28rem] w-full max-w-3xl grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+        <div className="mt-20 md:mt-24 w-full max-w-3xl grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
           {USE_CASES.map((u, i) => (
             <RevealOnScroll key={u.label} delay={i * 60}>
               <div className="group relative overflow-hidden rounded-xl aspect-square transition-all duration-200 hover:-translate-y-1">
