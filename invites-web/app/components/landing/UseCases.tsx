@@ -66,10 +66,10 @@ export default function UseCases() {
                 />
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  className="pointer-events-none absolute inset-2 rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                   style={{ boxShadow: `0 12px 40px ${u.accent}33` }}
                 />
-                <div className="absolute left-0 right-0 bottom-0 p-6 pl-8 md:pl-9">
+                <div className="absolute left-2 right-2 bottom-[9px] p-4 sm:p-5 md:p-6">
                   <div className="text-base md:text-lg font-semibold text-text1 tracking-tight leading-tight">
                     {u.label}
                   </div>

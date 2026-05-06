@@ -43,7 +43,7 @@ export default function PhaseShowcase({
   return (
     <section
       aria-labelledby={`phase-${phase}-heading`}
-      className={`relative ${bleedLeft ? 'pl-0 md:pl-0' : 'pl-4 sm:pl-6 md:pl-12 lg:pl-20'} ${bleedRight ? 'pr-0 md:pr-0' : 'pr-4 sm:pr-6 md:pr-12 lg:pr-20'} py-24 md:py-32`}
+      className="landing-shell relative py-24 md:py-32"
     >
       <div
         aria-hidden="true"
@@ -54,25 +54,25 @@ export default function PhaseShowcase({
       />
 
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-24 items-center w-full ${
+        className={`mx-auto grid w-full max-w-6xl grid-cols-1 justify-items-center gap-12 md:grid-cols-2 md:gap-20 md:justify-items-stretch ${
           reverse ? 'md:[&>*:first-child]:order-2' : ''
         }`}
         style={
           bleedRight
-            ? { marginLeft: 'auto', marginRight: 0, maxWidth: '48rem' }
+            ? { maxWidth: '72rem' }
             : bleedLeft
-              ? { marginLeft: 0, marginRight: 'auto', maxWidth: '48rem' }
-              : { marginLeft: 'auto', marginRight: 'auto', maxWidth: '72rem' }
+              ? { maxWidth: '72rem' }
+              : undefined
         }
       >
         {/* Text block */}
         <RevealOnScroll
           delay={reverse ? 120 : 0}
-          className={`flex justify-center ${reverse ? 'md:justify-start' : 'md:justify-end'}`}
+          className={`w-full flex justify-center ${reverse ? 'md:justify-start' : 'md:justify-end'}`}
         >
-          <div className="flex flex-col items-start gap-5 w-full max-w-[520px] text-left">
+          <div className="flex w-full max-w-[520px] flex-col items-start gap-5 text-left">
             <div
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-pill text-[11px] font-bold tracking-[0.18em] uppercase"
+              className="chip-landing-phase"
               style={{ backgroundColor: `${color}1F`, color }}
             >
               <span>{number}</span>
@@ -110,11 +110,12 @@ export default function PhaseShowcase({
         {/* App screenshot — rendered inside a phone frame with a phase-tinted glow */}
         <RevealOnScroll
           delay={reverse ? 0 : 120}
-          className={`w-fit mx-auto md:mx-0 flex justify-center ${
+          className={`w-full flex justify-center ${
             bleedRight ? 'md:justify-end' : bleedLeft ? 'md:justify-start' : reverse ? 'md:justify-start' : 'md:justify-end'
           }`}
         >
-          <PhoneFrame glowColor={color}>
+          <div className="mx-auto w-fit">
+            <PhoneFrame glowColor={color}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageSrc}
@@ -122,7 +123,8 @@ export default function PhaseShowcase({
               loading="lazy"
               className="h-full w-full object-cover"
             />
-          </PhoneFrame>
+            </PhoneFrame>
+          </div>
         </RevealOnScroll>
       </div>
     </section>

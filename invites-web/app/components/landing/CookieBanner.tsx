@@ -12,6 +12,8 @@ export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    let showTimer: number | null = null;
+
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === 'declined') {
@@ -22,10 +24,16 @@ export default function CookieBanner() {
         posthog.opt_in_capturing();
         return;
       }
-      setVisible(true);
+      showTimer = window.setTimeout(() => setVisible(true), 0);
     } catch {
-      setVisible(true);
+      showTimer = window.setTimeout(() => setVisible(true), 0);
     }
+
+    return () => {
+      if (showTimer !== null) {
+        window.clearTimeout(showTimer);
+      }
+    };
   }, []);
 
   const handleChoice = (choice: Choice) => {
@@ -50,7 +58,8 @@ export default function CookieBanner() {
       role="dialog"
       aria-live="polite"
       aria-label="Cookie consent"
-      className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 md:max-w-md z-[60] rounded-md border border-divider/70 bg-bg2/95 backdrop-blur-md p-5 shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
+      className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:bottom-6 sm:w-full sm:max-w-sm md:right-12 md:max-w-md lg:right-20 z-[60] rounded-2xl border border-divider/70 bg-bg2/95 backdrop-blur-md px-2 pt-[9px] pb-[9px] shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
+      style={{ padding: '9px 8px' }}
     >
       <p className="text-sm text-text1 leading-relaxed">
         We use cookies for analytics to improve Lazzo. See our{' '}
