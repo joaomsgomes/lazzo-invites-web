@@ -42,6 +42,7 @@ export default function PhaseShowcase({
 
   return (
     <section
+      id={`phase-${phase}`}
       aria-labelledby={`phase-${phase}-heading`}
       className="landing-shell relative landing-section-y"
     >

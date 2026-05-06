@@ -3,16 +3,14 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { trackEvent } from '@/lib/analytics';
+import { LAZZO_TESTFLIGHT_URL } from '@/lib/lazzo-download';
 
-const APPSTORE_URL = process.env.NEXT_PUBLIC_APPSTORE_URL || '#';
-
-type NavTarget = 'features' | 'how' | 'usecases' | 'contact';
+type NavTarget = 'features' | 'how' | 'usecases';
 
 const NAV_LINKS: { label: string; href: string; target: NavTarget }[] = [
-  { label: 'Features', href: '#phase-planning-heading', target: 'features' },
-  { label: 'How it works', href: '#how-heading', target: 'how' },
-  { label: 'Use cases', href: '#usecases-heading', target: 'usecases' },
-  { label: 'Contact', href: 'mailto:hi@getlazzo.com', target: 'contact' },
+  { label: 'Features', href: '#phase-planning', target: 'features' },
+  { label: 'How it works', href: '#how-it-works', target: 'how' },
+  { label: 'Use cases', href: '#usecases', target: 'usecases' },
 ];
 
 function scrollToHashWithOffset(hash: string) {
@@ -61,7 +59,7 @@ export default function NavBar() {
   };
 
   const handleDownloadClick = () => {
-    trackEvent('landing_cta_clicked', { location: 'nav', store: 'app_store' });
+    trackEvent('landing_cta_clicked', { location: 'nav', store: 'testflight' });
   };
 
   return (
@@ -104,9 +102,11 @@ export default function NavBar() {
           </ul>
 
           <a
-            href={APPSTORE_URL}
+            href={LAZZO_TESTFLIGHT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={handleDownloadClick}
-            aria-label="Download Lazzo on the App Store"
+            aria-label="Get Lazzo on TestFlight"
             className="cta-gradient-hover btn-landing-nav group relative transition-all duration-200 hover:-translate-y-0.5 ring-2 ring-white shadow-[0_8px_24px_rgba(255,255,255,0.18)] hover:shadow-[0_12px_34px_rgba(255,255,255,0.30)]"
           >
             <span className="hidden sm:inline">Get the App</span>

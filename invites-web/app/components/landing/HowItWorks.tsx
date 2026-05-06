@@ -28,6 +28,7 @@ const STEPS = [
 export default function HowItWorks() {
   return (
     <section
+      id="how-it-works"
       aria-labelledby="how-heading"
       className="landing-band-how-it-works"
     >

@@ -14,8 +14,14 @@ const SITE_URL = "https://getlazzo.com";
 const SITE_TITLE = "Lazzo";
 const SITE_DESCRIPTION = "One app for the whole life of your event. Plan with polls and RSVPs, share live photos during, and get an auto-generated recap after.";
 
+/** In dev, production metadataBase makes icon/OG URLs point at getlazzo.com and breaks the favicon on localhost. */
+const metadataBase =
+  process.env.NODE_ENV === "development"
+    ? new URL("http://localhost:3000")
+    : new URL(SITE_URL);
+
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase,
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   keywords: ["lazzo", "events", "party planner", "rsvp", "group chat", "shared photos", "event recap", "birthday", "house party"],

@@ -1,7 +1,6 @@
 import Image from 'next/image';
+import { LAZZO_TESTFLIGHT_URL } from '@/lib/lazzo-download';
 import RevealOnScroll from './RevealOnScroll';
-
-const TESTFLIGHT_URL = process.env.NEXT_PUBLIC_TESTFLIGHT_URL || 'https://testflight.apple.com/join/lazzo';
 
 export default function DownloadCTA() {
   return (
@@ -54,7 +53,7 @@ export default function DownloadCTA() {
           </div>
 
           <a
-            href={TESTFLIGHT_URL}
+            href={LAZZO_TESTFLIGHT_URL}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Download Lazzo on TestFlight"

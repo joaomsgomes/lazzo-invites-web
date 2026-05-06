@@ -1,8 +1,7 @@
 'use client';
 
 import { trackEvent } from '@/lib/analytics';
-
-const APPSTORE_URL = process.env.NEXT_PUBLIC_APPSTORE_URL || '#';
+import { LAZZO_TESTFLIGHT_URL } from '@/lib/lazzo-download';
 
 const MOOD = (id: string) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=500&q=70`;
@@ -25,11 +24,11 @@ const MOODBOARD = [
 
 export default function Hero() {
   const handleDownloadClick = () => {
-    trackEvent('landing_cta_clicked', { location: 'hero', store: 'app_store' });
+    trackEvent('landing_cta_clicked', { location: 'hero', store: 'testflight' });
   };
 
   const handleScrollClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const targetHash = '#phase-planning-heading';
+    const targetHash = '#phase-planning';
     const el = document.querySelector(targetHash);
     if (!el) return;
 
@@ -125,9 +124,11 @@ export default function Hero() {
             between the cluster and the scroll indicator. */}
         <div className="flex h-fit items-center justify-center">
           <a
-            href={APPSTORE_URL}
+            href={LAZZO_TESTFLIGHT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={handleDownloadClick}
-            aria-label="Download Lazzo on the App Store"
+            aria-label="Get Lazzo on TestFlight"
             className="btn-landing-primary group border-[0.5px] border-white/55 bg-bg1 text-text1 transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:scale-[1.03] hover:bg-bg2 shadow-[0_10px_32px_rgba(0,0,0,0.55)] hover:shadow-[0_16px_44px_rgba(0,0,0,0.65)]"
           >
             Get Started
@@ -137,7 +138,7 @@ export default function Hero() {
 
       {/* Scroll indicator sits in its own bottom zone of the hero */}
       <a
-        href="#phase-planning-heading"
+        href="#phase-planning"
         onClick={handleScrollClick}
         aria-label="Scroll to features"
         className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 text-text2 transition-colors hover:text-text1 sm:bottom-8 md:bottom-10"

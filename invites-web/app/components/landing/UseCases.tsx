@@ -28,7 +28,11 @@ const USE_CASES: Case[] = [
 
 export default function UseCases() {
   return (
-    <section aria-labelledby="usecases-heading" className="landing-shell relative landing-section-y">
+    <section
+      id="usecases"
+      aria-labelledby="usecases-heading"
+      className="landing-shell relative landing-section-y"
+    >
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -inset-y-[20%] inset-x-0 -z-10"
