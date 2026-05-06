@@ -28,6 +28,20 @@ export default function Hero() {
     trackEvent('landing_cta_clicked', { location: 'hero', store: 'app_store' });
   };
 
+  const handleScrollClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const targetHash = '#phase-planning-heading';
+    const el = document.querySelector(targetHash);
+    if (!el) return;
+
+    e.preventDefault();
+    const NAV_OFFSET = 96;
+    const targetTop = el.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
+    window.scrollTo({ top: Math.max(targetTop, 0), behavior: 'smooth' });
+    if (typeof history !== 'undefined') {
+      history.replaceState(null, '', targetHash);
+    }
+  };
+
   return (
     // `isolate` creates a stacking context so the absolute bg layers below
     // (moodboard, overlay, glow) stay within this section and don't fall
@@ -124,6 +138,7 @@ export default function Hero() {
       {/* Scroll indicator sits in its own bottom zone of the hero */}
       <a
         href="#phase-planning-heading"
+        onClick={handleScrollClick}
         aria-label="Scroll to features"
         className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 text-text2 transition-colors hover:text-text1 sm:bottom-8 md:bottom-10"
       >

@@ -15,6 +15,16 @@ const NAV_LINKS: { label: string; href: string; target: NavTarget }[] = [
   { label: 'Contact', href: 'mailto:hi@getlazzo.com', target: 'contact' },
 ];
 
+function scrollToHashWithOffset(hash: string) {
+  const el = document.querySelector(hash);
+  if (!el) return false;
+
+  const NAV_OFFSET = 96;
+  const targetTop = el.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
+  window.scrollTo({ top: Math.max(targetTop, 0), behavior: 'smooth' });
+  return true;
+}
+
 export default function NavBar() {
   const [scrolled, setScrolled] = useState(false);
 
@@ -32,10 +42,9 @@ export default function NavBar() {
     trackEvent('landing_nav_clicked', { target: link.target });
 
     if (link.href.startsWith('#')) {
-      const el = document.querySelector(link.href);
-      if (el) {
+      const scrolledToTarget = scrollToHashWithOffset(link.href);
+      if (scrolledToTarget) {
         e.preventDefault();
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         if (typeof history !== 'undefined') {
           history.replaceState(null, '', link.href);
         }
