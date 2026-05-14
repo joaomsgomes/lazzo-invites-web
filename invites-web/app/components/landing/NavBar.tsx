@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { trackEvent } from '@/lib/analytics';
 import { LAZZO_TESTFLIGHT_URL } from '@/lib/lazzo-download';
+import { useGetAppModal } from '@/app/hooks/useGetAppModal';
+import GetAppModal from './GetAppModal';
 
 type NavTarget = 'features' | 'how' | 'usecases';
 
@@ -25,6 +27,7 @@ function scrollToHashWithOffset(hash: string) {
 
 export default function NavBar() {
   const [scrolled, setScrolled] = useState(false);
+  const { isOpen, open, close } = useGetAppModal();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80);
@@ -58,11 +61,14 @@ export default function NavBar() {
     }
   };
 
-  const handleDownloadClick = () => {
-    trackEvent('landing_cta_clicked', { location: 'nav', store: 'testflight' });
+  const handleDownloadClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    trackEvent('landing_get_app_modal_opened', { location: 'nav' });
+    open();
   };
 
   return (
+    <>
     <nav
       aria-label="Primary"
       className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${
@@ -126,5 +132,7 @@ export default function NavBar() {
         }}
       />
     </nav>
+    <GetAppModal isOpen={isOpen} onClose={close} />
+    </>
   );
 }

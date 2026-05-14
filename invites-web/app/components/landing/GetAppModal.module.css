@@ -1,0 +1,283 @@
+/* "Get the App" modal — scoped styles.
+   Reads only from existing CSS variables declared in app/globals.css :root. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gap-md);
+  animation: backdropFadeIn 0.2s ease-out;
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--gap-xl) var(--gap-lg) var(--gap-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  animation: panelSlideUp 0.25s ease-out;
+}
+
+.closeBtn {
+  position: absolute;
+  top: var(--gap-sm);
+  right: var(--gap-sm);
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text2);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.closeBtn:hover {
+  color: var(--text1);
+  background: var(--bg3);
+}
+
+.title {
+  margin: 0 0 var(--gap-xs);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.27;
+  color: var(--text1);
+}
+
+.subtitle {
+  margin: 0 0 var(--gap-lg);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text2);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
+}
+
+.primaryCta {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 24px;
+  background: var(--text1);
+  color: var(--bg1);
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primaryCta::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(90deg, var(--planning) 0%, var(--living) 50%, var(--recap) 100%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.primaryCta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.12);
+}
+
+.primaryCta:hover::after,
+.primaryCta:focus-visible::after {
+  opacity: 1;
+}
+
+.secondaryCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 24px;
+  background: transparent;
+  color: var(--text1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.secondaryCta:hover {
+  border-color: var(--text2);
+  background: var(--bg3);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
+}
+
+.formHint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text2);
+}
+
+.input {
+  width: 100%;
+  padding: 12px var(--gap-md);
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm-alt);
+  color: var(--text1);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.input::placeholder {
+  color: var(--text2);
+  opacity: 0.7;
+}
+
+.input:focus {
+  border-color: var(--living);
+}
+
+.inputError {
+  border-color: var(--cantVote);
+}
+
+.error {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--cantVote);
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+}
+
+.backBtn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 var(--gap-md);
+  background: transparent;
+  color: var(--text2);
+  border: none;
+  border-radius: var(--radius-sm-alt);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.backBtn:hover {
+  color: var(--text1);
+}
+
+.submitBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 var(--gap-md);
+  background: var(--text1);
+  color: var(--bg1);
+  border: none;
+  border-radius: var(--radius-sm-alt);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.submitBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(255, 255, 255, 0.1);
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.success {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-xs);
+  padding: var(--gap-md);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm-alt);
+}
+
+.successTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text1);
+}
+
+.successBody {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text2);
+}
+
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes panelSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .panel {
+    animation: none;
+  }
+}
